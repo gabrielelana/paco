@@ -57,18 +57,14 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
-  # test "many" do
-  #   assert parse(many(string("a")), "") == {:ok, ""}
-  #   assert parse(many(string("a")), "a") == {:ok, "a"}
-  #   assert parse(many(string("a")), "aa") == {:ok, "aa"}
-  #   assert parse(many(string("a")), "aaaaa") == {:ok, "aaaaa"}
-  #   assert parse(many(string("a")), "b") == {:error,
-  #     """
-  #     Expected string(b) at line: 1, column: 0, but got
-  #     > |b
-  #     """
-  #   }
-  # end
+  test "many" do
+    assert parse(many(string("a")), "") == {:ok, []}
+    assert parse(many(string("a")), "a") == {:ok, ["a"]}
+    assert parse(many(string("a")), "aa") == {:ok, ["a", "a"]}
+    assert parse(many(string("a")), "aaaaa") == {:ok, ["a", "a", "a", "a", "a"]}
+    assert parse(many(string("a")), "b") == {:ok, []}
+    assert parse(seq([many(string("a")), string("b")]), "b") == {:ok, [[], "b"]}
+  end
 
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
