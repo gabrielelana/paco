@@ -13,7 +13,24 @@ defmodule Paco.Parser.String.Test do
       > |bbb
       """
     }
+    assert parse(re(~r/a+/), "baaa") == {:error,
+      """
+      Expected re(~r/a+/) at line: 1, column: 0, but got
+      > |baaa
+      """
+    }
+    assert parse(re(~r/^a+/m), "bbb\naaa") == {:error,
+      """
+      Expected re(~r/^a+/) at line: 1, column: 0, but got
+      > |bbb\naaa
+      """
+    }
   end
+
+#   test "whitespaces" do
+#     assert parse(whitespace, " ") == {:ok, " "}
+#     assert parse(whitespace, "\t") == {:ok, "\t"}
+#   end
 
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}

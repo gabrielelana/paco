@@ -62,10 +62,20 @@ defmodule Paco do
       end
     end
 
+    defp anchor(r) do
+      source = Regex.source(r)
+      if String.starts_with?(source, "\\A") do
+        r
+      else
+        {:ok, r} = Regex.compile("\\A#{source}")
+        r
+      end
+    end
+
     def re(r, opts \\ []) do
       map = Keyword.get(opts, :map, fn(x) -> x end)
       fn %Source{at: at, text: text} ->
-        case Regex.run(r, text, return: :index) do
+        case Regex.run(anchor(r), text, return: :index) do
           [{from, len}] ->
             to = from + len - 1
             {_, tail} = String.split_at(text, to)
