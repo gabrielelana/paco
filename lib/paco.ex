@@ -32,9 +32,11 @@ defmodule Paco do
     defp column(<<"\r\n"::utf8, text::binary>>, at, _cn), do: column(text, at - 2, 0)
     defp column(<<_::utf8, text::binary>>, at, cn), do: column(text, at - 1, cn + 1)
 
-    defp context(text, at, line, column) do
-      first_in_line_at = at - column
-      "> " <> String.slice(text, first_in_line_at, column) <> "|" <> String.slice(text, at, 60)
+    defp context(text, at, _line, column) do
+      at_first_in_line = at - column
+      before_at_in_line = String.slice(text, at_first_in_line, column)
+      after_at = String.slice(text, at, 60 - column)
+      "> #{before_at_in_line}|#{after_at}"
     end
   end
 
@@ -42,8 +44,10 @@ defmodule Paco do
 
     def parse(parser, text) do
       case parser.(Source.from(text)) do
-        %Failure{} = failure -> Failure.format(failure, text)
-        %Success{result: result} -> result
+        %Failure{} = failure ->
+          {:error, Failure.format(failure, text)}
+        %Success{result: result} ->
+          {:ok, result}
       end
     end
 
