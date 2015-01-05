@@ -65,7 +65,7 @@ defmodule Paco do
     def whitespace(opts \\ []), do: re(~r/\s/, opts)
     def whitespaces(opts \\ []), do: re(~r/\s+/, opts)
 
-    def eof(opts \\ []) do
+    def eof(_opts \\ []) do
       fn
         %Source{at: at, text: ""} ->
           %Success{from: at, to: at, tail: "", result: ""}
@@ -103,6 +103,29 @@ defmodule Paco do
             %Success{from: at + 1, to: at + consumed, tail: tail, result: map.(s)}
           :fail ->
             %Failure{at: at, message: "Expected string(#{s})"}
+        end
+      end
+    end
+
+    def one_of(parsers, _opts \\ []) do
+      fn %Source{at: at} = source ->
+        result =
+          Enum.reduce(parsers, :none, fn
+            (parser, :none) ->
+              case parser.(source) do
+                %Success{} = success ->
+                  success
+                %Failure{} ->
+                  :none
+              end
+            (_parser, %Success{} = success) ->
+              success
+          end)
+        case result do
+          %Success{} = success ->
+            success
+          :none ->
+            %Failure{at: at, message: "Expected one_of(?)"}
         end
       end
     end

@@ -46,6 +46,30 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "one_of" do
+    assert parse(one_of([string("a"), string("b")]), "a") == {:ok, "a"}
+    assert parse(one_of([string("a"), string("b")]), "b") == {:ok, "b"}
+    assert parse(one_of([string("a"), string("b")]), "c") == {:error,
+      """
+      Expected one_of(?) at line: 1, column: 0, but got
+      > |c
+      """
+    }
+  end
+
+  # test "many" do
+  #   assert parse(many(string("a")), "") == {:ok, ""}
+  #   assert parse(many(string("a")), "a") == {:ok, "a"}
+  #   assert parse(many(string("a")), "aa") == {:ok, "aa"}
+  #   assert parse(many(string("a")), "aaaaa") == {:ok, "aaaaa"}
+  #   assert parse(many(string("a")), "b") == {:error,
+  #     """
+  #     Expected string(b) at line: 1, column: 0, but got
+  #     > |b
+  #     """
+  #   }
+  # end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
