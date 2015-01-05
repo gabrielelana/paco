@@ -7,8 +7,19 @@ defmodule Paco.Parser.String.Test do
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
   end
 
+  test "perfect match!" do
+    assert parse!(string("aaa"), "aaa") == "aaa"
+    assert parse!(string("あいうえお"), "あいうえお") == "あいうえお"
+  end
+
   test "match with something left" do
     assert parse(string("aaa"), "aaa bbb") == {:ok, "aaa"}
+  end
+
+  test "failure!" do
+    assert_raise Paco.Parser.Error, fn ->
+      parse!(string("aaa"), "bbb")
+    end
   end
 
   test "failed match at line 1" do

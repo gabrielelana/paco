@@ -42,6 +42,17 @@ defmodule Paco do
 
   defmodule Parser do
 
+    defmodule Error, do: defexception [:message]
+
+    def parse!(parser, text) do
+      case parse(parser, text) do
+        {:ok, result} ->
+          result
+        {:error, error} ->
+          raise Error, message: error
+      end
+    end
+
     def parse(parser, text) do
       case parser.(Source.from(text)) do
         %Failure{} = failure ->
