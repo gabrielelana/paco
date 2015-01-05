@@ -65,6 +65,15 @@ defmodule Paco do
     def whitespace(opts \\ []), do: re(~r/\s/, opts)
     def whitespaces(opts \\ []), do: re(~r/\s+/, opts)
 
+    def eof(opts \\ []) do
+      fn
+        %Source{at: at, text: ""} ->
+          %Success{from: at, to: at, tail: "", result: ""}
+        %Source{at: at} ->
+          %Failure{at: at, message: "Expected the end of input"}
+      end
+    end
+
     def re(r, opts \\ []) do
       map = Keyword.get(opts, :map, fn(x) -> x end)
       fn %Source{at: at, text: text} ->

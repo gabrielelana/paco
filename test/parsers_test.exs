@@ -36,6 +36,16 @@ defmodule Paco.Parser.String.Test do
     assert parse(whitespaces, " \n\t\n  ") == {:ok, " \n\t\n  "}
   end
 
+  test "eof" do
+    assert parse(eof, "") == {:ok, ""}
+    assert parse(eof, "a") == {:error,
+      """
+      Expected the end of input at line: 1, column: 0, but got
+      > |a
+      """
+    }
+  end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
