@@ -2,6 +2,19 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
+  test "re" do
+    assert parse(re(~r/a+/), "aaa") == {:ok, "aaa"}
+    assert parse(re(~r/a+/), "aaabbb") == {:ok, "aaa"}
+    assert parse(re(~r/a(b+)a/), "abbba") == {:ok, ["bbb"]}
+    assert parse(re(~r/a(b+)a/, map: fn xs -> Enum.join(xs, "") end), "abbba") == {:ok, "bbb"}
+    assert parse(re(~r/a+/), "bbb") == {:error,
+      """
+      Expected re(~r/a+/) at line: 1, column: 0, but got
+      > |bbb
+      """
+    }
+  end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}

@@ -62,6 +62,27 @@ defmodule Paco do
       end
     end
 
+    def re(r, opts \\ []) do
+      map = Keyword.get(opts, :map, fn(x) -> x end)
+      fn %Source{at: at, text: text} ->
+        case Regex.run(r, text, return: :index) do
+          [{from, len}] ->
+            to = from + len - 1
+            {_, tail} = String.split_at(text, to)
+            %Success{from: from, to: to, tail: tail, result: map.(String.slice(text, from, len))}
+          [{from, len} | subpatterns] ->
+            to = from + len - 1
+            {_, tail} = String.split_at(text, to)
+            result = Enum.map(subpatterns, fn({from, len}) ->
+              String.slice(text, from, len)
+            end)
+            %Success{from: from, to: from + len - 1, tail: tail, result: map.(result)}
+          nil ->
+            %Failure{at: at, message: "Expected re(~r/#{Regex.source(r)}/)"}
+        end
+      end
+    end
+
     def string(s, opts \\ []) do
       map = Keyword.get(opts, :map, fn(x) -> x end)
       fn %Source{at: at, text: text} ->
