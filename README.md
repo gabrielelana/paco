@@ -7,7 +7,7 @@ expression = lazy(
   seq([
     string("("),
     one_of([
-      nothing, digit |> separated_by(string(",")), expression
+      peep(string(")"), digit |> separated_by(string(",")), expression
     ]),
     string(")"),
   ])
