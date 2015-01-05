@@ -62,15 +62,8 @@ defmodule Paco do
       end
     end
 
-    defp anchor(r) do
-      source = Regex.source(r)
-      if String.starts_with?(source, "\\A") do
-        r
-      else
-        {:ok, r} = Regex.compile("\\A#{source}")
-        r
-      end
-    end
+    def whitespace(opts \\ []), do: re(~r/\s/, opts)
+    def whitespaces(opts \\ []), do: re(~r/\s+/, opts)
 
     def re(r, opts \\ []) do
       map = Keyword.get(opts, :map, fn(x) -> x end)
@@ -131,5 +124,15 @@ defmodule Paco do
     defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, c), do: consume(t1, t2, c + 1)
     defp consume("", rest, c), do: {c, rest}
     defp consume(_, _, _), do: :fail
+
+    defp anchor(r) do
+      source = Regex.source(r)
+      if String.starts_with?(source, "\\A") do
+        r
+      else
+        {:ok, r} = Regex.compile("\\A#{source}")
+        r
+      end
+    end
   end
 end

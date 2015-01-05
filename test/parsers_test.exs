@@ -27,10 +27,14 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
-#   test "whitespaces" do
-#     assert parse(whitespace, " ") == {:ok, " "}
-#     assert parse(whitespace, "\t") == {:ok, "\t"}
-#   end
+  test "whitespaces" do
+    assert parse(whitespace, " ") == {:ok, " "}
+    assert parse(whitespace, "\t") == {:ok, "\t"}
+    assert parse(whitespace, "\n") == {:ok, "\n"}
+    assert parse(whitespaces, "   ") == {:ok, "   "}
+    assert parse(whitespaces, " \t  ") == {:ok, " \t  "}
+    assert parse(whitespaces, " \n\t\n  ") == {:ok, " \n\t\n  "}
+  end
 
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
