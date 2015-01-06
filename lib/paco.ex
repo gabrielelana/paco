@@ -134,16 +134,27 @@ defmodule Paco do
       end
     end
 
+    def maybe(parser, _opts \\ []) do
+      fn %Source{at: at, text: text} = source ->
+        case parser.(source) do
+          %Success{} = success ->
+            success
+          %Failure{} ->
+            %Success{from: at, to: at, tail: text, result: :nothing}
+        end
+      end
+    end
+
     def one_of(parsers, _opts \\ []) do
       fn %Source{at: at} = source ->
         result =
-          Enum.reduce(parsers, :none, fn
-            (parser, :none) ->
+          Enum.reduce(parsers, :nothing, fn
+            (parser, :nothing) ->
               case parser.(source) do
                 %Success{} = success ->
                   success
                 %Failure{} ->
-                  :none
+                  :nothing
               end
             (_parser, %Success{} = success) ->
               success
@@ -151,7 +162,7 @@ defmodule Paco do
         case result do
           %Success{} = success ->
             success
-          :none ->
+          :nothing ->
             %Failure{at: at, message: "Expected one_of(?)"}
         end
       end

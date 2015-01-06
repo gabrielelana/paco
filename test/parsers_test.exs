@@ -27,6 +27,12 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "maybe" do
+    assert parse(maybe(string("a")), "a") == {:ok, "a"}
+    assert parse(maybe(string("a")), "b") == {:ok, :nothing}
+    assert parse(maybe(string("a")), "")  == {:ok, :nothing}
+  end
+
   test "whitespaces" do
     assert parse(whitespace, " ") == {:ok, " "}
     assert parse(whitespace, "\t") == {:ok, "\t"}
