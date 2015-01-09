@@ -3,15 +3,12 @@ A parser combinator library for Elixir
 
 ## Example
 ```elixir
-expression = lazy(
-  seq([
-    string("("),
-    one_of([
-      peep(string(")"), digit |> separated_by(string(",")), expression
-    ]),
-    string(")"),
-  ])
-)
+expression =
+  recursive(
+    fn(p) ->
+      one_of([digits, p]) |> separated_by(",") |> surrounded_by("(", ")")
+    end
+  )
 
 expression |> parse("(7, (4, 5), (1, 2, 3), 6)") # == [7, [4, 5], [1, 2, 3], 6]
 ```
