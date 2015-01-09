@@ -191,6 +191,13 @@ defmodule Paco do
       end
     end
 
+    def recursive(parser) do
+      fn(source) ->
+        parser.(recursive(parser)).(source)
+      end
+    end
+
+
     defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, c), do: consume(t1, t2, c + 1)
     defp consume("", rest, c), do: {c, rest}
     defp consume(_, _, _), do: :fail

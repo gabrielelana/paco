@@ -27,6 +27,29 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "recursive" do
+    p = recursive(
+      fn(p) ->
+        one_of([
+          seq([string("("), maybe(p), string(")")]),
+          seq([string("["), maybe(p), string("]")]),
+          seq([string("{"), maybe(p), string("}")])
+        ])
+      end
+    )
+
+    assert parse(p, "()") == {:ok, ["(", :nothing, ")"]}
+    assert parse(p, "[]") == {:ok, ["[", :nothing, "]"]}
+    assert parse(p, "[()]") == {:ok, ["[", ["(", :nothing, ")"], "]"]}
+    assert parse(p, "()a") == {:ok, ["(", :nothing, ")"]}
+    assert parse(p, "(a") == {:error,
+      """
+      Expected one_of(?) at line: 1, column: 0, but got
+      > |(a
+      """
+    }
+  end
+
   test "maybe" do
     assert parse(maybe(string("a")), "a") == {:ok, "a"}
     assert parse(maybe(string("a")), "b") == {:ok, :nothing}
