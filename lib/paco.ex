@@ -156,6 +156,12 @@ defmodule Paco do
       end
     end
 
+    def always(result, _opts \\ []) do
+      fn %Source{at: at, text: text} ->
+        %Success{from: at, to: at, tail: text, result: result}
+      end
+    end
+
     def one_of(parsers, _opts \\ []) do
       fn %Source{at: at} = source ->
         result =

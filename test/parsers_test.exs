@@ -38,6 +38,10 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "always" do
+    assert parse(always(:something), "aaa") == {:ok, :something}
+  end
+
   test "recursive" do
     p = recursive(
       fn(p) ->
