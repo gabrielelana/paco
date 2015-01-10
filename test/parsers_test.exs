@@ -27,6 +27,17 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "peep" do
+    assert parse(seq([string("a"), peep(string("b"))]), "ab") == {:ok, ["a", :nothing]}
+    assert parse(seq([string("a"), peep(string("b")), string("b")]), "ab") == {:ok, ["a", :nothing, "b"]}
+    assert parse(seq([string("a"), peep(string("a"))]), "ab") == {:error,
+      """
+      Expected string(a) at line: 1, column: 1, but got
+      > a|b
+      """
+    }
+  end
+
   test "recursive" do
     p = recursive(
       fn(p) ->

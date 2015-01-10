@@ -145,6 +145,17 @@ defmodule Paco do
       end
     end
 
+    def peep(parser, _opts \\ []) do
+      fn %Source{at: at, text: text} = source ->
+        case parser.(source) do
+          %Success{} ->
+            %Success{from: at, to: at, tail: text, result: :nothing}
+          %Failure{} = failure ->
+            failure
+        end
+      end
+    end
+
     def one_of(parsers, _opts \\ []) do
       fn %Source{at: at} = source ->
         result =
