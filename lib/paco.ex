@@ -249,7 +249,7 @@ defmodule Paco do
 
     def separated_by(element, separator, opts \\ []) do
       decorate(opts,
-        seq([element, many(seq([skip(separator), element]))], map: &List.flatten/1)
+        seq([element, many(seq([skip(separator), element]))], to: &List.flatten/1)
       )
     end
 
@@ -257,17 +257,17 @@ defmodule Paco do
     def surrounded_by(element, around, opts) when is_list(opts), do: surrounded_by(element, around, around, opts)
     def surrounded_by(element, preceding, following, opts \\ []) do
       decorate(opts,
-        seq([skip(preceding), element, skip(following)], map: &List.flatten/1)
+        seq([skip(preceding), element, skip(following)], to: &List.flatten/1)
       )
     end
 
 
     defp decorate(opts, parse) do
-      map = Keyword.get(opts, :map, fn(x) -> x end)
+      transform_to = Keyword.get(opts, :to, fn(x) -> x end)
       fn source ->
         case parse.(source) do
           success = %Success{result: result} ->
-            %Success{success | result: map.(result)}
+            %Success{success | result: transform_to.(result)}
           failure = %Failure{} ->
             failure
         end
