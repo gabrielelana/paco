@@ -57,6 +57,8 @@ defmodule Paco do
       case parser.(Source.from(text)) do
         %Failure{} = failure ->
           {:error, Failure.format(failure, text)}
+        %Success{skip: true} ->
+          {:ok, []}
         %Success{result: result} ->
           {:ok, result}
       end
@@ -134,6 +136,19 @@ defmodule Paco do
               {last_success.to, last_success.tail}
           end
           %Success{from: at, to: to, tail: tail, result: results}
+        end
+      )
+    end
+
+    def skip(parser, opts \\ []) do
+      decorate(opts,
+        fn %Source{} = source ->
+          case parser.(source) do
+            %Success{} = success ->
+              %Success{success | skip: true}
+            %Failure{} = failure ->
+              failure
+          end
         end
       )
     end

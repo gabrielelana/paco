@@ -71,11 +71,28 @@ defmodule Paco.Parser.String.Test do
     assert parse(maybe(string("a")), "")  == {:ok, []}
   end
 
+  test "skip" do
+    assert parse(skip(string("a")), "a") == {:ok, []}
+
+    identifier = seq([
+      skip(maybe(whitespaces)),
+      re(~r/[_a-zA-Z][_a-zA-Z0-9]*/),
+      skip(maybe(whitespaces))
+    ])
+
+    assert parse(identifier, "a") == {:ok, ["a"]}
+    assert parse(identifier, " a") == {:ok, ["a"]}
+    assert parse(identifier, "a ") == {:ok, ["a"]}
+    assert parse(identifier, "   a") == {:ok, ["a"]}
+    assert parse(identifier, "a   ") == {:ok, ["a"]}
+  end
+
   test "whitespaces" do
     assert parse(whitespace, " ") == {:ok, " "}
     assert parse(whitespace, "\t") == {:ok, "\t"}
     assert parse(whitespace, "\n") == {:ok, "\n"}
     assert parse(whitespaces, "   ") == {:ok, "   "}
+    assert parse(whitespaces, "   a") == {:ok, "   "}
     assert parse(whitespaces, " \t  ") == {:ok, " \t  "}
     assert parse(whitespaces, " \n\t\n  ") == {:ok, " \n\t\n  "}
   end
