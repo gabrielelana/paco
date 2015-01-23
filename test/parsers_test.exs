@@ -139,10 +139,10 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "surrounded_by" do
-    identifier = seq([skip(maybe(whitespaces)), re(~r/\w/), skip(maybe(whitespaces))])
+    identifier = surrounded_by(re(~r/\w/), skip(maybe(whitespaces)))
     identifier_quoted = surrounded_by(identifier, string(~s(")), escape_with: string("\\"))
 
-    assert parse(identifier_quoted, ~s("a")) == {:ok, ["a"]}
+    assert parse(identifier_quoted, ~s("a")) == {:ok, "a"}
   end
 
   test "perfect match" do
