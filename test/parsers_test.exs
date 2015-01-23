@@ -138,6 +138,13 @@ defmodule Paco.Parser.String.Test do
     assert parse(identifier_separated_by_comma, " a , a , a ") == {:ok, ["a", "a", "a"]}
   end
 
+  test "surrounded_by" do
+    identifier = seq([skip(maybe(whitespaces)), re(~r/\w/), skip(maybe(whitespaces))])
+    identifier_quoted = surrounded_by(identifier, string(~s(")), escape_with: string("\\"))
+
+    assert parse(identifier_quoted, ~s("a")) == {:ok, ["a"]}
+  end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}

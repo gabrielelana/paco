@@ -253,6 +253,13 @@ defmodule Paco do
       )
     end
 
+    def surrounded_by(element, around), do: surrounded_by(element, around, around, [])
+    def surrounded_by(element, around, opts) when is_list(opts), do: surrounded_by(element, around, around, opts)
+    def surrounded_by(element, preceding, following, opts \\ []) do
+      decorate(opts,
+        seq([skip(preceding), element, skip(following)], map: &List.flatten/1)
+      )
+    end
 
 
     defp decorate(opts, parse) do
