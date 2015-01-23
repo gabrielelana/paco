@@ -75,145 +75,173 @@ defmodule Paco do
     end
 
     def re(r, opts \\ []) do
-      map = Keyword.get(opts, :map, fn(x) -> x end)
-      fn %Source{at: at, text: text} ->
-        case Regex.run(anchor(r), text, return: :index) do
-          [{from, len}] ->
-            to = from + len - 1
-            {_, tail} = String.split_at(text, to)
-            %Success{from: from, to: to, tail: tail, result: map.(String.slice(text, from, len))}
-          [{from, len} | subpatterns] ->
-            to = from + len - 1
-            {_, tail} = String.split_at(text, to)
-            result = Enum.map(subpatterns, fn({from, len}) ->
-              String.slice(text, from, len)
-            end)
-            %Success{from: from, to: from + len - 1, tail: tail, result: map.(result)}
-          nil ->
-            %Failure{at: at, message: "Expected re(~r/#{Regex.source(r)}/)"}
+      decorate(opts,
+        fn %Source{at: at, text: text} ->
+          case Regex.run(anchor(r), text, return: :index) do
+            [{from, len}] ->
+              to = from + len - 1
+              {_, tail} = String.split_at(text, to)
+              %Success{from: from, to: to, tail: tail, result: String.slice(text, from, len)}
+            [{from, len} | subpatterns] ->
+              to = from + len - 1
+              {_, tail} = String.split_at(text, to)
+              result = Enum.map(subpatterns, fn({from, len}) ->
+                String.slice(text, from, len)
+              end)
+              %Success{from: from, to: from + len - 1, tail: tail, result: result}
+            nil ->
+              %Failure{at: at, message: "Expected re(~r/#{Regex.source(r)}/)"}
+          end
         end
-      end
+      )
     end
 
     def string(s, opts \\ []) do
-      map = Keyword.get(opts, :map, fn(x) -> x end)
-      fn %Source{at: at, text: text} ->
-        case consume(s, text, 0) do
-          {consumed, tail} ->
-            %Success{from: at + 1, to: at + consumed, tail: tail, result: map.(s)}
-          :fail ->
-            %Failure{at: at, message: "Expected string(#{s})"}
+      decorate(opts,
+        fn %Source{at: at, text: text} ->
+          case consume(s, text, 0) do
+            {consumed, tail} ->
+              %Success{from: at + 1, to: at + consumed, tail: tail, result: s}
+            :fail ->
+              %Failure{at: at, message: "Expected string(#{s})"}
+          end
         end
-      end
+      )
     end
 
-    def many(parser, _opts \\ []) do
-      fn %Source{at: at, text: text} = source ->
-        successes =
-          Stream.unfold(source,
-            fn(%Source{} = source) ->
-              case parser.(source) do
-                %Success{to: to, tail: tail} = success ->
-                  {success, %Source{at: to, text: tail}}
-                %Failure{} ->
-                  nil
+    def many(parser, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at, text: text} = source ->
+          successes =
+            Stream.unfold(source,
+              fn(%Source{} = source) ->
+                case parser.(source) do
+                  %Success{to: to, tail: tail} = success ->
+                    {success, %Source{at: to, text: tail}}
+                  %Failure{} ->
+                    nil
+                end
               end
-            end
-          )
-          |> Enum.to_list
+            )
+            |> Enum.to_list
 
-        results = successes |> Enum.map(&(&1.result))
-        {to, tail} = case successes do
-          [] ->
-            {at, text}
-          successes ->
-            last_success = List.last(successes)
-            {last_success.to, last_success.tail}
+          results = successes |> Enum.map(&(&1.result))
+          {to, tail} = case successes do
+            [] ->
+              {at, text}
+            successes ->
+              last_success = List.last(successes)
+              {last_success.to, last_success.tail}
+          end
+          %Success{from: at, to: to, tail: tail, result: results}
         end
-        %Success{from: at, to: to, tail: tail, result: results}
-      end
+      )
     end
 
-    def maybe(parser, _opts \\ []) do
-      fn %Source{at: at, text: text} = source ->
-        case parser.(source) do
-          %Success{} = success ->
-            success
-          %Failure{} ->
-            %Success{from: at, to: at, tail: text, result: :nothing}
-        end
-      end
-    end
-
-    def peep(parser, _opts \\ []) do
-      fn %Source{at: at, text: text} = source ->
-        case parser.(source) do
-          %Success{} ->
-            %Success{from: at, to: at, tail: text, result: :nothing}
-          %Failure{} = failure ->
-            failure
-        end
-      end
-    end
-
-    def always(result, _opts \\ []) do
-      fn %Source{at: at, text: text} ->
-        %Success{from: at, to: at, tail: text, result: result}
-      end
-    end
-
-    def one_of(parsers, _opts \\ []) do
-      fn %Source{at: at} = source ->
-        result =
-          Enum.reduce(parsers, :nothing, fn
-            (parser, :nothing) ->
-              case parser.(source) do
-                %Success{} = success ->
-                  success
-                %Failure{} ->
-                  :nothing
-              end
-            (_parser, %Success{} = success) ->
+    def maybe(parser, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at, text: text} = source ->
+          case parser.(source) do
+            %Success{} = success ->
               success
-          end)
-        case result do
-          %Success{} = success ->
-            success
-          :nothing ->
-            %Failure{at: at, message: "Expected one_of(?)"}
+            %Failure{} ->
+              %Success{from: at, to: at, tail: text, result: :nothing}
+          end
         end
-      end
+      )
     end
 
-    def seq(parsers, _opts \\ []) do
-      fn %Source{} = source ->
-        result =
-          Enum.reduce(parsers, {source, []}, fn
-            (parser, {%Source{} = source, results}) ->
-              case parser.(source) do
-                %Success{to: to, tail: tail, result: result} ->
-                  {%Source{at: to, text: tail}, [result|results]}
-                %Failure{} = failure ->
-                  failure
-              end
-            (_parser, %Failure{} = failure) ->
+    def peep(parser, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at, text: text} = source ->
+          case parser.(source) do
+            %Success{} ->
+              %Success{from: at, to: at, tail: text, result: :nothing}
+            %Failure{} = failure ->
               failure
-          end)
-        case result do
-          {%Source{at: at, text: text}, results} ->
-            %Success{from: source.at, to: at, tail: text, result: Enum.reverse(results)}
-          %Failure{} = failure ->
+          end
+        end
+      )
+    end
+
+    def always(result, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at, text: text} ->
+          %Success{from: at, to: at, tail: text, result: result}
+        end
+      )
+    end
+
+    def one_of(parsers, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at} = source ->
+          result =
+            Enum.reduce(parsers, :nothing, fn
+              (parser, :nothing) ->
+                case parser.(source) do
+                  %Success{} = success ->
+                    success
+                  %Failure{} ->
+                    :nothing
+                end
+              (_parser, %Success{} = success) ->
+                success
+            end)
+          case result do
+            %Success{} = success ->
+              success
+            :nothing ->
+              %Failure{at: at, message: "Expected one_of(?)"}
+          end
+        end
+      )
+    end
+
+    def seq(parsers, opts \\ []) do
+      decorate(opts,
+        fn %Source{} = source ->
+          result =
+            Enum.reduce(parsers, {source, []}, fn
+              (parser, {%Source{} = source, results}) ->
+                case parser.(source) do
+                  %Success{to: to, tail: tail, result: result} ->
+                    {%Source{at: to, text: tail}, [result|results]}
+                  %Failure{} = failure ->
+                    failure
+                end
+              (_parser, %Failure{} = failure) ->
+                failure
+            end)
+          case result do
+            {%Source{at: at, text: text}, results} ->
+              %Success{from: source.at, to: at, tail: text, result: Enum.reverse(results)}
+            %Failure{} = failure ->
+              failure
+          end
+        end
+      )
+    end
+
+    def recursive(parser, opts \\ []) do
+      decorate(opts,
+        fn(source) ->
+          parser.(recursive(parser)).(source)
+        end
+      )
+    end
+
+
+    defp decorate(opts, parse) do
+      map = Keyword.get(opts, :map, fn(x) -> x end)
+      fn source ->
+        case parse.(source) do
+          success = %Success{result: result} ->
+            %Success{success | result: map.(result)}
+          failure = %Failure{} ->
             failure
         end
       end
     end
-
-    def recursive(parser) do
-      fn(source) ->
-        parser.(recursive(parser)).(source)
-      end
-    end
-
 
     defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, c), do: consume(t1, t2, c + 1)
     defp consume("", rest, c), do: {c, rest}
