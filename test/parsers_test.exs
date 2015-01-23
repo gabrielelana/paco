@@ -81,7 +81,7 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "eof" do
-    assert parse(eof, "") == {:ok, ""}
+    assert parse(eof, "") == {:ok, []}
     assert parse(eof, "a") == {:error,
       """
       Expected the end of input at line: 1, column: 0, but got

@@ -5,7 +5,7 @@ defmodule Paco do
     def from(s) when is_binary(s), do: %__MODULE__{at: 0, text: s}
   end
 
-  defmodule Success, do: defstruct from: 0, to: 0, tail: "", result: ""
+  defmodule Success, do: defstruct from: 0, to: 0, tail: "", result: []
 
   defmodule Failure do
     defstruct at: 0, message: ""
@@ -68,7 +68,7 @@ defmodule Paco do
     def eof(_opts \\ []) do
       fn
         %Source{at: at, text: ""} ->
-          %Success{from: at, to: at, tail: "", result: ""}
+          %Success{from: at, to: at, tail: "", result: []}
         %Source{at: at} ->
           %Failure{at: at, message: "Expected the end of input"}
       end
