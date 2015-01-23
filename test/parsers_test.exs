@@ -127,6 +127,17 @@ defmodule Paco.Parser.String.Test do
     assert parse(seq([many(string("a")), string("b")]), "b") == {:ok, [[], "b"]}
   end
 
+  test "separated_by" do
+    identifier = seq([skip(maybe(whitespaces)), re(~r/\w/), skip(maybe(whitespaces))])
+    identifier_separated_by_comma = separated_by(identifier, string(","))
+
+    assert parse(identifier_separated_by_comma, "a") == {:ok, ["a"]}
+    assert parse(identifier_separated_by_comma, "a,a") == {:ok, ["a", "a"]}
+    assert parse(identifier_separated_by_comma, " a, a ") == {:ok, ["a", "a"]}
+    assert parse(identifier_separated_by_comma, "a,a,a") == {:ok, ["a", "a", "a"]}
+    assert parse(identifier_separated_by_comma, " a , a , a ") == {:ok, ["a", "a", "a"]}
+  end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}

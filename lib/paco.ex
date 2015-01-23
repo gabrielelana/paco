@@ -247,6 +247,13 @@ defmodule Paco do
       )
     end
 
+    def separated_by(element, separator, opts \\ []) do
+      decorate(opts,
+        seq([element, many(seq([skip(separator), element]))], map: &List.flatten/1)
+      )
+    end
+
+
 
     defp decorate(opts, parse) do
       map = Keyword.get(opts, :map, fn(x) -> x end)
