@@ -28,8 +28,8 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "peep" do
-    assert parse(seq([string("a"), peep(string("b"))]), "ab") == {:ok, ["a", :nothing]}
-    assert parse(seq([string("a"), peep(string("b")), string("b")]), "ab") == {:ok, ["a", :nothing, "b"]}
+    assert parse(seq([string("a"), peep(string("b"))]), "ab") == {:ok, ["a"]}
+    assert parse(seq([string("a"), peep(string("b")), string("b")]), "ab") == {:ok, ["a", "b"]}
     assert parse(seq([string("a"), peep(string("a"))]), "ab") == {:error,
       """
       Expected string(a) at line: 1, column: 1, but got
@@ -53,10 +53,10 @@ defmodule Paco.Parser.String.Test do
       end
     )
 
-    assert parse(p, "()") == {:ok, ["(", :nothing, ")"]}
-    assert parse(p, "[]") == {:ok, ["[", :nothing, "]"]}
-    assert parse(p, "[()]") == {:ok, ["[", ["(", :nothing, ")"], "]"]}
-    assert parse(p, "()a") == {:ok, ["(", :nothing, ")"]}
+    assert parse(p, "()") == {:ok, ["(", ")"]}
+    assert parse(p, "[]") == {:ok, ["[", "]"]}
+    assert parse(p, "[()]") == {:ok, ["[", ["(", ")"], "]"]}
+    assert parse(p, "()a") == {:ok, ["(", ")"]}
     assert parse(p, "(a") == {:error,
       """
       Expected one_of(?) at line: 1, column: 0, but got
@@ -67,8 +67,8 @@ defmodule Paco.Parser.String.Test do
 
   test "maybe" do
     assert parse(maybe(string("a")), "a") == {:ok, "a"}
-    assert parse(maybe(string("a")), "b") == {:ok, :nothing}
-    assert parse(maybe(string("a")), "")  == {:ok, :nothing}
+    assert parse(maybe(string("a")), "b") == {:ok, []}
+    assert parse(maybe(string("a")), "")  == {:ok, []}
   end
 
   test "whitespaces" do

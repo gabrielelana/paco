@@ -5,7 +5,7 @@ defmodule Paco do
     def from(s) when is_binary(s), do: %__MODULE__{at: 0, text: s}
   end
 
-  defmodule Success, do: defstruct from: 0, to: 0, tail: "", result: []
+  defmodule Success, do: defstruct from: 0, to: 0, tail: "", result: [], skip: false
 
   defmodule Failure do
     defstruct at: 0, message: ""
@@ -145,7 +145,7 @@ defmodule Paco do
             %Success{} = success ->
               success
             %Failure{} ->
-              %Success{from: at, to: at, tail: text, result: :nothing}
+              %Success{from: at, to: at, tail: text, skip: true}
           end
         end
       )
@@ -156,7 +156,7 @@ defmodule Paco do
         fn %Source{at: at, text: text} = source ->
           case parser.(source) do
             %Success{} ->
-              %Success{from: at, to: at, tail: text, result: :nothing}
+              %Success{from: at, to: at, tail: text, skip: true}
             %Failure{} = failure ->
               failure
           end
@@ -204,6 +204,8 @@ defmodule Paco do
             Enum.reduce(parsers, {source, []}, fn
               (parser, {%Source{} = source, results}) ->
                 case parser.(source) do
+                  %Success{to: to, tail: tail, skip: true} ->
+                    {%Source{at: to, text: tail}, results}
                   %Success{to: to, tail: tail, result: result} ->
                     {%Source{at: to, text: tail}, [result|results]}
                   %Failure{} = failure ->
