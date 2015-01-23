@@ -79,11 +79,11 @@ defmodule Paco do
         fn %Source{at: at, text: text} ->
           case Regex.run(anchor(r), text, return: :index) do
             [{from, len}] ->
-              to = from + len - 1
+              to = from + len
               {_, tail} = String.split_at(text, to)
               %Success{from: from, to: to, tail: tail, result: String.slice(text, from, len)}
             [{from, len} | subpatterns] ->
-              to = from + len - 1
+              to = from + len
               {_, tail} = String.split_at(text, to)
               result = Enum.map(subpatterns, fn({from, len}) ->
                 String.slice(text, from, len)
