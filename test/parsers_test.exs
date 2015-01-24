@@ -202,15 +202,14 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "parse s-expression" do
-    digits = re(~r/\d+/) |> surrounded_by(maybe(whitespaces), to: &String.to_integer/1)
+    lexeme = fn(p) -> p |> surrounded_by(maybe(whitespaces)) end
+    digits = lexeme.(re(~r/\d+/, to: &String.to_integer/1))
     expression =
       recursive(
         fn(p) ->
           one_of([digits, p])
-          |> separated_by(string(",") |> surrounded_by(maybe(whitespaces)))
-          |> surrounded_by(
-              string("(") |> surrounded_by(maybe(whitespaces)),
-              string(")") |> surrounded_by(maybe(whitespaces)))
+          |> separated_by(lexeme.(string(",")))
+          |> surrounded_by(lexeme.(string("(")), lexeme.(string(")")))
         end
       )
 
