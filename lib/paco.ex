@@ -241,20 +241,26 @@ defmodule Paco do
 
     def recursive(parser, opts \\ []) do
       decorate(opts,
-        fn(source) ->
-          parser.(recursive(parser)).(source)
+        fn %Source{} = source ->
+          parser.(recursive(parser, opts)).(source)
         end
       )
     end
 
     def separated_by(element, separator, opts \\ []) do
       decorate(opts,
-        seq([element, many(seq([skip(separator), element]))], to: &List.flatten/1)
+        seq([element, many(seq([skip(separator), element], to: &List.first/1))],
+          to: fn([l, r]) -> Enum.concat([l], r) end
+        )
       )
     end
 
-    def surrounded_by(element, around), do: surrounded_by(element, around, around, [])
-    def surrounded_by(element, around, opts) when is_list(opts), do: surrounded_by(element, around, around, opts)
+    def surrounded_by(element, around) do
+      surrounded_by(element, around, around, [])
+    end
+    def surrounded_by(element, around, opts) when is_list(opts) do
+      surrounded_by(element, around, around, opts)
+    end
     def surrounded_by(element, preceding, following, opts \\ []) do
       decorate(opts,
         seq([skip(preceding), element, skip(following)], to: &List.first/1)
@@ -264,11 +270,11 @@ defmodule Paco do
 
     defp decorate(opts, parse) do
       transform_to = Keyword.get(opts, :to, fn(x) -> x end)
-      fn source ->
+      fn %Source{} = source ->
         case parse.(source) do
-          success = %Success{result: result} ->
+          %Success{result: result} = success ->
             %Success{success | result: transform_to.(result)}
-          failure = %Failure{} ->
+          %Failure{} = failure ->
             failure
         end
       end

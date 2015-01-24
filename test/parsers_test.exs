@@ -128,14 +128,11 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "separated_by" do
-    identifier = seq([skip(maybe(whitespaces)), re(~r/\w/), skip(maybe(whitespaces))])
-    identifier_separated_by_comma = separated_by(identifier, string(","))
+    identifier_separated_by_comma = separated_by(re(~r/\w+/), string(","))
 
     assert parse(identifier_separated_by_comma, "a") == {:ok, ["a"]}
     assert parse(identifier_separated_by_comma, "a,a") == {:ok, ["a", "a"]}
-    assert parse(identifier_separated_by_comma, " a, a ") == {:ok, ["a", "a"]}
     assert parse(identifier_separated_by_comma, "a,a,a") == {:ok, ["a", "a", "a"]}
-    assert parse(identifier_separated_by_comma, " a , a , a ") == {:ok, ["a", "a", "a"]}
   end
 
   test "surrounded_by" do
@@ -202,6 +199,27 @@ defmodule Paco.Parser.String.Test do
 
   test "use with pipe operator" do
     assert (string("aaa") |> parse("aaa")) == {:ok, "aaa"}
+  end
+
+  test "parse s-expression" do
+    digits = re(~r/\d+/) |> surrounded_by(maybe(whitespaces), to: &String.to_integer/1)
+    expression =
+      recursive(
+        fn(p) ->
+          one_of([digits, p])
+          |> separated_by(string(",") |> surrounded_by(maybe(whitespaces)))
+          |> surrounded_by(
+              string("(") |> surrounded_by(maybe(whitespaces)),
+              string(")") |> surrounded_by(maybe(whitespaces)))
+        end
+      )
+
+    assert parse(expression, "(1, 2, 3)") == {:ok, [1, 2, 3]}
+    assert parse(expression, "(1, 2, (3, 4))") == {:ok, [1, 2, [3, 4]]}
+    assert parse(expression, "((1,2))") == {:ok, [[1, 2]]}
+    assert parse(expression, "(2)") == {:ok, [2]}
+    assert parse(expression, "((2))") == {:ok, [[2]]}
+    assert parse(expression, "(1, 2)") == {:ok, [1,2]}
   end
 
 end
