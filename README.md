@@ -6,9 +6,9 @@ A parser combinator library for Elixir
 expression =
   recursive(
     fn(p) ->
-      one_of([digits, p]) |> separated_by(",") |> surrounded_by("(", ")")
+      one_of([number, p]) |> separated_by(",") |> surrounded_by("(", ")")
     end
   )
 
-expression |> parse("(7, (4, 5), (1, 2, 3), 6)") # == [7, [4, 5], [1, 2, 3], 6]
+expression |> parse("(7, (4, 5), (1, 2, 3), 6)") # => [7, [4, 5], [1, 2, 3], 6]
 ```
