@@ -246,6 +246,46 @@ defmodule Paco.Parser.String.Test do
     assert parse(expression, "(1, 2)") == {:ok, [1,2]}
   end
 
+  test "associativity" do
+    expression = recursive(
+      fn(e) ->
+        primary = one_of([
+          re(~r/\d+/, to: &String.to_integer/1) |> surrounded_by(maybe(whitespaces)),
+          e |> surrounded_by(
+            string("(") |> surrounded_by(maybe(whitespaces)),
+            string(")") |> surrounded_by(maybe(whitespaces))
+          )
+        ])
+        multiplicative_expression = one_of([
+          primary |> separated_by(string("*"), to: fn(ns) -> Enum.reduce(ns, &Kernel.*/2) end),
+          primary |> separated_by(string("/"), to: fn(ns) -> Enum.reduce(ns, &Kernel.//2) end)
+          # primary |> separated_by(string("*"), to: fn [n] -> n; ns -> [:*] ++ ns end),
+          # primary |> separated_by(string("/"), to: fn [n] -> n; ns -> [:/] ++ ns end)
+        ])
+        additive_expression = one_of([
+          multiplicative_expression |> separated_by(string("+"), to: fn(ns) -> Enum.reduce(ns, &Kernel.+/2) end),
+          multiplicative_expression |> separated_by(string("-"), to: fn(ns) -> Enum.reduce(ns, &Kernel.-/2) end)
+          # multiplicative_expression |> separated_by(string("+"), to: fn [n] -> n; ns -> [:+] ++ ns end),
+          # multiplicative_expression |> separated_by(string("-"), to: fn [n] -> n; ns -> [:-] ++ ns end)
+        ])
+        additive_expression
+      end
+    )
+
+    assert parse(expression, "5") == {:ok, 5}
+    assert parse(expression, "(5)") == {:ok, 5}
+    assert parse(expression, "5 + 5") == {:ok, 10}
+    assert parse(expression, "(5) + (5)") == {:ok, 10}
+    assert parse(expression, "(5 + 5)") == {:ok, 10}
+    assert parse(expression, "5 + 5 + 5 + 5") == {:ok, 20}
+    assert parse(expression, "5 * 5") == {:ok, 25}
+    assert parse(expression, "5 * 5 + 1") == {:ok, 26}
+    assert parse(expression, "5 * (5 + 1)") == {:ok, 30}
+    assert parse(expression, "1 + (2 * 3)") == {:ok, 7}
+    assert parse(expression, "1 + 2 * 3") == {:ok, 7}
+    assert parse(expression, "(1 + 2) * 3") == {:ok, 9}
+  end
+
   test "parse docopt examples" do
     _examples =
       ~s'''
