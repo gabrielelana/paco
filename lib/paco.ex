@@ -111,6 +111,12 @@ defmodule Paco do
       )
     end
 
+    def line(p, opts \\ []) do
+      decorate(opts,
+        seq([skip(maybe(string("\n"))), p, skip(string("\n"))], to: fn [e] -> e end)
+      )
+    end
+
     def many(parser, opts \\ []) do
       decorate(opts,
         fn %Source{at: at, text: text} = source ->

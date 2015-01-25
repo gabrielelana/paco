@@ -142,6 +142,19 @@ defmodule Paco.Parser.String.Test do
     assert parse(identifier_quoted, ~s("a")) == {:ok, "a"}
   end
 
+  test "line" do
+    assert parse(line(string("aaa")), "aaa\n") == {:ok, "aaa"}
+    assert parse(line(string("aaa")), "\naaa\n") == {:ok, "aaa"}
+    assert parse(line(string("aaa")), "\n\naaa\n") == {:error,
+      """
+      Expected string(aaa) at line: 2, column: 0, but got
+      > |
+      aaa
+
+      """
+    }
+  end
+
   test "perfect match" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
     assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
@@ -256,8 +269,6 @@ defmodule Paco.Parser.String.Test do
 
     # # I would like to build a struct like
     # # %DocoptExample{usage: usage, arguments: arguments, expected: expected}
-
-    # # We need a more clear and direct way to create a line oriented parser
 
     # start = always(emit: :start)
 
