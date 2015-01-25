@@ -67,12 +67,21 @@ defmodule Paco do
     def whitespace(opts \\ []), do: re(~r/\s/, opts)
     def whitespaces(opts \\ []), do: re(~r/\s+/, opts)
 
-    def eof(_opts \\ []) do
+    def eof do
       fn
         %Source{at: at, text: ""} ->
           %Success{from: at, to: at, tail: "", result: []}
         %Source{at: at} ->
           %Failure{at: at, message: "Expected the end of input"}
+      end
+    end
+
+    def nl do
+      fn %Source{} = source ->
+        case re(~r/\n|\r\n|\r/).(source) do
+          %Success{} = success -> success
+          %Failure{} = failure -> %Failure{failure | message: "Expected the end of line"}
+        end
       end
     end
 
@@ -113,7 +122,7 @@ defmodule Paco do
 
     def line(p, opts \\ []) do
       decorate(opts,
-        seq([skip(maybe(string("\n"))), p, skip(string("\n"))], to: fn [e] -> e end)
+        seq([skip(maybe(nl)), p, skip(nl)], to: fn [e] -> e end)
       )
     end
 

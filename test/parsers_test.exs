@@ -142,6 +142,18 @@ defmodule Paco.Parser.String.Test do
     assert parse(identifier_quoted, ~s("a")) == {:ok, "a"}
   end
 
+  test "nl" do
+    assert parse(nl, "\n") == {:ok, "\n"}
+    assert parse(nl, "\r") == {:ok, "\r"}
+    assert parse(nl, "\r\n") == {:ok, "\r\n"}
+    assert parse(nl, "a") == {:error,
+      """
+      Expected the end of line at line: 1, column: 0, but got
+      > |a
+      """
+    }
+  end
+
   test "line" do
     assert parse(line(string("aaa")), "aaa\n") == {:ok, "aaa"}
     assert parse(line(string("aaa")), "\naaa\n") == {:ok, "aaa"}
