@@ -122,7 +122,7 @@ defmodule Paco do
 
     def line(p, opts \\ []) do
       decorate(opts,
-        seq([skip(maybe(nl)), p, skip(nl)], to: fn [e] -> e end)
+        seq([skip(maybe(nl)), p, skip(nl)], to: fn [line] -> line end)
       )
     end
 
