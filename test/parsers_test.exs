@@ -221,4 +221,83 @@ defmodule Paco.Parser.String.Test do
     assert parse(expression, "(1, 2)") == {:ok, [1,2]}
   end
 
+  test "parse docopt examples" do
+    _examples =
+      ~s'''
+      r"""Usage: prog
+
+      """
+      $ prog
+      {}
+
+      # This is a comment
+
+      $ prog --xxx
+      "user-error"
+
+      # This is a comment
+
+      r"""Usage: prog [options]
+
+      Options: -a  All.
+
+      """
+      $ prog
+      {"-a": false}
+
+      $ prog -a
+      {"-a": true}
+
+      $ prog -x
+      "user-error"
+      '''
+
+    # IO.puts "\n" <> examples
+
+    # # I would like to build a struct like
+    # # %DocoptExample{usage: usage, arguments: arguments, expected: expected}
+
+    # # We need a more clear and direct way to create a line oriented parser
+
+    # start = always(emit: :start)
+
+    # # populate the usage part
+    # usage = between(string(~s'r"""'), line(string(~s'""""')))
+    # usage = between(string(~s'r"""'), line(string(~s'""""')), emit: :usage)
+
+    # # populate the arguments part with
+    # arguments = seq([skip(string("$ prog ")), until(nl), skip(nl)])
+    # arguments = seq([skip(string("$ prog ")), until(nl), skip(nl)], emit: :usage)
+
+    # # populate the expected part with
+    # expected = until(seq([nl, one_or_more(nl)]))
+    # expected = until(seq([nl, one_or_more(nl)]), emit: :expected)
+
+    # example = seq([start, usage, many(seq[arguments, expected, skip(line(re(~r/^#.*$/)))])])
+
+    # p =
+    #   many(
+    #     seq([
+    #       always(%DocoptExample{}, emit: start),
+    #       between(string(~s'r"""'), line(string(~s'"""')), emit: :usage),
+    #       many(
+    #         seq([
+    #           seq([skip(string("$ prog ")), until(nl), skip(nl)], emit: :arguments),
+    #           until(seq([nl, one_or_more(nl)]), emit: :expected),
+    #           skip(zero_or_more(line(starts_with: "#")))
+    #         ])
+    #       )
+    #     ])
+    #   )
+
+    # examples |> parse(p,
+    #   reduce: fn
+    #     (_, example, :start) -> example
+    #     (usage, example, :usage) -> %DocoptExample{example | usage: usage}
+    #     ([arguments], example, :arguments) -> %DocoptExample{example | arguments: arguments}
+    #     (expected, example, :expected) -> %DocoptExample{example | expected: expected}
+    #   end
+    # )
+  end
+
 end
