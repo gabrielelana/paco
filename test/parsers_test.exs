@@ -247,6 +247,8 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "associativity" do
+
+
     expression = recursive(
       fn(e) ->
         primary = one_of([
@@ -361,6 +363,31 @@ defmodule Paco.Parser.String.Test do
     #     (expected, example, :expected) -> %DocoptExample{example | expected: expected}
     #   end
     # )
+  end
+
+  test "parse json" do
+    # parser(json) do
+    #   json_string = between(double_quotes)
+    #   json_number = [
+    #     maybe("-"),
+    #     one_of([
+    #       "0",
+    #       [one_of(1..9), many(one_of(0..9))]
+    #     ]),
+    #     maybe("."),
+    #     many(one_of(0..9)),
+    #     maybe([
+    #       one_of("e", "E"),
+    #       one_of("+", "-"),
+    #       one_of(0..9)
+    #     ])
+    #   ]
+    #   parser(value) do
+    #     json_object = [json_string, ":", value] |> separated_by(comma) |> surrounde_by("{", "}")
+    #     json_array = value |> separated_by(comma) |> surrounded_by("[", "]"),
+    #     one_of([json_string, json_number, json_object, json_array, "true", "false", "null"])
+    #   end
+    # end
   end
 
 end
