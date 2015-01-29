@@ -365,6 +365,30 @@ defmodule Paco.Parser.String.Test do
     # )
   end
 
+  test "parse json numbers" do
+    json_number = seq([
+      maybe(string("-")),
+      maybe(one_of([
+        string("0"),
+        seq([re(~r/[1-9]/), many(re(~r/[0-9]/))])
+      ])),
+      maybe(string(".")),
+      many(re(~r/[0-9]/)),
+      maybe(seq([
+        one_of([string("e"), string("E")]),
+        maybe(one_of([string("+"), string("-")])),
+        many(re(~r/[0-9]/))
+      ])),
+    ], to: fn(n) -> (n |> List.flatten |> Enum.join) end)
+
+    assert parse(json_number, "010") == {:ok, "010"}
+    assert parse(json_number, "10") == {:ok, "10"}
+    assert parse(json_number, "-10") == {:ok, "-10"}
+    assert parse(json_number, "-10.4") == {:ok, "-10.4"}
+    assert parse(json_number, "-10.4e10") == {:ok, "-10.4e10"}
+    assert parse(json_number, "-10.4e+10") == {:ok, "-10.4e+10"}
+  end
+
   test "parse json" do
     # parser(json) do
     #   json_string = between(double_quotes)
