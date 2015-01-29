@@ -85,6 +85,10 @@ defmodule Paco do
       end
     end
 
+    def lrp, do: skip(string("("))
+    def rrp, do: skip(string(")"))
+    def comma, do: skip(string(","))
+
     def re(r, opts \\ []) do
       decorate(opts,
         fn %Source{at: at, text: text} ->
