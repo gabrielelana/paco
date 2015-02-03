@@ -130,6 +130,46 @@ defmodule Paco do
       )
     end
 
+    def repeat(parser, exactly) do
+      repeat(parser, exactly, exactly, [])
+    end
+    def repeat(parser, exactly, opts) when is_list(opts) do
+      repeat(parser, exactly, exactly, opts)
+    end
+    def repeat(parser, at_least, at_most, opts \\ []) do
+      decorate(opts,
+        fn %Source{at: at, text: text} = source ->
+          successes =
+            Stream.unfold(source,
+              fn(%Source{} = source) ->
+                case parser.(source) do
+                  %Success{to: to, tail: tail} = success ->
+                    {success, %Source{at: to, text: tail}}
+                  %Failure{} ->
+                    nil
+                end
+              end
+            )
+            |> Enum.to_list
+
+          case Enum.count(successes) do
+            n when n != at_least and at_least == at_most ->
+              %Failure{at: at, message: "Expected #{at_least} of ?"}
+            n when n < at_least ->
+              %Failure{at: at, message: "Expected at least #{at_least} of ?"}
+            n when n > at_most ->
+              %Failure{at: at, message: "Expected at most #{at_most} of ?"}
+            n when n == 0 and at_least == 0 ->
+              %Success{from: at, to: at, tail: text, result: []}
+            _ ->
+              %Success{
+                List.last(successes) | from: at, result: successes |> Enum.map(&(&1.result))
+              }
+          end
+        end
+      )
+    end
+
     def many(parser, opts \\ []) do
       decorate(opts,
         fn %Source{at: at, text: text} = source ->

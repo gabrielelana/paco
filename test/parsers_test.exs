@@ -2,6 +2,32 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
+  test "repeat" do
+    assert parse(repeat(string("a"), 0, 2), "") == {:ok, []}
+    assert parse(repeat(string("a"), 1, 2), "a") == {:ok, ["a"]}
+    assert parse(repeat(string("a"), 1, 2), "aa") == {:ok, ["a", "a"]}
+    assert parse(repeat(string("a"), 1, 2), "aaa") == {:error,
+      """
+      Expected at most 2 of ? at line: 1, column: 0, but got
+      > |aaa
+      """
+    }
+    assert parse(repeat(string("a"), 1, 2), "b") == {:error,
+      """
+      Expected at least 1 of ? at line: 1, column: 0, but got
+      > |b
+      """
+    }
+
+    assert parse(repeat(string("a"), 1), "a") == {:ok, ["a"]}
+    assert parse(repeat(string("a"), 2), "a") == {:error,
+      """
+      Expected 2 of ? at line: 1, column: 0, but got
+      > |a
+      """
+    }
+  end
+
   test "match" do
     assert parse(match(~r/a+/), "aaa") == {:ok, "aaa"}
     assert parse(match(~r/a+/), "aaabbb") == {:ok, "aaa"}
@@ -247,8 +273,6 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "associativity" do
-
-
     expression = recursive(
       fn(e) ->
         primary = one_of([
