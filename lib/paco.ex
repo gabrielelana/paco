@@ -64,8 +64,8 @@ defmodule Paco do
       end
     end
 
-    def whitespace(opts \\ []), do: re(~r/\s/, opts)
-    def whitespaces(opts \\ []), do: re(~r/\s+/, opts)
+    def whitespace(opts \\ []), do: match(~r/\s/, opts)
+    def whitespaces(opts \\ []), do: match(~r/\s+/, opts)
 
     def eof do
       fn
@@ -78,7 +78,7 @@ defmodule Paco do
 
     def nl do
       fn %Source{} = source ->
-        case re(~r/\n|\r\n|\r/).(source) do
+        case match(~r/\n|\r\n|\r/).(source) do
           %Success{} = success -> success
           %Failure{} = failure -> %Failure{failure | message: "Expected the end of line"}
         end
@@ -89,7 +89,7 @@ defmodule Paco do
     def rrp, do: skip(string(")"))
     def comma, do: skip(string(","))
 
-    def re(r, opts \\ []) do
+    def match(r, opts \\ []) do
       decorate(opts,
         fn %Source{at: at, text: text} ->
           case Regex.run(anchor(r), text, return: :index) do
@@ -105,7 +105,7 @@ defmodule Paco do
               end)
               %Success{from: from, to: from + len - 1, tail: tail, result: result}
             nil ->
-              %Failure{at: at, message: "Expected re(~r/#{Regex.source(r)}/)"}
+              %Failure{at: at, message: "Expected match(~r/#{Regex.source(r)}/)"}
           end
         end
       )

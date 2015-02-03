@@ -2,26 +2,26 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
-  test "re" do
-    assert parse(re(~r/a+/), "aaa") == {:ok, "aaa"}
-    assert parse(re(~r/a+/), "aaabbb") == {:ok, "aaa"}
-    assert parse(re(~r/a(b+)a/), "abbba") == {:ok, ["bbb"]}
-    assert parse(re(~r/a(b+)a/, to: fn xs -> Enum.join(xs, "") end), "abbba") == {:ok, "bbb"}
-    assert parse(re(~r/a+/), "bbb") == {:error,
+  test "match" do
+    assert parse(match(~r/a+/), "aaa") == {:ok, "aaa"}
+    assert parse(match(~r/a+/), "aaabbb") == {:ok, "aaa"}
+    assert parse(match(~r/a(b+)a/), "abbba") == {:ok, ["bbb"]}
+    assert parse(match(~r/a(b+)a/, to: fn xs -> Enum.join(xs, "") end), "abbba") == {:ok, "bbb"}
+    assert parse(match(~r/a+/), "bbb") == {:error,
       """
-      Expected re(~r/a+/) at line: 1, column: 0, but got
+      Expected match(~r/a+/) at line: 1, column: 0, but got
       > |bbb
       """
     }
-    assert parse(re(~r/a+/), "baaa") == {:error,
+    assert parse(match(~r/a+/), "baaa") == {:error,
       """
-      Expected re(~r/a+/) at line: 1, column: 0, but got
+      Expected match(~r/a+/) at line: 1, column: 0, but got
       > |baaa
       """
     }
-    assert parse(re(~r/^a+/m), "bbb\naaa") == {:error,
+    assert parse(match(~r/^a+/m), "bbb\naaa") == {:error,
       """
-      Expected re(~r/^a+/) at line: 1, column: 0, but got
+      Expected match(~r/^a+/) at line: 1, column: 0, but got
       > |bbb\naaa
       """
     }
@@ -76,7 +76,7 @@ defmodule Paco.Parser.String.Test do
 
     identifier = seq([
       skip(maybe(whitespaces)),
-      re(~r/[_a-zA-Z][_a-zA-Z0-9]*/),
+      match(~r/[_a-zA-Z][_a-zA-Z0-9]*/),
       skip(maybe(whitespaces))
     ])
 
@@ -128,7 +128,7 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "separated_by" do
-    identifier_separated_by_comma = separated_by(re(~r/\w+/), string(","))
+    identifier_separated_by_comma = separated_by(match(~r/\w+/), string(","))
 
     assert parse(identifier_separated_by_comma, "a") == {:ok, ["a"]}
     assert parse(identifier_separated_by_comma, "a,a") == {:ok, ["a", "a"]}
@@ -136,7 +136,7 @@ defmodule Paco.Parser.String.Test do
   end
 
   test "surrounded_by" do
-    identifier = surrounded_by(re(~r/\w/), skip(maybe(whitespaces)))
+    identifier = surrounded_by(match(~r/\w/), skip(maybe(whitespaces)))
     identifier_quoted = surrounded_by(identifier, string(~s(")), escape_with: string("\\"))
 
     assert parse(identifier_quoted, ~s("a")) == {:ok, "a"}
@@ -228,7 +228,7 @@ defmodule Paco.Parser.String.Test do
 
   test "parse s-expression" do
     lexeme = fn(p) -> p |> surrounded_by(maybe(whitespaces)) end
-    number = lexeme.(re(~r/\d+/, to: &String.to_integer/1))
+    number = lexeme.(match(~r/\d+/, to: &String.to_integer/1))
     expression =
       recursive(
         fn(p) ->
@@ -252,7 +252,7 @@ defmodule Paco.Parser.String.Test do
     expression = recursive(
       fn(e) ->
         primary = one_of([
-          re(~r/\d+/, to: &String.to_integer/1) |> surrounded_by(maybe(whitespaces)),
+          match(~r/\d+/, to: &String.to_integer/1) |> surrounded_by(maybe(whitespaces)),
           e |> surrounded_by(
             string("(") |> surrounded_by(maybe(whitespaces)),
             string(")") |> surrounded_by(maybe(whitespaces))
@@ -338,7 +338,7 @@ defmodule Paco.Parser.String.Test do
     # expected = until(seq([nl, one_or_more(nl)]))
     # expected = until(seq([nl, one_or_more(nl)]), emit: :expected)
 
-    # example = seq([start, usage, many(seq[arguments, expected, skip(line(re(~r/^#.*$/)))])])
+    # example = seq([start, usage, many(seq[arguments, expected, skip(line(match(~r/^#.*$/)))])])
 
     # p =
     #   many(
@@ -370,14 +370,14 @@ defmodule Paco.Parser.String.Test do
       maybe(string("-")),
       maybe(one_of([
         string("0"),
-        seq([re(~r/[1-9]/), many(re(~r/[0-9]/))])
+        seq([match(~r/[1-9]/), many(match(~r/[0-9]/))])
       ])),
       maybe(string(".")),
-      many(re(~r/[0-9]/)),
+      many(match(~r/[0-9]/)),
       maybe(seq([
         one_of([string("e"), string("E")]),
         maybe(one_of([string("+"), string("-")])),
-        many(re(~r/[0-9]/))
+        many(match(~r/[0-9]/))
       ])),
     ], to: fn(n) -> (n |> List.flatten |> Enum.join) end)
 
