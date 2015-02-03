@@ -59,6 +59,12 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "zero_or_more" do
+    assert parse(zero_or_more(string("a")), "a") == {:ok, ["a"]}
+    assert parse(zero_or_more(string("a")), "aa") == {:ok, ["a", "a"]}
+    assert parse(zero_or_more(string("a")), "b") == {:ok, []}
+  end
+
   test "match" do
     assert parse(match(~r/a+/), "aaa") == {:ok, "aaa"}
     assert parse(match(~r/a+/), "aaabbb") == {:ok, "aaa"}
