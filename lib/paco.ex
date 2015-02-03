@@ -173,6 +173,7 @@ defmodule Paco do
     def many(parser, opts \\ []), do: repeat(parser, 0, :infinite, opts)
     def at_least(parser, at_least, opts \\ []), do: repeat(parser, at_least, :infinite, opts)
     def at_most(parser, at_most, opts \\ []), do: repeat(parser, 0, at_most, opts)
+    def one_or_more(parser, opts \\ []), do: repeat(parser, 1, :infinite, opts)
 
     def skip(parser, opts \\ []) do
       decorate(opts,

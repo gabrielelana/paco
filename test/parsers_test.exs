@@ -48,6 +48,17 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "one_or_more" do
+    assert parse(one_or_more(string("a")), "a") == {:ok, ["a"]}
+    assert parse(one_or_more(string("a")), "aa") == {:ok, ["a", "a"]}
+    assert parse(one_or_more(string("a")), "b") == {:error,
+      """
+      Expected at least 1 of ? at line: 1, column: 0, but got
+      > |b
+      """
+    }
+  end
+
   test "match" do
     assert parse(match(~r/a+/), "aaa") == {:ok, "aaa"}
     assert parse(match(~r/a+/), "aaabbb") == {:ok, "aaa"}
