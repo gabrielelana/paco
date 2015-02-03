@@ -170,34 +170,7 @@ defmodule Paco do
       )
     end
 
-    def many(parser, opts \\ []) do
-      decorate(opts,
-        fn %Source{at: at, text: text} = source ->
-          successes =
-            Stream.unfold(source,
-              fn(%Source{} = source) ->
-                case parser.(source) do
-                  %Success{to: to, tail: tail} = success ->
-                    {success, %Source{at: to, text: tail}}
-                  %Failure{} ->
-                    nil
-                end
-              end
-            )
-            |> Enum.to_list
-
-          results = successes |> Enum.map(&(&1.result))
-          {to, tail} = case successes do
-            [] ->
-              {at, text}
-            successes ->
-              last_success = List.last(successes)
-              {last_success.to, last_success.tail}
-          end
-          %Success{from: at, to: to, tail: tail, result: results}
-        end
-      )
-    end
+    def many(parser, opts \\ []), do: repeat(parser, 0, :infinite, opts)
 
     def skip(parser, opts \\ []) do
       decorate(opts,
