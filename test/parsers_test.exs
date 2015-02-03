@@ -28,6 +28,26 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "at_least" do
+    assert parse(at_least(string("a"), 2), "aaa") == {:ok, ["a", "a", "a"]}
+    assert parse(at_least(string("a"), 2), "a") == {:error,
+      """
+      Expected at least 2 of ? at line: 1, column: 0, but got
+      > |a
+      """
+    }
+  end
+
+  test "at_most" do
+    assert parse(at_most(string("a"), 2), "aa") == {:ok, ["a", "a"]}
+    assert parse(at_most(string("a"), 2), "aaa") == {:error,
+      """
+      Expected at most 2 of ? at line: 1, column: 0, but got
+      > |aaa
+      """
+    }
+  end
+
   test "match" do
     assert parse(match(~r/a+/), "aaa") == {:ok, "aaa"}
     assert parse(match(~r/a+/), "aaabbb") == {:ok, "aaa"}
