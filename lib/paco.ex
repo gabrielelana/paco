@@ -111,6 +111,15 @@ defmodule Paco do
       )
     end
 
+    def between(around) do
+      between(around, around, [])
+    end
+    def between(left, right, opts \\ []) do
+      decorate(opts,
+        seq([skip(left), until(right), skip(right)], to: fn([between]) -> between end)
+      )
+    end
+
     def until(p, opts \\ []) do
       decorate(opts,
         fn %Source{at: start_at, text: start_text} = source ->

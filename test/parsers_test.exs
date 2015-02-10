@@ -9,6 +9,12 @@ defmodule Paco.Parser.String.Test do
     assert parse(until(string("a")), "") == {:ok, ""}
   end
 
+  test "between" do
+    assert parse(between(string("*")), "*Hello*") == {:ok, "Hello"}
+    assert parse(between(string("("), string(")")), "(1 + 2)") == {:ok, "1 + 2"}
+    assert parse(between(string("("), string(")")), "(Hello\nWorld)") == {:ok, "Hello\nWorld"}
+  end
+
   test "repeat" do
     assert parse(repeat(string("a"), 0, 2), "") == {:ok, []}
     assert parse(repeat(string("a"), 1, 2), "a") == {:ok, ["a"]}
