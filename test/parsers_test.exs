@@ -2,6 +2,13 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
+  test "until" do
+    assert parse(until(string("a")), "bbba") == {:ok, "bbb"}
+    assert parse(until(string("a")), "bbb") == {:ok, "bbb"}
+    assert parse(until(string("a")), "b") == {:ok, "b"}
+    assert parse(until(string("a")), "") == {:ok, ""}
+  end
+
   test "repeat" do
     assert parse(repeat(string("a"), 0, 2), "") == {:ok, []}
     assert parse(repeat(string("a"), 1, 2), "a") == {:ok, ["a"]}
