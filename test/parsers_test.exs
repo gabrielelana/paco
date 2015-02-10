@@ -259,6 +259,15 @@ defmodule Paco.Parser.String.Test do
     }
   end
 
+  test "failed match unexpected end of input" do
+    assert parse(string("aaa"), "aa") == {:error,
+      """
+      Expected string(aaa) at line: 1, column: 0, but got
+      > |aa
+      """
+    }
+  end
+
   test "failed match at line 2" do
     assert parse(seq([string("aaa\n"), string("aaa")]), "aaa\nbbb") == {:error,
       """
