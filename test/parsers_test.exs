@@ -13,6 +13,13 @@ defmodule Paco.Parser.String.Test do
     assert parse(between(string("*")), "*Hello*") == {:ok, "Hello"}
     assert parse(between(string("("), string(")")), "(1 + 2)") == {:ok, "1 + 2"}
     assert parse(between(string("("), string(")")), "(Hello\nWorld)") == {:ok, "Hello\nWorld"}
+    assert parse(between(string("*")), "aaa") == {:error,
+      # TODO: Expected something between string(*) at line: 1, column: 0, but got
+      """
+      Expected string(*) at line: 1, column: 0, but got
+      > |aaa
+      """
+    }
   end
 
   test "repeat" do
