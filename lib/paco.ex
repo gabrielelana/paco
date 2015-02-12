@@ -123,9 +123,13 @@ defmodule Paco do
     def until(p, opts \\ []) do
       concat_to_string = fn(nps) -> List.flatten(nps) |> Enum.join("") end
       decorate(opts,
-        case Keyword.get(opts, :escape_with) do
-          nil ->
+        case Keyword.get(opts, :escape_with, Keyword.get(opts, :escape, false)) do
+          false ->
             many(non(p), to: concat_to_string)
+          true ->
+            many(one_of([seq([string("\\"), p]), non(p)]), to: concat_to_string)
+          escape when is_binary(escape) ->
+            many(one_of([seq([string(escape), p]), non(p)]), to: concat_to_string)
           escape ->
             many(one_of([seq([escape, p]), non(p)]), to: concat_to_string)
         end
