@@ -123,15 +123,15 @@ defmodule Paco do
     def non(p, opts \\ []) do
       decorate(opts,
         fn
-          %Source{at: start_at, text: ""} ->
-            %Success{from: start_at, to: start_at, tail: "", result: ""}
-          %Source{at: start_at, text: start_text} = source ->
+          %Source{at: at, text: ""} ->
+            %Failure{at: at, message: "Expected not(?)"}
+          %Source{at: at, text: text} = source ->
             case p.(source) do
               %Success{} ->
-                %Success{from: start_at, to: start_at, tail: start_text, result: ""}
+                %Failure{at: at, message: "Expected not(?)"}
               %Failure{} ->
-                <<matched::utf8, tail::binary>> = start_text
-                %Success{from: start_at, to: start_at + 1, tail: tail, result: <<matched::utf8>>}
+                <<matched::utf8, tail::binary>> = text
+                %Success{from: at, to: at + 1, tail: tail, result: <<matched::utf8>>}
           end
         end
       )

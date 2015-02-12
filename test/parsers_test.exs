@@ -12,10 +12,20 @@ defmodule Paco.Parser.String.Test do
 
   test "non" do
     assert parse(non(string("a")), "bbb") == {:ok, "b"}
-    assert parse(non(string("a")), "aaa") == {:ok, ""}
-    assert parse(non(string("a")), "") == {:ok, ""}
     assert parse(non(string("aaa")), "aa") == {:ok, "a"}
-    assert parse(non(string("aaa")), "aaa") == {:ok, ""}
+    assert parse(non(string("a")), "") == {:error,
+      # TODO: Expected not(?) at line: 1, column: 0, but got end of input
+      """
+      Expected not(?) at line: 1, column: 0, but got
+      > |
+      """
+    }
+    assert parse(non(string("a")), "aaa") == {:error,
+      """
+      Expected not(?) at line: 1, column: 0, but got
+      > |aaa
+      """
+    }
   end
 
   test "between" do
