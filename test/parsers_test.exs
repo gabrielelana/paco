@@ -8,6 +8,7 @@ defmodule Paco.Parser.String.Test do
     assert parse(until(string("a")), "b") == {:ok, "b"}
     assert parse(until(string("a")), "") == {:ok, ""}
     assert parse(until(string("b")), "b") == {:ok, ""}
+    assert parse(until(string(")"), escape_with: string("\\")), "a\\)aa)") == {:ok, "a\\)aa"}
   end
 
   test "non" do

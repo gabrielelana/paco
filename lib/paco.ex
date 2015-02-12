@@ -121,8 +121,14 @@ defmodule Paco do
     end
 
     def until(p, opts \\ []) do
+      concat_to_string = fn(nps) -> List.flatten(nps) |> Enum.join("") end
       decorate(opts,
-        many(non(p), to: fn(nps) -> List.flatten(nps) |> Enum.join("") end)
+        case Keyword.get(opts, :escape_with) do
+          nil ->
+            many(non(p), to: concat_to_string)
+          escape ->
+            many(one_of([seq([escape, p]), non(p)]), to: concat_to_string)
+        end
       )
     end
 
