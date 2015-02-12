@@ -10,6 +10,14 @@ defmodule Paco.Parser.String.Test do
     assert parse(until(string("b")), "b") == {:ok, ""}
   end
 
+  test "non" do
+    assert parse(non(string("a")), "bbb") == {:ok, "b"}
+    assert parse(non(string("a")), "aaa") == {:ok, ""}
+    assert parse(non(string("a")), "") == {:ok, ""}
+    assert parse(non(string("aaa")), "aa") == {:ok, "a"}
+    assert parse(non(string("aaa")), "aaa") == {:ok, ""}
+  end
+
   test "between" do
     assert parse(between(string("*")), "*Hello*") == {:ok, "Hello"}
     assert parse(between(string("("), string(")")), "(1 + 2)") == {:ok, "1 + 2"}

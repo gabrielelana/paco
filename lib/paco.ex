@@ -120,6 +120,23 @@ defmodule Paco do
       )
     end
 
+    def non(p, opts \\ []) do
+      decorate(opts,
+        fn
+          %Source{at: start_at, text: ""} ->
+            %Success{from: start_at, to: start_at, tail: "", result: ""}
+          %Source{at: start_at, text: start_text} = source ->
+            case p.(source) do
+              %Success{} ->
+                %Success{from: start_at, to: start_at, tail: start_text, result: ""}
+              %Failure{} ->
+                <<matched::utf8, tail::binary>> = start_text
+                %Success{from: start_at, to: start_at + 1, tail: tail, result: <<matched::utf8>>}
+          end
+        end
+      )
+    end
+
     def until(p, opts \\ []) do
       decorate(opts,
         fn %Source{at: start_at, text: start_text} = source ->
