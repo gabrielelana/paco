@@ -120,6 +120,12 @@ defmodule Paco do
       )
     end
 
+    def until(p, opts \\ []) do
+      decorate(opts,
+        many(non(p), to: fn(nps) -> List.flatten(nps) |> Enum.join("") end)
+      )
+    end
+
     def non(p, opts \\ []) do
       decorate(opts,
         fn
@@ -132,36 +138,6 @@ defmodule Paco do
               %Failure{} ->
                 <<matched::utf8, tail::binary>> = text
                 %Success{from: at, to: at + 1, tail: tail, result: <<matched::utf8>>}
-          end
-        end
-      )
-    end
-
-    def until(p, opts \\ []) do
-      decorate(opts,
-        fn %Source{at: start_at, text: start_text} = source ->
-          successes =
-            Stream.unfold({source, ""},
-              fn
-                ({%Source{text: ""}, _}) ->
-                  nil
-                ({%Source{at: at, text: text} = source, matched_so_far}) ->
-                  case p.(source) do
-                    %Success{} ->
-                      nil
-                    %Failure{} ->
-                      <<matched::utf8, tail::binary>> = text
-                      result = <<matched_so_far::binary, matched::utf8>>
-                      success = %Success{from: start_at, to: at + 1, tail: tail, result: result}
-                      {success, {%Source{at: at + 1, text: tail}, result}}
-                  end
-              end
-            )
-            |> Enum.to_list
-
-          case Enum.count(successes) do
-            0 -> %Success{from: start_at, to: start_at, tail: start_text, result: ""}
-            _ -> List.last(successes)
           end
         end
       )
