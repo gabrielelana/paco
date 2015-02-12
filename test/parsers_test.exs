@@ -7,6 +7,7 @@ defmodule Paco.Parser.String.Test do
     assert parse(until(string("a")), "bbb") == {:ok, "bbb"}
     assert parse(until(string("a")), "b") == {:ok, "b"}
     assert parse(until(string("a")), "") == {:ok, ""}
+    assert parse(until(string("b")), "b") == {:ok, ""}
   end
 
   test "between" do
