@@ -2,6 +2,22 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
+  test "empty" do
+    assert parse(empty, "") == {:ok, []}
+    # By itself it's pretty useless because it always matches
+    assert parse(empty, "aaa") == {:ok, []}
+    # But when used with other combinators...
+    # Here we are parsing an empty line
+    assert parse(line(empty), "\n") == {:ok, []}
+    assert parse(line(empty), "a\n") == {:error,
+      """
+      Expected one_of(?) at line: 1, column: 0, but got
+      > |a
+
+      """
+    }
+  end
+
   test "ended_by" do
     assert parse(ended_by(string("a")), "bbba") == {:ok, "bbb"}
     # Unlike until ended_by consumes the ending parser

@@ -76,6 +76,12 @@ defmodule Paco do
       end
     end
 
+    def empty do
+      fn %Source{at: at, text: text} ->
+        %Success{from: at, to: at, tail: text, result: "", skip: true}
+      end
+    end
+
     def nl do
       fn %Source{} = source ->
         case match(~r/\n|\r\n|\r/).(source) do
