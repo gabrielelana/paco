@@ -120,6 +120,12 @@ defmodule Paco do
       )
     end
 
+    def ended_by(p, opts \\ []) do
+      decorate(opts,
+        seq([until(p), skip(p)], to: fn([ended_by]) -> ended_by end)
+      )
+    end
+
     def until(p, opts \\ []) do
       concat_to_string = fn(nps) -> List.flatten(nps) |> Enum.join("") end
       decorate(opts,

@@ -2,6 +2,18 @@ defmodule Paco.Parser.String.Test do
   import Paco.Parser
   use ExUnit.Case
 
+  test "ended_by" do
+    assert parse(ended_by(string("a")), "bbba") == {:ok, "bbb"}
+    # Unlike until ended_by consumes the ending parser
+    assert parse(seq([ended_by(string("a")), string("a")]), "bbba") == {:error,
+      # TODO: Expected not(?) at line: 1, column: 0, but got end of input
+      """
+      Expected string(a) at line: 1, column: 4, but got
+      > bbba|
+      """
+    }
+  end
+
   test "until" do
     assert parse(until(string("a")), "bbba") == {:ok, "bbb"}
     assert parse(until(string("a")), "bbb") == {:ok, "bbb"}
