@@ -276,11 +276,17 @@ defmodule Paco.Parser.String.Test do
     assert parse(line(string("aaa")), "\naaa\n") == {:ok, "aaa"}
     assert parse(line(string("aaa")), "\n\naaa\n") == {:error,
       """
-      Expected string(aaa) at line: 2, column: 0, but got
+      Expected one_of(?) at line: 1, column: 0, but got
       > |
+
       aaa
 
       """
+      # Expected string(aaa) at line: 2, column: 0, but got
+      # > |
+      # aaa
+
+      # """
     }
   end
 

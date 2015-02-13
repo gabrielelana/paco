@@ -174,7 +174,10 @@ defmodule Paco do
 
     def line(p, opts \\ []) do
       decorate(opts,
-        seq([skip(maybe(nl)), p, skip(nl)], to: fn [line] -> line end)
+        one_of([
+          seq([p, skip(nl)]),
+          seq([skip(nl), p, skip(nl)])
+        ], to: fn [line] -> line; [] -> [] end)
       )
     end
 
