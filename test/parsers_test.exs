@@ -433,48 +433,36 @@ defmodule Paco.Parser.String.Test do
 
     # IO.puts "\n" <> examples
 
-    # # I would like to build a struct like
-    # # %DocoptExample{usage: usage, arguments: arguments, expected: expected}
+    # defmodule Docopt.Scenario.Parser do
+    #   use Paco
 
-    # start = always(emit: :start)
+    #   combinator(:lex, p), do: p |> surrounded_by(maybe(whitespaces))
 
-    # # populate the usage part
-    # usage = between(string(~s'r"""'), line(string(~s'""""')))
-    # usage = between(string(~s'r"""'), line(string(~s'""""')), emit: :usage)
+    #   parser(:begin_usage), do: string(~s'r"""')
+    #   parser(:end_usage), do: string(~s'"""')
+    #   parser(:usage), do: between(begin_usage, line(end_usage))
 
-    # # populate the arguments part with
-    # arguments = seq([skip(string("$ prog ")), until(nl), skip(nl)])
-    # arguments = seq([skip(string("$ prog ")), until(nl), skip(nl)], emit: :usage)
+    #   parser(:prompt), do: string(~s'$ prog')
+    #   # parser(:command), do: line(starting_with: prompt)
+    #   parser(:command), do: between(prompt, nl)
+    #   parser(:result), do: ended_by(seq([nl, one_of([nl, eof])]))
+    #   parser(:scenario), do: seq([command, expectation])
 
-    # # populate the expected part with
-    # expected = until(seq([nl, one_or_more(nl)]))
-    # expected = until(seq([nl, one_or_more(nl)]), emit: :expected)
+    #   parser(:comment), do: line(starting_with: string("#") |> lex)
+    #   parser(:empty_line), do: line(empty |> lex)
 
-    # example = seq([start, usage, many(seq[arguments, expected, skip(line(match(~r/^#.*$/)))])])
+    #   parser(:scenarios), do: seq([usage, many(one_of([scenario, comment, empty_line)])])
 
-    # p =
-    #   many(
-    #     seq([
-    #       always(%DocoptExample{}, emit: start),
-    #       between(string(~s'r"""'), line(string(~s'"""')), emit: :usage),
-    #       many(
-    #         seq([
-    #           seq([skip(string("$ prog ")), until(nl), skip(nl)], emit: :arguments),
-    #           until(seq([nl, one_or_more(nl)]), emit: :expected),
-    #           skip(zero_or_more(line(starts_with: "#")))
-    #         ])
-    #       )
-    #     ])
-    #   )
-
-    # examples |> parse(p,
-    #   reduce: fn
-    #     (_, example, :start) -> example
-    #     (usage, example, :usage) -> %DocoptExample{example | usage: usage}
-    #     ([arguments], example, :arguments) -> %DocoptExample{example | arguments: arguments}
-    #     (expected, example, :expected) -> %DocoptExample{example | expected: expected}
+    #   # %Docopt.Scenario{usage: usage, command: command, result: result}
+    #   transform(:usage, usage), do: %Docopt.Scenario{usage: usage}
+    #   transform(:scenario, [command, result]), do: %Docopt.Scenario{command: command, result: result}
+    #   transform(:scenarios, [%Docopt.Scenario{usage: usage}, scenarios]) do
+    #     for scenario <- scenarios, do: %Docopt.Scenario{scenario | usage: usage}
     #   end
-    # )
+
+    #   # root, do: many(scenarios)
+    #   parser(:root), do: many(scenarios)
+    # end
   end
 
   test "parse json numbers" do
