@@ -94,6 +94,7 @@ defmodule Paco do
     def lrp, do: skip(string("("))
     def rrp, do: skip(string(")"))
     def comma, do: skip(string(","))
+    def dot, do: skip(string("."))
 
     def match(r, opts \\ []) do
       decorate(opts,
