@@ -281,6 +281,12 @@ defmodule Paco do
       )
     end
 
+    def never do
+      fn %Source{at: at, text: text} ->
+        %Failure{at: at, message: "Expected to never reach this point"}
+      end
+    end
+
     def one_of(parsers, opts \\ []) do
       decorate(opts,
         fn %Source{at: at} = source ->
