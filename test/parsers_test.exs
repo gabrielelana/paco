@@ -523,6 +523,20 @@ defmodule Paco.Parser.String.Test do
     assert parse(json_number, "-10.4e+10") == {:ok, "-10.4e+10"}
   end
 
+  test "json components" do
+    json_string = between(string(~s|"|))
+    json_semicolon = string(":") |> surrounded_by(maybe(whitespaces))
+    json_comma = string(",") |> surrounded_by(maybe(whitespaces))
+    json_lcp = string("{") |> surrounded_by(maybe(whitespaces))
+    json_rcp = string("}") |> surrounded_by(maybe(whitespaces))
+    json_object = seq([json_string, skip(json_semicolon), json_string])
+                  |> separated_by(json_comma)
+                  |> surrounded_by(json_lcp, json_rcp)
+
+    assert parse(json_string, ~s|"foo"|) == {:ok, "foo"}
+    assert parse(json_object, ~s|{"foo":"bar"}|) == {:ok, [["foo", "bar"]]}
+  end
+
   test "parse json" do
     # parser(json) do
     #   json_string = between(double_quotes)
