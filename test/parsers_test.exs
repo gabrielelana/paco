@@ -465,38 +465,52 @@ defmodule Paco.Parser.String.Test do
       "user-error"
       '''
 
-    # IO.puts "\n" <> examples
-
     # defmodule Docopt.Scenario.Parser do
     #   use Paco
 
-    #   combinator(:lex, p), do: p |> surrounded_by(maybe(whitespaces))
+    #   rule usage, do: between(line_starting_with(~s(r""")), line(~s(""")))
+    #   rule comment, do: line_starting_with("#")
+    #   rule command, do: line_starting_with(skip("$ prog"))
 
-    #   parser(:begin_usage), do: string(~s'r"""')
-    #   parser(:end_usage), do: string(~s'"""')
-    #   parser(:usage), do: between(begin_usage, line(end_usage))
-
-    #   parser(:prompt), do: string(~s'$ prog')
-    #   # parser(:command), do: line(starting_with: prompt)
-    #   parser(:command), do: between(prompt, nl)
-    #   parser(:result), do: ended_by(seq([nl, one_of([nl, eof])]))
-    #   parser(:scenario), do: seq([command, expectation])
-
-    #   parser(:comment), do: line(starting_with: string("#") |> lex)
-    #   parser(:empty_line), do: line(empty |> lex)
-
-    #   parser(:scenarios), do: seq([usage, many(one_of([scenario, comment, empty_line)])])
-
-    #   # %Docopt.Scenario{usage: usage, command: command, result: result}
-    #   transform(:usage, usage), do: %Docopt.Scenario{usage: usage}
-    #   transform(:scenario, [command, result]), do: %Docopt.Scenario{command: command, result: result}
-    #   transform(:scenarios, [%Docopt.Scenario{usage: usage}, scenarios]) do
-    #     for scenario <- scenarios, do: %Docopt.Scenario{scenario | usage: usage}
+    #   rule result do
+    #     ended_by(
+    #       many(one_of([empty_line, eof, skip(comment)]))
+    #       |> only_if(fn(tokens) ->
+    #                    (tokens |> contains(:eof)) ||
+    #                    (tokens |> select(:empty_line) |> count) >= 2
+    #                  end)
+    #     )
     #   end
 
-    #   # root, do: many(scenarios)
-    #   parser(:root), do: many(scenarios)
+    #   rule scenario do
+    #     bind(usage, fn(usage) ->
+    #       many(
+    #         bind(seq([command, result]), fn([command, result]) ->
+    #           %Docopt.Scenario{usage: usage, command: command, result: result}
+    #         end)
+    #       )
+    #     end)
+    #   end
+
+    #   # rule command_scenario(usage) do
+    #   #   monad do
+    #   #     c <- command
+    #   #     r <- result
+    #   #     return(%Docopt.Scenario{usage: u, command: c, result: r})
+    #   #   end
+    #   # end
+
+    #   # rule usage_scenario do
+    #   #   monad do
+    #   #     u <- usage
+    #   #     many(command_scenario(u))
+    #   #   end
+    #   # end
+
+    #   root scenarios, do: many(scenario)
     # end
+
+    # Docopt.Scenario.Parser.parse(examples)
   end
 
   test "parse json numbers" do
