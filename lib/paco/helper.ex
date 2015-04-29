@@ -21,7 +21,7 @@ defmodule Paco.Helper do
           parse: fn %Paco.Input{} = input ->
                    case (unquote(block)) do
                      %Paco.Parser{} = parser -> parser.parse.(input)
-                     _ -> raise Error, message: "parser macro do block must return a %Paco.Parser struct"
+                     _ -> raise Error, message: "A parser must return a %Paco.Parser"
                    end
                  end}
       end

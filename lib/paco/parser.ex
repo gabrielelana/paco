@@ -63,13 +63,26 @@ defmodule Paco.Parser do
         {to, tail} ->
           %Paco.Success{from: from, to: to, tail: tail, result: s}
         :fail ->
-          %Paco.Failure{at: from, what: "string(#{s})"}
+          %Paco.Failure{at: from, what: "string(#{truncate(s, 42)})"}
       end
     end
   end
 
 
-
+  # TODO: separator option
+  # TODO: omission option
+  # TODO: pull request to add it to String
+  # http://apidock.com/rails/String/truncate
+  defp truncate(string, at) when is_binary(string) do
+    case String.length(string) do
+      n when n <= at ->
+        string
+      n ->
+        omission = "..."
+        at_with_room_for_omission = at - String.length(omission)
+        "#{String.slice(string, 0, at_with_room_for_omission)}#{omission}"
+    end
+  end
 
 
   @nl ["\x{000A}",         # LF:    Line Feed, U+000A
