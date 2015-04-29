@@ -72,54 +72,6 @@ defmodule Paco.Parser do
 
 
 
-  # parser one_of(parsers) do
-  #   fn %Input{at: from} = input ->
-  #     []
-  #   end
-  # end
-
-  # def one_of(parsers) do
-  #   # if the do argument *is* an anonymous function
-  #   %Parser{
-  #     name: "one_of",
-  #     parse: fn %Input{at: from} = input ->
-  #       []
-  #     end}
-  # end
-
-  # parser date do
-  #   seq([
-  #     digit(4) |> as(:year), "-",
-  #     digit(2) |> as(:month), "-",
-  #     digit(2) |> as(:day)
-  #   ])
-  #   |> flatten
-  # end
-
-  # def date do
-  #   # if the do argument *is not* an anonymous function
-  #   %Parser{
-  #     name: "date",
-  #     parse: fn %Input{} = input ->
-  #              parser = seq([
-  #                digit(4) |> as(:year), "-",
-  #                digit(2) |> as(:month), "-",
-  #                digit(2) |> as(:day)
-  #              ])
-  #              |> flatten
-  #              case parser do
-  #                %Parser{} -> parser.parse.(input)
-  #                _ -> :error
-  #              end
-  #            end
-  # end
-
-
-
-
-
-
-
   @nl ["\x{000A}",         # LF:    Line Feed, U+000A
        "\x{000B}",         # VT:    Vertical Tab, U+000B
        "\x{000C}",         # FF:    Form Feed, U+000C

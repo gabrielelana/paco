@@ -1,7 +1,5 @@
 defmodule Paco.Helper do
 
-  # TODO: how to not use attributes with internal parsers?
-
   defmacro parser({name, _, _} = definition, do: {:fn, _, _} = block) do
     quote do
       @paco_parsers unquote(name)
@@ -13,8 +11,6 @@ defmodule Paco.Helper do
       end
     end
   end
-
-  # TODO: what about we give something else then %Paco.Input?
 
   defmacro parser({name, _, _} = definition, do: block) do
     quote do
@@ -32,9 +28,6 @@ defmodule Paco.Helper do
     end
   end
 
-  # TODO: clause with not nil for a better error message
-  # TODO: check if @paco_root_parser is an atom
-  # TODO: if not @paco_root_parser then take the last parser
 
   # root parser aaa do ...
   defmacro root({:parser, _, [{name, _, nil} = definition]}, do: block) do
