@@ -4,6 +4,19 @@ defmodule Paco.Test do
   import Paco
   import Paco.Parser
 
+  # defmodule UseMacro do
+  #   import Paco.Helper
+  #   import Paco.Parser
+
+  #   parser aaa do
+  #     string("aaa")
+  #   end
+  # end
+
+  # test "use macro" do
+  #   assert parse(UseMacro.aaa, "aaa") == {:ok, "aaa"}
+  # end
+
   test "string" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
   end
