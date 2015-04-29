@@ -16,17 +16,6 @@ defmodule Paco.Test do
     assert SomethingToParse.parse("aaa") == {:ok, "aaa"}
   end
 
-  test "string" do
-    assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
-  end
-
-  test "multibyte string" do
-    assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
-  end
-
-  test "empty string" do
-    assert parse(string(""), "") == {:ok, ""}
-  end
 
   test "seq ok" do
     assert parse(seq([string("a"), string("b")]), "ab") == {:ok, ["a", "b"]}
