@@ -39,12 +39,8 @@ defmodule Paco do
       Module.get_attribute(env.module, :paco_parsers) |> Enum.reverse
     )
     quote do
-      def parse(s) do
-        Paco.parse(apply(__MODULE__, unquote(root_parser), []), s)
-      end
-      def parse!(s) do
-        Paco.parse!(apply(__MODULE__, unquote(root_parser), []), s)
-      end
+      def parse(s), do: Paco.parse(apply(__MODULE__, unquote(root_parser), []), s)
+      def parse!(s), do: Paco.parse!(apply(__MODULE__, unquote(root_parser), []), s)
     end
   end
 
