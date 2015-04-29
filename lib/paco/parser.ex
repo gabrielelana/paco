@@ -131,15 +131,15 @@ defmodule Paco.Parser do
       ]
 
   Enum.each @nl, fn nl ->
-    def consume(<<unquote(nl)::utf8, t1::binary>>,
+    defp consume(<<unquote(nl)::utf8, t1::binary>>,
                  <<unquote(nl)::utf8, t2::binary>>,
                  {n, l, _}) do
       consume(t1, t2, {n + 1, l + 1, 1})
     end
   end
-  def consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, {n, l, c}) do
+  defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, {n, l, c}) do
     consume(t1, t2, {n + byte_size(<<h>>), l, c + 1})
   end
-  def consume("", tail, position), do: {position, tail}
-  def consume(_, _, _), do: :fail
+  defp consume("", tail, position), do: {position, tail}
+  defp consume(_, _, _), do: :fail
 end
