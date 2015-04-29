@@ -21,11 +21,6 @@ defmodule Paco.Test do
     assert parse(seq([string("a"), string("b")]), "ab") == {:ok, ["a", "b"]}
   end
 
-  test "one_of ok" do
-    assert parse(one_of([string("a"), string("b")]), "a") == {:ok, "a"}
-    assert parse(one_of([string("a"), string("b")]), "b") == {:ok, "b"}
-  end
-
   test "seq failure" do
     {:error, failure} = parse(seq([string("a"), string("b")]), "aa")
     assert Paco.Failure.format(failure) ==
@@ -36,14 +31,6 @@ defmodule Paco.Test do
     assert Paco.Failure.format(failure) ==
       """
       Failed to match seq at line: 1, column: 1 <because> Failed to match string(b) at line: 2, column: 1
-      """
-  end
-
-  test "one_of failure" do
-    {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
-    assert Paco.Failure.format(failure) ==
-      """
-      Failed to match one_of(string(a) | string(b)) at line: 1, column: 1
       """
   end
 end
