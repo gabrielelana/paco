@@ -42,118 +42,24 @@ defmodule Paco do
   end
 
 
-
-  defmodule Parser do
-
-    def parse(parser, text) do
-      case parser.(Input.from(text)) do
-        %Failure{} = failure ->
-          {:error, failure}
-        %Success{skip: true} ->
-          {:ok, []}
-        %Success{result: result} ->
-          {:ok, result}
-      end
+  def parse(%Paco.Parser{} = parser, text) do
+    case parser.parse.(Paco.Input.from(text)) do
+      %Paco.Failure{} = failure ->
+        {:error, failure}
+      %Paco.Success{skip: true} ->
+        {:ok, []}
+      %Paco.Success{result: result} ->
+        {:ok, result}
     end
-
-    def parse!(parser, text) do
-      case parse(parser, text) do
-        {:ok, result} ->
-          result
-        {:error, failure} ->
-          raise Error, message: Failure.format(failure)
-      end
-    end
-
-
-
-    def seq(parsers) do
-      fn %Input{at: from, stream: stream} = input ->
-        result = Enum.reduce(parsers, {input, []},
-                             fn
-                               (parser, {input, results}) ->
-                                 case parser.(input) do
-                                   %Success{to: to, tail: tail, skip: true} ->
-                                     {%Input{at: to, text: tail, stream: stream}, results}
-                                   %Success{to: to, tail: tail, result: result} ->
-                                     {%Input{at: to, text: tail, stream: stream}, [result|results]}
-                                   %Failure{} = failure ->
-                                     failure
-                                 end
-                               (_, %Failure{} = failure) ->
-                                 failure
-                             end)
-
-        case result do
-          {%Input{at: to, text: text}, results} ->
-            %Success{from: from, to: to, tail: text, result: Enum.reverse(results)}
-          %Failure{} = failure ->
-            %Failure{at: from,
-                     what: "seq",
-                     because: failure}
-        end
-      end
-    end
-
-    def one_of(parsers) do
-      fn %Input{at: from} = input ->
-        result = Enum.reduce(parsers, [],
-                             fn
-                               (_, %Success{} = success) ->
-                                 success
-                               (parser, failures) ->
-                                 case parser.(input) do
-                                   %Success{} = success ->
-                                     success
-                                   %Failure{} = failure ->
-                                     [failure | failures]
-                                 end
-                             end)
-
-        case result do
-          %Success{} = success ->
-            success
-          failures ->
-            whats = failures |> Enum.reverse |> Enum.map(&(&1.what)) |> Enum.join(" | ")
-            %Failure{at: from, what: "one_of(#{whats})"}
-        end
-      end
-    end
-
-
-    def string(s) do
-      fn %Input{at: from, text: text} ->
-        case consume(s, text, from) do
-          {to, tail} ->
-            %Success{from: from, to: to, tail: tail, result: s}
-          :fail ->
-            %Failure{at: from, what: "string(#{s})"}
-        end
-      end
-    end
-
-
-    @nl ["\x{000A}",         # LF:    Line Feed, U+000A
-         "\x{000B}",         # VT:    Vertical Tab, U+000B
-         "\x{000C}",         # FF:    Form Feed, U+000C
-         "\x{000D}",         # CR:    Carriage Return, U+000D
-         "\x{000D}\x{000A}", # CR+LF: CR (U+000D) followed by LF (U+000A)
-         "\x{0085}",         # NEL:   Next Line, U+0085
-         "\x{2028}",         # LS:    Line Separator, U+2028
-         "\x{2029}"          # PS:    Paragraph Separator, U+2029
-        ]
-
-    Enum.each @nl, fn nl ->
-      defp consume(<<unquote(nl)::utf8, t1::binary>>,
-                   <<unquote(nl)::utf8, t2::binary>>,
-                   {n, l, _}) do
-        consume(t1, t2, {n + 1, l + 1, 1})
-      end
-    end
-    defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, {n, l, c}) do
-      consume(t1, t2, {n + byte_size(<<h>>), l, c + 1})
-    end
-    defp consume("", tail, position), do: {position, tail}
-    defp consume(_, _, _), do: :fail
   end
+
+  def parse!(%Paco.Parser{} = parser, text) do
+    case parser.parse.(parser, text) do
+      {:ok, result} ->
+        result
+      {:error, failure} ->
+        raise Error, message: Paco.Failure.format(failure)
+    end
+  end
+
 end

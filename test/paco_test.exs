@@ -1,12 +1,10 @@
 defmodule Paco.Test do
-  import Paco.Parser
   use ExUnit.Case
 
-  test "the truth" do
-    assert 1 + 1 == 2
-  end
+  import Paco
+  import Paco.Parser
 
-  test "simple string" do
+  test "string" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
   end
 
