@@ -24,13 +24,12 @@ defmodule Paco.Parser do
         {%Paco.Input{at: to, text: text}, results} ->
           %Paco.Success{from: from, to: to, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          %Paco.Failure{at: from,
-                   what: "seq",
-                   because: failure}
+          %Paco.Failure{at: from, what: "seq([#{do_describe(parsers)}])", because: failure}
       end
     end
   end
 
+  parser one_of([parser]), do: parser
   parser one_of(parsers) do
     fn %Paco.Input{at: from} = input ->
       result = Enum.reduce(parsers, [],
@@ -49,11 +48,14 @@ defmodule Paco.Parser do
       case result do
         %Paco.Success{} = success ->
           success
-        failures ->
-          whats = failures |> Enum.reverse |> Enum.map(&(&1.what)) |> Enum.join(" | ")
-          %Paco.Failure{at: from, what: "one_of(#{whats})"}
+        _ ->
+          %Paco.Failure{at: from, what: "one_of([#{do_describe(parsers)}])"}
       end
     end
+  end
+
+  defp do_describe(parsers) when is_list(parsers) do
+    parsers |> Enum.reverse |> Enum.map(&(&1.name)) |> Enum.join(", ")
   end
 
 
@@ -77,7 +79,7 @@ defmodule Paco.Parser do
     case String.length(string) do
       n when n <= at ->
         string
-      n ->
+      _ ->
         omission = "..."
         at_with_room_for_omission = at - String.length(omission)
         "#{String.slice(string, 0, at_with_room_for_omission)}#{omission}"

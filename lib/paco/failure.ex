@@ -12,7 +12,8 @@ defmodule Paco.Failure do
   end
   def format(%Paco.Failure{at: {_, line, column}, what: what, because: failure}) do
     """
-    Failed to match #{what} at line: #{line}, column: #{column} <because> #{String.strip(format(failure))}
+    Failed to match #{what} at line: #{line}, column: #{column}, because it
+    #{String.strip(format(failure))}
     """
   end
 end
