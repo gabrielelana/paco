@@ -28,7 +28,7 @@ defmodule Paco.Helper do
                            %Paco.Failure{failure | what: unquote(name)}
                        end
                      _ ->
-                       raise Error, message: "A parser must return a %Paco.Parser"
+                       raise RuntimeError, message: "A parser must return a %Paco.Parser"
                    end
                  end}
       end

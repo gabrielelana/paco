@@ -9,6 +9,10 @@ defmodule Paco.Parser.Seq.Test do
     assert parse(seq([string("a")]), "a") == {:ok, ["a"]}
   end
 
+  test "with no parsers" do
+    assert_raise ArgumentError, fn -> seq([]) end
+  end
+
   test "fail to parse because of the first parser" do
     {:error, failure} = parse(seq([string("a"), string("b")]), "bb")
     assert Paco.Failure.format(failure) ==

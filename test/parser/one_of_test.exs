@@ -14,6 +14,10 @@ defmodule Paco.Parser.OneOf.Test do
     assert parse(one_of([string("a"), string("b"), string("c")]), "abc") == {:ok, "a"}
   end
 
+  test "with no parsers" do
+    assert_raise ArgumentError, fn -> one_of([]) end
+  end
+
   test "fail to parse" do
     {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
     assert Paco.Failure.format(failure) ==
