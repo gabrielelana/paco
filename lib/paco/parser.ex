@@ -3,18 +3,6 @@ defmodule Paco.Parser do
 
   defstruct name: nil, parse: nil
 
-  def label(parser, name) do
-    %Paco.Parser{
-      name: name,
-      parse: fn %Paco.Input{} = input ->
-               case parser.parse.(input) do
-                 %Paco.Success{} = success ->
-                   success
-                 %Paco.Failure{} = failure ->
-                   %Paco.Failure{failure | what: name}
-               end
-             end}
-  end
 
   parser seq(parsers) do
     fn %Paco.Input{at: from, stream: stream} = input ->
@@ -42,7 +30,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser one_of([parser]), do: parser
+  def one_of([parser]), do: parser
   parser one_of(parsers) do
     fn %Paco.Input{at: from} = input ->
       result = Enum.reduce(parsers, [],
@@ -67,10 +55,6 @@ defmodule Paco.Parser do
     end
   end
 
-  defp do_describe(parsers) when is_list(parsers) do
-    parsers |> Enum.reverse |> Enum.map(&(&1.name)) |> Enum.join(", ")
-  end
-
 
   parser string(s) do
     fn %Paco.Input{at: from, text: text} ->
@@ -83,6 +67,24 @@ defmodule Paco.Parser do
     end
   end
 
+
+  def label(parser, name) do
+    %Paco.Parser{
+      name: name,
+      parse: fn %Paco.Input{} = input ->
+               case parser.parse.(input) do
+                 %Paco.Success{} = success ->
+                   success
+                 %Paco.Failure{} = failure ->
+                   %Paco.Failure{failure | what: name}
+               end
+             end}
+  end
+
+
+  defp do_describe(parsers) when is_list(parsers) do
+    parsers |> Enum.reverse |> Enum.map(&(&1.name)) |> Enum.join(", ")
+  end
 
   # TODO: separator option
   # TODO: omission option

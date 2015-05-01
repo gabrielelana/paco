@@ -20,8 +20,15 @@ defmodule Paco.Helper do
           name: unquote(name),
           parse: fn %Paco.Input{} = input ->
                    case (unquote(block)) do
-                     %Paco.Parser{} = parser -> parser.parse.(input)
-                     _ -> raise Error, message: "A parser must return a %Paco.Parser"
+                     %Paco.Parser{} = parser ->
+                       case parser.parse.(input) do
+                         %Paco.Success{} = success ->
+                           success
+                         %Paco.Failure{} = failure ->
+                           %Paco.Failure{failure | what: unquote(name)}
+                       end
+                     _ ->
+                       raise Error, message: "A parser must return a %Paco.Parser"
                    end
                  end}
       end
