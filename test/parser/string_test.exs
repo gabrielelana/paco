@@ -20,7 +20,7 @@ defmodule Paco.Parser.String.Test do
     {:error, failure} = parse(string("aaa"), "bbb")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match string(aaa) at line: 1, column: 1
+      Failed to match string(aaa) at 1:1
       """
   end
 
@@ -28,7 +28,7 @@ defmodule Paco.Parser.String.Test do
     {:error, failure} = parse(string(String.duplicate("a", 1000)), "bbb")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match string(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...) at line: 1, column: 1
+      Failed to match string(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...) at 1:1
       """
   end
 end

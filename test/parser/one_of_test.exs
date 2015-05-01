@@ -22,7 +22,7 @@ defmodule Paco.Parser.OneOf.Test do
     {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match one_of([string, string]) at line: 1, column: 1
+      Failed to match one_of([string, string]) at 1:1
       """
   end
 
@@ -32,7 +32,7 @@ defmodule Paco.Parser.OneOf.Test do
     {:error, failure} = parse(one_of([string("a")]), "c")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match string(a) at line: 1, column: 1
+      Failed to match string(a) at 1:1
       """
   end
 end

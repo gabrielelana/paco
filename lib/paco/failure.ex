@@ -7,13 +7,13 @@ defmodule Paco.Failure do
 
   def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}) do
     """
-    Failed to match #{what} at line: #{line}, column: #{column}
+    Failed to match #{what} at #{line}:#{column}
     """
   end
   def format(%Paco.Failure{at: {_, line, column}, what: what, because: failure}) do
+    failure = Regex.replace(~r/^F/, String.strip(format(failure)), "f")
     """
-    Failed to match #{what} at line: #{line}, column: #{column}, because it
-    #{String.strip(format(failure))}
+    Failed to match #{what} at #{line}:#{column}, because it #{failure}
     """
   end
 end

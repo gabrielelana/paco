@@ -56,8 +56,7 @@ defmodule Paco.Test do
     {:error, failure} = UsePacoReferenceOtherParsers.parse("aaaccc")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match all at line: 1, column: 1, because it
-      Failed to match bbb at line: 1, column: 4
+      Failed to match all at 1:1, because it failed to match bbb at 1:4
       """
   end
 

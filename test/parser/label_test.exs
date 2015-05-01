@@ -13,7 +13,7 @@ defmodule Paco.Parser.Label.Test do
     {:error, failure} = parse(labeled, "b")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match an a at line: 1, column: 1
+      Failed to match an a at 1:1
       """
   end
 end
