@@ -26,5 +26,4 @@ defmodule Paco.Parser.Seq.Test do
       Failed to match string(b) at line: 1, column: 2
       """
   end
-
 end

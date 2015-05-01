@@ -3,6 +3,19 @@ defmodule Paco.Parser do
 
   defstruct name: nil, parse: nil
 
+  def label(parser, name) do
+    %Paco.Parser{
+      name: name,
+      parse: fn %Paco.Input{} = input ->
+               case parser.parse.(input) do
+                 %Paco.Success{} = success ->
+                   success
+                 %Paco.Failure{} = failure ->
+                   %Paco.Failure{failure | what: name}
+               end
+             end}
+  end
+
   parser seq(parsers) do
     fn %Paco.Input{at: from, stream: stream} = input ->
       result = Enum.reduce(parsers, {input, []},
