@@ -23,12 +23,4 @@ defmodule Paco.Parser.String.Test do
       Failed to match string(aaa) at 1:1
       """
   end
-
-  test "fail to parse a long string" do
-    {:error, failure} = parse(string(String.duplicate("a", 1000)), "bbb")
-    assert Paco.Failure.format(failure) ==
-      """
-      Failed to match string(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...) at 1:1
-      """
-  end
 end

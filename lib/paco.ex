@@ -32,6 +32,24 @@ defmodule Paco do
     end
   end
 
+   # def describe(%Paco.Parser{name: name}), do: name
+   # def describe(parsers) when is_list(parsers) do
+   #   parsers |> Enum.map(&describe/1) |> Enum.join(", ")
+   # end
+   # def describe(name, parsers) do
+   #   "#{name}([#{describe(parsers)}])"
+   # end
+   def describe(string) when is_binary(string), do: string
+   def describe(%Paco.Parser{name: name, combine: []}), do: name
+   def describe(%Paco.Parser{name: name, combine: parsers}) when is_list(parsers) do
+     parsers = parsers |> Enum.map(&describe/1) |> Enum.join(", ")
+     "#{name}([#{parsers}])"
+   end
+   def describe(%Paco.Parser{name: name, combine: parser}) do
+     "#{name}(#{describe(parser)})"
+   end
+
+
   @doc false
   defmacro __before_compile__(env) do
     root_parser = pick_root_parser_between(

@@ -5,7 +5,11 @@ defmodule Paco.Parser.Label.Test do
   import Paco.Parser
 
   test "label the name of a parser" do
-    assert "an a" == label(string("a"), "an a").name
+    assert label(string("a"), "an a").name == "an a"
+  end
+
+  test "describe" do
+    assert describe(label(string("a"), "an a")) == "an a"
   end
 
   test "label shows up in the failure message" do

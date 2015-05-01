@@ -1,12 +1,12 @@
 defmodule Paco.Parser do
   import Paco.Helper
 
-  defstruct name: nil, parse: nil
+  defstruct name: nil, combine: [], parse: nil
 
 
   def seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
   parser seq(parsers) do
-    fn %Paco.Input{at: from, stream: stream} = input, _this ->
+    fn %Paco.Input{at: from, stream: stream} = input, this ->
       result = Enum.reduce(parsers, {input, []},
                            fn
                              (%Paco.Parser{} = parser, {input, results}) ->
@@ -26,7 +26,7 @@ defmodule Paco.Parser do
         {%Paco.Input{at: to, text: text}, results} ->
           %Paco.Success{from: from, to: to, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          %Paco.Failure{at: from, what: "seq([#{do_describe(parsers)}])", because: failure}
+          %Paco.Failure{at: from, what: Paco.describe(this), because: failure}
       end
     end
   end
@@ -34,7 +34,7 @@ defmodule Paco.Parser do
   def one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
   def one_of([parser]), do: parser
   parser one_of(parsers) do
-    fn %Paco.Input{at: from} = input, _this ->
+    fn %Paco.Input{at: from} = input, this ->
       result = Enum.reduce(parsers, [],
                            fn
                              (_, %Paco.Success{} = success) ->
@@ -52,19 +52,19 @@ defmodule Paco.Parser do
         %Paco.Success{} = success ->
           success
         _ ->
-          %Paco.Failure{at: from, what: "one_of([#{do_describe(parsers)}])"}
+          %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end
   end
 
 
   parser string(s) do
-    fn %Paco.Input{at: from, text: text}, _this ->
+    fn %Paco.Input{at: from, text: text}, this ->
       case consume(s, text, from) do
         {to, tail} ->
           %Paco.Success{from: from, to: to, tail: tail, result: s}
         :fail ->
-          %Paco.Failure{at: from, what: "string(#{truncate(s, 42)})"}
+          %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end
   end
@@ -73,6 +73,7 @@ defmodule Paco.Parser do
   def label(parser, name) do
     %Paco.Parser{
       name: name,
+      combine: [],
       parse: fn %Paco.Input{} = input, _this ->
                case parser.parse.(input, parser) do
                  %Paco.Success{} = success ->
@@ -83,25 +84,6 @@ defmodule Paco.Parser do
              end}
   end
 
-
-  defp do_describe(parsers) when is_list(parsers) do
-    parsers |> Enum.reverse |> Enum.map(&(&1.name)) |> Enum.join(", ")
-  end
-
-  # TODO: separator option
-  # TODO: omission option
-  # TODO: pull request to add it to String
-  # http://apidock.com/rails/String/truncate
-  defp truncate(string, at) when is_binary(string) do
-    case String.length(string) do
-      n when n <= at ->
-        string
-      _ ->
-        omission = "..."
-        at_with_room_for_omission = at - String.length(omission)
-        "#{String.slice(string, 0, at_with_room_for_omission)}#{omission}"
-    end
-  end
 
 
   @nl ["\x{000A}",         # LF:    Line Feed, U+000A

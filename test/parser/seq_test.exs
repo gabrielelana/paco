@@ -17,7 +17,7 @@ defmodule Paco.Parser.Seq.Test do
     {:error, failure} = parse(seq([string("a"), string("b")]), "bb")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match seq([string, string]) at 1:1, because it failed to match string(a) at 1:1
+      Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(a) at 1:1
       """
   end
 
@@ -25,7 +25,7 @@ defmodule Paco.Parser.Seq.Test do
     {:error, failure} = parse(seq([string("a"), string("b")]), "aa")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match seq([string, string]) at 1:1, because it failed to match string(b) at 1:2
+      Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
   end
 end

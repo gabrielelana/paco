@@ -18,11 +18,15 @@ defmodule Paco.Parser.OneOf.Test do
     assert_raise ArgumentError, fn -> one_of([]) end
   end
 
+  test "describe" do
+    assert describe(one_of([string("a"), string("b")])) == "one_of([string(a), string(b)])"
+  end
+
   test "fail to parse" do
     {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
     assert Paco.Failure.format(failure) ==
       """
-      Failed to match one_of([string, string]) at 1:1
+      Failed to match one_of([string(a), string(b)]) at 1:1
       """
   end
 
