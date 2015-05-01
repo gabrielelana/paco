@@ -18,10 +18,10 @@ defmodule Paco.Helper do
       def unquote(definition) do
         %Paco.Parser{
           name: unquote(name),
-          parse: fn %Paco.Input{} = input ->
+          parse: fn %Paco.Input{} = input, _this ->
                    case (unquote(block)) do
                      %Paco.Parser{} = parser ->
-                       case parser.parse.(input) do
+                       case parser.parse.(input, parser) do
                          %Paco.Success{} = success ->
                            success
                          %Paco.Failure{} = failure ->

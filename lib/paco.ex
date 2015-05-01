@@ -13,7 +13,7 @@ defmodule Paco do
   end
 
   def parse(%Paco.Parser{} = parser, text) do
-    case parser.parse.(Paco.Input.from(text)) do
+    case parser.parse.(Paco.Input.from(text), parser) do
       %Paco.Failure{} = failure ->
         {:error, failure}
       %Paco.Success{skip: true} ->
@@ -24,7 +24,7 @@ defmodule Paco do
   end
 
   def parse!(%Paco.Parser{} = parser, text) do
-    case parser.parse.(parser, text) do
+    case parse(parser, text) do
       {:ok, result} ->
         result
       {:error, failure} ->

@@ -6,11 +6,11 @@ defmodule Paco.Parser do
 
   def seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
   parser seq(parsers) do
-    fn %Paco.Input{at: from, stream: stream} = input ->
+    fn %Paco.Input{at: from, stream: stream} = input, _this ->
       result = Enum.reduce(parsers, {input, []},
                            fn
                              (%Paco.Parser{} = parser, {input, results}) ->
-                               case parser.parse.(input) do
+                               case parser.parse.(input, parser) do
                                  %Paco.Success{to: to, tail: tail, skip: true} ->
                                    {%Paco.Input{at: to, text: tail, stream: stream}, results}
                                  %Paco.Success{to: to, tail: tail, result: result} ->
@@ -34,13 +34,13 @@ defmodule Paco.Parser do
   def one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
   def one_of([parser]), do: parser
   parser one_of(parsers) do
-    fn %Paco.Input{at: from} = input ->
+    fn %Paco.Input{at: from} = input, _this ->
       result = Enum.reduce(parsers, [],
                            fn
                              (_, %Paco.Success{} = success) ->
                                success
                              (%Paco.Parser{} = parser, failures) ->
-                               case parser.parse.(input) do
+                               case parser.parse.(input, parser) do
                                  %Paco.Success{} = success ->
                                    success
                                  %Paco.Failure{} = failure ->
@@ -59,7 +59,7 @@ defmodule Paco.Parser do
 
 
   parser string(s) do
-    fn %Paco.Input{at: from, text: text} ->
+    fn %Paco.Input{at: from, text: text}, _this ->
       case consume(s, text, from) do
         {to, tail} ->
           %Paco.Success{from: from, to: to, tail: tail, result: s}
@@ -73,8 +73,8 @@ defmodule Paco.Parser do
   def label(parser, name) do
     %Paco.Parser{
       name: name,
-      parse: fn %Paco.Input{} = input ->
-               case parser.parse.(input) do
+      parse: fn %Paco.Input{} = input, _this ->
+               case parser.parse.(input, parser) do
                  %Paco.Success{} = success ->
                    success
                  %Paco.Failure{} = failure ->
