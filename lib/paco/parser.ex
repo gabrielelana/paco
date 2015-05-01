@@ -4,8 +4,8 @@ defmodule Paco.Parser do
   defstruct name: nil, combine: [], parse: nil
 
 
-  def seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
-  parser seq(parsers) do
+  parser_ seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
+  parser_ seq(parsers) do
     fn %Paco.Input{at: from, stream: stream} = input, this ->
       result = Enum.reduce(parsers, {input, []},
                            fn
@@ -31,9 +31,9 @@ defmodule Paco.Parser do
     end
   end
 
-  def one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
-  def one_of([parser]), do: parser
-  parser one_of(parsers) do
+  parser_ one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
+  parser_ one_of([parser]), do: parser
+  parser_ one_of(parsers) do
     fn %Paco.Input{at: from} = input, this ->
       result = Enum.reduce(parsers, [],
                            fn
@@ -58,7 +58,7 @@ defmodule Paco.Parser do
   end
 
 
-  parser string(s) do
+  parser_ string(s) do
     fn %Paco.Input{at: from, text: text}, this ->
       case consume(s, text, from) do
         {to, tail} ->

@@ -1,12 +1,23 @@
 defmodule Paco.Helper do
 
 
-  defmacro parser({name, _, arguments} = definition, do: {:fn, _, _} = block) do
+  defmacro parser_(definition, do: {:__block__, [], _} = block) do
+    parser__(definition, do: block)
+  end
+  defmacro parser_(definition, do: {:fn, _, _} = expression) do
+    parser__(definition, do: {:__block__, [], [expression]})
+  end
+  defmacro parser_(definition, do: {_, _, _} = expression) do
     quote do
-      @paco_parsers unquote(name)
+      def unquote(definition), do: unquote(expression)
+    end
+  end
+
+  defp parser__({name, _, arguments} = definition, do: block) do
+    quote do
       def unquote(definition) do
         %Paco.Parser{
-          name: unquote(name),
+          name: to_string(unquote(name)),
           combine: unquote(normalize_parser_arguments(arguments)),
           parse: unquote(block)
         }
@@ -14,12 +25,13 @@ defmodule Paco.Helper do
     end
   end
 
+
   defmacro parser({name, _, arguments} = definition, do: block) do
     quote do
       @paco_parsers unquote(name)
       def unquote(definition) do
         %Paco.Parser{
-          name: unquote(name),
+          name: to_string(unquote(name)),
           combine: unquote(normalize_parser_arguments(arguments)),
           parse: fn %Paco.Input{} = input, _this ->
                    case (unquote(block)) do
