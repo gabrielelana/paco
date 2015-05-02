@@ -104,7 +104,7 @@ defmodule Paco.Parser do
     end
   end
   defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, {n, l, c}) do
-    consume(t1, t2, {n + byte_size(<<h>>), l, c + 1})
+    consume(t1, t2, {n + 1, l, c + 1})
   end
   defp consume("", tail, position), do: {position, tail}
   defp consume(_, _, _), do: :fail
