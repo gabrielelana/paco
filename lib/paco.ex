@@ -12,8 +12,8 @@ defmodule Paco do
     end
   end
 
-  def parse(%Paco.Parser{} = parser, text) do
-    case parser.parse.(Paco.Input.from(text), parser) do
+  def parse(%Paco.Parser{} = parser, text, opts \\ []) do
+    case parser.parse.(Paco.Input.from(text, opts), parser) do
       %Paco.Failure{} = failure ->
         {:error, failure}
       %Paco.Success{skip: true} ->
@@ -23,8 +23,8 @@ defmodule Paco do
     end
   end
 
-  def parse!(%Paco.Parser{} = parser, text) do
-    case parse(parser, text) do
+  def parse!(%Paco.Parser{} = parser, text, opts \\ []) do
+    case parse(parser, text, opts) do
       {:ok, result} ->
         result
       {:error, failure} ->
@@ -32,22 +32,15 @@ defmodule Paco do
     end
   end
 
-   # def describe(%Paco.Parser{name: name}), do: name
-   # def describe(parsers) when is_list(parsers) do
-   #   parsers |> Enum.map(&describe/1) |> Enum.join(", ")
-   # end
-   # def describe(name, parsers) do
-   #   "#{name}([#{describe(parsers)}])"
-   # end
-   def describe(string) when is_binary(string), do: string
-   def describe(%Paco.Parser{name: name, combine: []}), do: name
-   def describe(%Paco.Parser{name: name, combine: parsers}) when is_list(parsers) do
-     parsers = parsers |> Enum.map(&describe/1) |> Enum.join(", ")
-     "#{name}([#{parsers}])"
-   end
-   def describe(%Paco.Parser{name: name, combine: parser}) do
-     "#{name}(#{describe(parser)})"
-   end
+  def describe(string) when is_binary(string), do: string
+  def describe(%Paco.Parser{name: name, combine: []}), do: name
+  def describe(%Paco.Parser{name: name, combine: parsers}) when is_list(parsers) do
+    parsers = parsers |> Enum.map(&describe/1) |> Enum.join(", ")
+    "#{name}([#{parsers}])"
+  end
+  def describe(%Paco.Parser{name: name, combine: parser}) do
+    "#{name}(#{describe(parser)})"
+  end
 
 
   @doc false
@@ -57,8 +50,8 @@ defmodule Paco do
       Module.get_attribute(env.module, :paco_parsers) |> Enum.reverse
     )
     quote do
-      def parse(s), do: Paco.parse(apply(__MODULE__, unquote(root_parser), []), s)
-      def parse!(s), do: Paco.parse!(apply(__MODULE__, unquote(root_parser), []), s)
+      def parse(s, opts \\ []), do: Paco.parse(apply(__MODULE__, unquote(root_parser), []), s, opts)
+      def parse!(s, opts \\ []), do: Paco.parse!(apply(__MODULE__, unquote(root_parser), []), s, opts)
     end
   end
 
