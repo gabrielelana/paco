@@ -32,6 +32,17 @@ defmodule Paco do
     end
   end
 
+  def explain(%Paco.Parser{} = parser, text) do
+    {:ok, pid} = GenEvent.start_link()
+    GenEvent.add_handler(pid, Paco.Explainer, [])
+    GenEvent.notify(pid, {:loaded, text})
+    parse(parser, text, target: pid)
+    report = GenEvent.call(pid, Paco.Explainer, :report)
+    GenEvent.stop(pid)
+    report
+  end
+
+  def describe("\n"), do: "\\n"
   def describe(string) when is_binary(string), do: string
   def describe(%Paco.Parser{name: name, combine: []}), do: name
   def describe(%Paco.Parser{name: name, combine: parsers}) when is_list(parsers) do

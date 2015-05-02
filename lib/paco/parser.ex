@@ -3,18 +3,22 @@ defmodule Paco.Parser do
 
   defstruct name: nil, combine: [], parse: nil
 
+  defp notify(nil, _what), do: :ok
+  defp notify(target, what), do: GenEvent.notify(target, what)
+
 
   parser_ seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
   parser_ seq(parsers) do
-    fn %Paco.Input{at: from, stream: stream} = input, this ->
-      result = Enum.reduce(parsers, {input, []},
+    fn %Paco.Input{at: from, target: target} = input, this ->
+      notify(target, {:started, Paco.describe(this)})
+      result = Enum.reduce(parsers, {input, from, []},
                            fn
-                             (%Paco.Parser{} = parser, {input, results}) ->
+                             (%Paco.Parser{} = parser, {input, _, results}) ->
                                case parser.parse.(input, parser) do
-                                 %Paco.Success{to: to, tail: tail, skip: true} ->
-                                   {%Paco.Input{at: to, text: tail, stream: stream}, results}
-                                 %Paco.Success{to: to, tail: tail, result: result} ->
-                                   {%Paco.Input{at: to, text: tail, stream: stream}, [result|results]}
+                                 %Paco.Success{to: to, at: at, tail: tail, skip: true} ->
+                                   {%Paco.Input{input | at: at, text: tail}, to, results}
+                                 %Paco.Success{to: to, at: at, tail: tail, result: result} ->
+                                   {%Paco.Input{input | at: at, text: tail}, to, [result|results]}
                                  %Paco.Failure{} = failure ->
                                    failure
                                end
@@ -23,9 +27,11 @@ defmodule Paco.Parser do
                            end)
 
       case result do
-        {%Paco.Input{at: to, text: text}, results} ->
-          %Paco.Success{from: from, to: to, tail: text, result: Enum.reverse(results)}
+        {%Paco.Input{at: at, text: text}, to, results} ->
+          notify(target, {:matched, from, to})
+          %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
+          notify(target, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this), because: failure}
       end
     end
@@ -59,11 +65,14 @@ defmodule Paco.Parser do
 
 
   parser_ string(s) do
-    fn %Paco.Input{at: from, text: text}, this ->
-      case consume(s, text, from) do
-        {to, tail} ->
-          %Paco.Success{from: from, to: to, tail: tail, result: s}
-        :fail ->
+    fn %Paco.Input{at: from, text: text, target: target}, this ->
+      notify(target, {:started, Paco.describe(this)})
+      case consume(s, text, from, from) do
+        {to, at, tail} ->
+          notify(target, {:matched, from, to})
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+        :fail -> # TODO: change into error
+          notify(target, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end
@@ -99,13 +108,17 @@ defmodule Paco.Parser do
   Enum.each @nl, fn nl ->
     defp consume(<<unquote(nl)::utf8, t1::binary>>,
                  <<unquote(nl)::utf8, t2::binary>>,
-                 {n, l, _}) do
-      consume(t1, t2, {n + 1, l + 1, 1})
+                 _to,
+                 {n, l, _} = at) do
+      consume(t1, t2, at, {n + 1, l + 1, 1})
     end
   end
-  defp consume(<<h::utf8, t1::binary>>, <<h::utf8, t2::binary>>, {n, l, c}) do
-    consume(t1, t2, {n + 1, l, c + 1})
+  defp consume(<<h::utf8, t1::binary>>,
+               <<h::utf8, t2::binary>>,
+               _to,
+               {n, l, c} = at) do
+    consume(t1, t2, at, {n + 1, l, c + 1})
   end
-  defp consume("", tail, position), do: {position, tail}
-  defp consume(_, _, _), do: :fail
+  defp consume("", tail, to, at), do: {to, at, tail}
+  defp consume(_, _, _, _), do: :fail
 end
