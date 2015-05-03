@@ -40,7 +40,8 @@ defmodule Paco.Parser do
   parser_ one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
   parser_ one_of([parser]), do: parser
   parser_ one_of(parsers) do
-    fn %Paco.Input{at: from} = input, this ->
+    fn %Paco.Input{at: from, target: target} = input, this ->
+      notify(target, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, [],
                            fn
                              (_, %Paco.Success{} = success) ->
@@ -55,9 +56,11 @@ defmodule Paco.Parser do
                            end)
 
       case result do
-        %Paco.Success{} = success ->
+        %Paco.Success{from: from, to: to} = success ->
+          notify(target, {:matched, from, to})
           success
         _ ->
+          notify(target, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end
