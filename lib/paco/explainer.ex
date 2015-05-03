@@ -98,6 +98,7 @@ defmodule Paco.Explainer do
   defp indent(text, level) do
     text = Regex.replace(~r/^/m, text, String.duplicate("   ", level))
     text = Regex.replace(~r/^(\s*)   (Matched|Failed)/m, text, "\\1└─ \\2")
+    text = Regex.replace(~r/ +$/m, text, "")
     text
   end
 

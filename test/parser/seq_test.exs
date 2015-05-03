@@ -28,4 +28,13 @@ defmodule Paco.Parser.Seq.Test do
       Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
   end
+
+  test "fail to parse for end of input" do
+    {:error, failure} = parse(seq([string("aaa"), string("bbb")]), "a")
+    assert Paco.Failure.format(failure) ==
+      """
+      Failed to match seq([string(aaa), string(bbb)]) at 1:1, because it failed to match string(aaa) at 1:1
+      """
+  end
+
 end

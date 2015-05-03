@@ -25,13 +25,12 @@ defmodule Paco.Explain.Test do
       {:started, "nl"},
       {:matched, {0, 1, 1}, {0, 1, 1}}
     ]
-    # Otherwise my "remove trailing whitespace" script will screw up the test :-(
-    assert report(events) == [
-      "Matched nl from 1:1 to 1:1",
-      "1> ",
-      "   ^",
-      "",
-    ] |> Enum.join("\n")
+    assert report(events) ==
+      """
+      Matched nl from 1:1 to 1:1
+      1>
+         ^
+      """
   end
 
   test "report failed with one level" do
@@ -171,6 +170,15 @@ defmodule Paco.Explain.Test do
       └─ Failed to match string(bbb) at 1:4
          1> aaaccc
                ^
+      """}
+  end
+
+  test "explain failure on empty string" do
+    assert explain(string("aaa"), "") == {:ok,
+      """
+      Failed to match string(aaa) at 1:1
+      1>
+         ^
       """}
   end
 end

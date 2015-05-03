@@ -23,4 +23,12 @@ defmodule Paco.Parser.String.Test do
       Failed to match string(aaa) at 1:1
       """
   end
+
+  test "fail to parse empty string" do
+    {:error, failure} = parse(string("aaa"), "")
+    assert Paco.Failure.format(failure) ==
+      """
+      Failed to match string(aaa) at 1:1
+      """
+  end
 end
