@@ -74,7 +74,7 @@ defmodule Paco.Parser do
         {to, at, tail} ->
           notify(target, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
-        :fail -> # TODO: change into error
+        :error ->
           notify(target, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
@@ -123,5 +123,5 @@ defmodule Paco.Parser do
     consume(t1, t2, at, {n + 1, l, c + 1})
   end
   defp consume("", tail, to, at), do: {to, at, tail}
-  defp consume(_, _, _, _), do: :fail
+  defp consume(_, _, _, _), do: :error
 end
