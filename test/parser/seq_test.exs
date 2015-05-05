@@ -13,6 +13,15 @@ defmodule Paco.Parser.Seq.Test do
     assert_raise ArgumentError, fn -> seq([]) end
   end
 
+  test "describe" do
+    assert describe(seq([string("a"), string("b")])) == "seq([string(a), string(b)])"
+  end
+
+  test "skipped parsers should be removed from result" do
+    assert parse(seq([string("a"), skip(string("b")), string("c")]), "abc") == {:ok, ["a", "c"]}
+    assert parse(seq([skip(string("a"))]), "a") == {:ok, []}
+  end
+
   test "fail to parse because of the first parser" do
     {:error, failure} = parse(seq([string("a"), string("b")]), "bb")
     assert Paco.Failure.format(failure) ==

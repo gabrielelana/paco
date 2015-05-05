@@ -6,6 +6,16 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(target, what), do: GenEvent.notify(target, what)
 
+  parser_ skip(%Paco.Parser{} = parser) do
+    fn %Paco.Input{} = input, _this ->
+      case parser.parse.(input, parser) do
+        %Paco.Success{} = success ->
+          %Paco.Success{success | skip: true}
+        %Paco.Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
   parser_ seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
   parser_ seq(parsers) do

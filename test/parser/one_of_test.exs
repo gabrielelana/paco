@@ -22,6 +22,11 @@ defmodule Paco.Parser.OneOf.Test do
     assert describe(one_of([string("a"), string("b")])) == "one_of([string(a), string(b)])"
   end
 
+  test "skipped parsers should be removed from result" do
+    assert parse(one_of([string("a"), skip(string("b"))]), "a") == {:ok, "a"}
+    assert parse(one_of([string("a"), skip(string("b"))]), "b") == {:ok, []}
+  end
+
   test "fail to parse" do
     {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
     assert Paco.Failure.format(failure) ==
