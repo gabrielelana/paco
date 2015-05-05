@@ -96,10 +96,10 @@ defmodule Paco.Explainer do
   end
 
   defp indent(text, level) do
-    text = Regex.replace(~r/^/m, text, String.duplicate("   ", level))
-    text = Regex.replace(~r/^(\s*)   (Matched|Failed)/m, text, "\\1└─ \\2")
-    text = Regex.replace(~r/ +$/m, text, "")
     text
+    |> indent_with_spaces(level)
+    |> mark_relation_with_parent
+    |> trim_leading_spaces
   end
 
   defp pointers(from_column, from_column), do: pointers(from_column)
@@ -143,5 +143,17 @@ defmodule Paco.Explainer do
                           end
                       end)
     |> Enum.to_list
+  end
+
+  defp indent_with_spaces(text, level) do
+    Regex.replace(~r/^/m, text, String.duplicate("   ", level))
+  end
+
+  defp mark_relation_with_parent(text) do
+    Regex.replace(~r/^(\s*)   (Matched|Failed)/m, text, "\\1└─ \\2")
+  end
+
+  defp trim_leading_spaces(text) do
+    Regex.replace(~r/ +$/m, text, "")
   end
 end
