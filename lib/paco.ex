@@ -13,14 +13,19 @@ defmodule Paco do
   end
 
   def parse(%Paco.Parser{} = parser, text, opts \\ []) do
-    case parser.parse.(Paco.Input.from(text, opts), parser) do
-      %Paco.Failure{} = failure ->
-        {:error, failure}
-      %Paco.Success{skip: true} ->
-        {:ok, []}
-      %Paco.Success{result: result} ->
-        {:ok, result}
-    end
+    input = Paco.Input.from(text, opts)
+    deliver = fn(result, nil)    -> result
+                (result, stream) -> send(stream, {self, result})
+              end
+    deliver.(case parser.parse.(input, parser) do
+               %Paco.Failure{} = failure ->
+                 {:error, failure}
+               %Paco.Success{skip: true} ->
+                 {:ok, []}
+               %Paco.Success{result: result} ->
+                 {:ok, result}
+             end,
+             input.stream)
   end
 
   def parse!(%Paco.Parser{} = parser, text, opts \\ []) do

@@ -78,13 +78,21 @@ defmodule Paco.Parser do
 
 
   parser_ string(s) do
-    fn %Paco.Input{at: from, text: text, target: target}, this ->
+    fn %Paco.Input{at: from, text: text, target: target, stream: stream} = input, this ->
       notify(target, {:started, Paco.describe(this)})
       case consume(s, text, from, from) do
         {to, at, tail} ->
           notify(target, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
-        :error ->
+        :end_of_input when is_pid(stream) ->
+          notify(target, {:failed, from})
+          send(stream, {self, :more})
+          receive do
+            {:load, string} ->
+              notify(target, {:loaded, string})
+              this.parse.(%Paco.Input{input|text: text <> string}, this)
+          end
+        _ ->
           notify(target, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
@@ -133,5 +141,6 @@ defmodule Paco.Parser do
     consume(t1, t2, at, {n + 1, l, c + 1})
   end
   defp consume("", tail, to, at), do: {to, at, tail}
-  defp consume(_, _, _, _), do: :error
+  defp consume(_, "", _, _), do: :end_of_input
+  defp consume(_, _, _, _), do: :failure
 end
