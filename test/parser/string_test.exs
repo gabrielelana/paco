@@ -1,4 +1,4 @@
-defmodule Paco.Parser.String.Test do
+defmodule Paco.Parser.StringTest do
   use ExUnit.Case
 
   import Paco

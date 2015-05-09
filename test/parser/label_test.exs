@@ -1,4 +1,4 @@
-defmodule Paco.Parser.Label.Test do
+defmodule Paco.Parser.LabelTest do
   use ExUnit.Case
 
   import Paco

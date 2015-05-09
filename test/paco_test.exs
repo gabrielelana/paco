@@ -1,4 +1,4 @@
-defmodule Paco.Test do
+defmodule PacoTest do
   use ExUnit.Case
 
   import Paco.Parser
