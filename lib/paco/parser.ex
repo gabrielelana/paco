@@ -88,10 +88,9 @@ defmodule Paco.Parser do
         :end_of_input when is_pid(stream) ->
           send(stream, {self, :more})
           receive do
-            # TODO: rename string into more_text
-            {:load, string} ->
-              notify(collector, {:loaded, string})
-              this.parse.(%Paco.Input{input|text: text <> string}, this)
+            {:load, more_text} ->
+              notify(collector, {:loaded, more_text})
+              this.parse.(%Paco.Input{input|text: text <> more_text}, this)
             :halt ->
               notify(collector, {:started, description})
               notify(collector, {:failed, from})
