@@ -4,7 +4,7 @@ defmodule Paco.Parser do
   defstruct name: nil, combine: [], parse: nil
 
   defp notify(nil, _what), do: :ok
-  defp notify(target, what), do: GenEvent.notify(target, what)
+  defp notify(collector, what), do: GenEvent.notify(collector, what)
 
   parser_ skip(%Paco.Parser{} = parser) do
     fn %Paco.Input{} = input, _this ->
@@ -19,8 +19,8 @@ defmodule Paco.Parser do
 
   parser_ seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
   parser_ seq(parsers) do
-    fn %Paco.Input{at: from, target: target} = input, this ->
-      notify(target, {:started, Paco.describe(this)})
+    fn %Paco.Input{at: from, collector: collector} = input, this ->
+      notify(collector, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, {input, from, []},
                            fn
                              (%Paco.Parser{} = parser, {input, _, results}) ->
@@ -38,10 +38,10 @@ defmodule Paco.Parser do
 
       case result do
         {%Paco.Input{at: at, text: text}, to, results} ->
-          notify(target, {:matched, from, to})
+          notify(collector, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          notify(target, {:failed, from})
+          notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this), because: failure}
       end
     end
@@ -50,8 +50,8 @@ defmodule Paco.Parser do
   parser_ one_of([]), do: (raise ArgumentError, message: "Must give at least one parser to one_of combinator")
   parser_ one_of([parser]), do: parser
   parser_ one_of(parsers) do
-    fn %Paco.Input{at: from, target: target} = input, this ->
-      notify(target, {:started, Paco.describe(this)})
+    fn %Paco.Input{at: from, collector: collector} = input, this ->
+      notify(collector, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, [],
                            fn
                              (_, %Paco.Success{} = success) ->
@@ -67,10 +67,10 @@ defmodule Paco.Parser do
 
       case result do
         %Paco.Success{from: from, to: to} = success ->
-          notify(target, {:matched, from, to})
+          notify(collector, {:matched, from, to})
           success
         _ ->
-          notify(target, {:failed, from})
+          notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end
@@ -78,22 +78,22 @@ defmodule Paco.Parser do
 
 
   parser_ string(s) do
-    fn %Paco.Input{at: from, text: text, target: target, stream: stream} = input, this ->
+    fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->
       case consume(s, text, from, from) do
         {to, at, tail} ->
-          notify(target, {:started, Paco.describe(this)})
-          notify(target, {:matched, from, to})
+          notify(collector, {:started, Paco.describe(this)})
+          notify(collector, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
           send(stream, {self, :more})
           receive do
             {:load, string} ->
-              notify(target, {:loaded, string})
+              notify(collector, {:loaded, string})
               this.parse.(%Paco.Input{input|text: text <> string}, this)
           end
         _ ->
-          notify(target, {:started, Paco.describe(this)})
-          notify(target, {:failed, from})
+          notify(collector, {:started, Paco.describe(this)})
+          notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: Paco.describe(this)}
       end
     end

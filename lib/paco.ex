@@ -41,7 +41,7 @@ defmodule Paco do
     {:ok, pid} = GenEvent.start_link()
     GenEvent.add_handler(pid, Paco.Explainer, [])
     GenEvent.notify(pid, {:loaded, text})
-    parse(parser, text, target: pid)
+    parse(parser, text, collector: pid)
     report = GenEvent.call(pid, Paco.Explainer, :report)
     GenEvent.stop(pid)
     report
