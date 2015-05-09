@@ -42,21 +42,20 @@ defmodule Paco.StreamTest do
   test "parse stream of one success" do
     parser = seq([string("ab"), string("c")])
 
-    result = Stream.unfold("abc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-             |> Paco.stream(parser)
-             |> Enum.to_list
+    [result] = Stream.unfold("abc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+               |> Paco.stream(parser)
+               |> Enum.to_list
 
-    assert result == [["ab", "c"]]
+    assert result == ["ab", "c"]
   end
 
   test "parse stream of one failure" do
     parser = seq([string("ab"), string("c")])
 
-    result = Stream.unfold("abd", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-             |> Paco.stream(parser)
-             |> Enum.to_list
+    [failure] = Stream.unfold("abd", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+               |> Paco.stream(parser)
+               |> Enum.to_list
 
-    [failure] = result
     assert Paco.Failure.format(failure) ==
       """
       Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
@@ -66,10 +65,10 @@ defmodule Paco.StreamTest do
   test "parse stream of more successes" do
     parser = seq([string("ab"), string("c")])
 
-    result = Stream.unfold("abcabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-             |> Paco.stream(parser)
-             |> Enum.to_list
+    results = Stream.unfold("abcabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+              |> Paco.stream(parser)
+              |> Enum.to_list
 
-    assert result == [["ab", "c"], ["ab", "c"]]
+    assert results == [["ab", "c"], ["ab", "c"]]
   end
 end
