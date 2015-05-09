@@ -19,12 +19,7 @@ defmodule Paco.Stream do
   defp start_link(parser) do
     # IO.puts("START PARSER PROCESS")
     running_parser = spawn_link(Paco, :parse, [parser, "", [stream: self]])
-    # TODO: extract consume_request_for_more_input
-    receive do
-      {^running_parser, :more} ->
-        # IO.puts("PARSER NEEDS MORE INPUT")
-        :ok
-    end
+    consume_request_for_more_input_from(running_parser)
     running_parser
   end
 
@@ -70,6 +65,12 @@ defmodule Paco.Stream do
       receive do
         {^running_parser, {:error, failure}} -> failure
       end
+    end
+  end
+
+  defp consume_request_for_more_input_from(running_parser) do
+    receive do
+      {^running_parser, :more} -> :ok
     end
   end
 end
