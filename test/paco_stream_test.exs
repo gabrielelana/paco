@@ -107,6 +107,29 @@ defmodule Paco.StreamTest do
            "downstream must never be called since downstream asked to halt as first command"
   end
 
+  test "parse stream when downstream suspend the pipe as first command" do
+    stream = stream_of("abc")
+             |> Stream.each(&count(:upstream_called, &1))
+             |> Paco.stream(string("a"))
+
+    downstream_accumulator = make_ref
+    result = Enumerable.reduce(stream,
+                               {:suspend, downstream_accumulator},
+                               fn(_, _) ->
+                                 count(:downstream_called)
+                                 {:cont, nil}
+                               end)
+
+    assert {:suspended, ^downstream_accumulator, continuation} = result,
+           "the pipeline must suspend with the downstream accumulator and a continuation"
+    assert Process.get(:upstream_called, 0) == 0,
+           "upstream must never be called since downstream asked to suspend as first command"
+    assert Process.get(:downstream_called, 0) == 0,
+           "downstream must never be called since downstream asked to suspend as first command"
+
+    assert is_function(continuation, 1)
+  end
+
   test "parse stream when downstream halts" do
     results = stream_of("abcabc")
              |> Stream.each(&count(:upstream_called, &1))
