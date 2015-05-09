@@ -48,4 +48,14 @@ defmodule Paco.StreamTest do
 
     assert result == [["ab", "c"]]
   end
+
+  test "parse stream of more successes" do
+    parser = seq([string("ab"), string("c")])
+
+    result = Stream.unfold("abcabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+             |> Paco.stream(parser)
+             |> Enum.to_list
+
+    assert result == [["ab", "c"], ["ab", "c"]]
+  end
 end

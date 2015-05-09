@@ -79,6 +79,7 @@ defmodule Paco.Parser do
 
   parser_ string(s) do
     fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->
+      # TODO: extract description = Paco.describe(this)
       case consume(s, text, from, from) do
         {to, at, tail} ->
           notify(collector, {:started, Paco.describe(this)})
@@ -87,6 +88,7 @@ defmodule Paco.Parser do
         :end_of_input when is_pid(stream) ->
           send(stream, {self, :more})
           receive do
+            # TODO: rename string into more_text
             {:load, string} ->
               notify(collector, {:loaded, string})
               this.parse.(%Paco.Input{input|text: text <> string}, this)
