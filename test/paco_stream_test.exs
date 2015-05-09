@@ -42,7 +42,9 @@ defmodule Paco.StreamTest do
   test "parse stream of one success" do
     parser = seq([string("ab"), string("c")])
 
-    [result] = stream_of("abc") |> Paco.stream(parser) |> Enum.to_list
+    [result] = stream_of("abc")
+               |> Paco.stream(parser)
+               |> Enum.to_list
 
     assert result == ["ab", "c"]
   end
@@ -50,7 +52,9 @@ defmodule Paco.StreamTest do
   test "parse stream of one failure" do
     parser = seq([string("ab"), string("c")])
 
-    [failure] = stream_of("abd") |> Paco.stream(parser) |> Enum.to_list
+    [failure] = stream_of("abd")
+                |> Paco.stream(parser)
+                |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==
       """
@@ -61,7 +65,9 @@ defmodule Paco.StreamTest do
   test "parse stream of more successes" do
     parser = seq([string("ab"), string("c")])
 
-    results = stream_of("abcabc") |> Paco.stream(parser) |> Enum.to_list
+    results = stream_of("abcabc")
+              |> Paco.stream(parser)
+              |> Enum.to_list
 
     assert results == [["ab", "c"], ["ab", "c"]]
   end
@@ -69,7 +75,9 @@ defmodule Paco.StreamTest do
   test "parse a success after a failure" do
     parser = seq([string("ab"), string("c")])
 
-    [failure, success] = stream_of("abdabc") |> Paco.stream(parser) |> Enum.to_list
+    [failure, success] = stream_of("abdabc")
+                         |> Paco.stream(parser)
+                         |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==
       """
@@ -80,35 +88,30 @@ defmodule Paco.StreamTest do
 
   test "parse stream when downstream halts the pipe as first command" do
     stream = stream_of("abc")
-             |> Stream.each(fn _ -> Process.put(:upstream_called, true) end)
+             |> Stream.each(&count(:upstream_called, &1))
              |> Paco.stream(string("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
                                {:halt, downstream_accumulator},
                                fn(_, _) ->
-                                 Process.put(:downstream_called, true)
+                                 count(:downstream_called)
                                  {:cont, nil}
                                end)
 
     assert result == {:halted, downstream_accumulator},
            "the pipeline must halt with the downstream accumulator"
-    refute Process.get(:upstream_called, false),
+    assert Process.get(:upstream_called, 0) == 0,
            "upstream must never be called since downstream asked to halt as first command"
-    refute Process.get(:downstream_called, false)
+    assert Process.get(:downstream_called, 0) == 0,
            "downstream must never be called since downstream asked to halt as first command"
   end
 
   test "parse stream when downstream halts" do
-    count = fn key, _ -> Process.put(key, Process.get(key, 0) + 1) end
-
     results = stream_of("abcabc")
-             |> Stream.each(&count.(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Paco.stream(string("abc"))
-             # Same problem with Stream.chunk(3) seems that
-             # is not related to the paser's stream implementation
-             # |> Stream.chunk(3)
-             |> Stream.each(&count.(:downstream_called, &1))
+             |> Stream.each(&count(:downstream_called, &1))
              |> Stream.take(1)
              |> Enum.to_list
 
@@ -118,21 +121,19 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream when upstream halts" do
-    count = fn key, x -> Process.put(key, Process.get(key, 0) + 1) end
-
     results = stream_of("abcabc")
-             |> Stream.each(&count.(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Stream.take(4)
              |> Paco.stream(string("abc"))
-             |> Stream.each(&count.(:downstream_called, &1))
+             |> Stream.each(&count(:downstream_called, &1))
              |> Enum.to_list
 
     # When the stream is halted from upstream and the parser is waiting
     # for more input we don't return a failure but we truncate the stream.
     # This behaviour is compatibile with Stream.chunk
     assert results == ["abc"]
-    assert Process.get(:upstream_called, 0) == 5    # should have been 4???
-    assert Process.get(:downstream_called, 0) == 1
+    assert counted(:upstream_called) == 5    # should have been 4???
+    assert counted(:downstream_called) == 1
   end
 
 
@@ -140,4 +141,11 @@ defmodule Paco.StreamTest do
   defp stream_of(string) do
     Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
   end
+
+  defp count(key), do: count(key, nil)
+  defp count(key, _) do
+    Process.put(key, Process.get(key, 0) + 1)
+  end
+
+  defp counted(key), do: Process.get(key, 0)
 end
