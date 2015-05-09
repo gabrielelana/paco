@@ -1,18 +1,18 @@
 defmodule Paco.Stream do
 
-  def from(upstream, %Paco.Parser{} = parser) do
-    &parse(upstream, start_link(parser), parser, &1, &2)
+  def from(upstream, %Paco.Parser{} = parser, on_failure) do
+    &parse(upstream, {start_link(parser), parser, on_failure}, &1, &2)
   end
 
-  defp parse(upstream, running_parser, parser, {:suspend, downstream_accumulator}, downstream_reducer) do
-    {:suspended, downstream_accumulator, &parse(upstream, running_parser, parser, &1, downstream_reducer)}
+  defp parse(upstream, configuration, {:suspend, downstream_accumulator}, downstream_reducer) do
+    {:suspended, downstream_accumulator, &parse(upstream, configuration, &1, downstream_reducer)}
   end
-  defp parse(_upstream, running_parser, _parser, {:halt, downstream_accumulator}, _downstream_reducer) do
+  defp parse(_, {running_parser, _, _}, {:halt, downstream_accumulator}, _) do
     stop(running_parser)
     {:halted, downstream_accumulator}
   end
-  defp parse(upstream, running_parser, parser, downstream_command, downstream_reducer) do
-    stream = Stream.transform(upstream, {running_parser, parser}, &transform/2)
+  defp parse(upstream, {running_parser, _, _} = configuration, downstream_command, downstream_reducer) do
+    stream = Stream.transform(upstream, configuration, &transform/2)
     run(stream, running_parser, downstream_command, downstream_reducer)
   end
 
@@ -23,20 +23,22 @@ defmodule Paco.Stream do
     running_parser
   end
 
-  defp transform(upstream_element, {running_parser, parser}) do
-    # IO.puts("LOAD #{upstream_element} TO #{inspect(parser)}")
+  defp transform(upstream_element, {running_parser, parser, on_failure}) do
+    # IO.puts("LOAD #{upstream_element} TO #{inspect(running_parser)}")
     send(running_parser, {:load, upstream_element})
     receive do
       {^running_parser, :more} ->
         # IO.puts("PARSER NEEDS MORE INPUT")
-        {[], {running_parser, parser}}
+        {[], {running_parser, parser, on_failure}}
       {^running_parser, {:ok, parsed}} ->
         # IO.puts("PARSED! #{inspect(parsed)}")
-        {[parsed], {start_link(parser), parser}}
+        {[parsed], {start_link(parser), parser, on_failure}}
       {^running_parser, {:error, failure}} ->
-        # IO.puts("FAILURE! #{inspect(failure)}")
-        {[failure], {start_link(parser), parser}}
-        # TODO: if Paco.stream!, {:halt, nil}
+        case on_failure do
+          :halt -> {:halt, failure}
+          :continue -> {[failure], {start_link(parser), parser, on_failure}}
+          :raise -> raise RuntimeError, message: Paco.Failure.format(failure)
+        end
     end
   end
 
