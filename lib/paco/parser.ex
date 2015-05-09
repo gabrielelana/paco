@@ -90,6 +90,10 @@ defmodule Paco.Parser do
             {:load, string} ->
               notify(collector, {:loaded, string})
               this.parse.(%Paco.Input{input|text: text <> string}, this)
+            :halt ->
+              notify(collector, {:started, Paco.describe(this)})
+              notify(collector, {:failed, from})
+              %Paco.Failure{at: from, what: Paco.describe(this)}
           end
         _ ->
           notify(collector, {:started, Paco.describe(this)})
