@@ -7,7 +7,7 @@ defmodule Paco.Stream do
   defp parse(upstream, running_parser, parser, {:suspend, downstream_accumulator}, downstream_reducer) do
     {:suspended, downstream_accumulator, &parse(upstream, running_parser, parser, &1, downstream_reducer)}
   end
-  defp parse(_upstream, running_parser, parser, {:halt, downstream_accumulator}, _downstream_reducer) do
+  defp parse(_upstream, running_parser, _parser, {:halt, downstream_accumulator}, _downstream_reducer) do
     stop(running_parser)
     {:halted, downstream_accumulator}
   end
