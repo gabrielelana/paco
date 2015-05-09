@@ -79,10 +79,10 @@ defmodule Paco.Parser do
 
   parser_ string(s) do
     fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->
-      # TODO: extract description = Paco.describe(this)
+      description = Paco.describe(this)
       case consume(s, text, from, from) do
         {to, at, tail} ->
-          notify(collector, {:started, Paco.describe(this)})
+          notify(collector, {:started, description})
           notify(collector, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
@@ -93,14 +93,14 @@ defmodule Paco.Parser do
               notify(collector, {:loaded, string})
               this.parse.(%Paco.Input{input|text: text <> string}, this)
             :halt ->
-              notify(collector, {:started, Paco.describe(this)})
+              notify(collector, {:started, description})
               notify(collector, {:failed, from})
-              %Paco.Failure{at: from, what: Paco.describe(this)}
+              %Paco.Failure{at: from, what: description}
           end
         _ ->
-          notify(collector, {:started, Paco.describe(this)})
+          notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: Paco.describe(this)}
+          %Paco.Failure{at: from, what: description}
       end
     end
   end
