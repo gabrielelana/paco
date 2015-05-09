@@ -4,7 +4,7 @@ defmodule Paco.StreamTest do
   import Paco.Parser
 
   test "parser in stream mode will wait for more input" do
-    parser = seq([string("a"), string("b"), string("c")])
+    parser = seq([string("ab"), string("c")])
     parser_process = spawn_link(Paco, :parse, [parser, "", [stream: self]])
     assert_receive {^parser_process, :more}
 
@@ -15,7 +15,7 @@ defmodule Paco.StreamTest do
     assert_receive {^parser_process, :more}
 
     send(parser_process, {:load, "c"})
-    assert_receive {^parser_process, {:ok, ["a", "b", "c"]}}
+    assert_receive {^parser_process, {:ok, ["ab", "c"]}}
 
     refute Process.alive?(parser_process)
   end
