@@ -71,4 +71,18 @@ defmodule Paco.StreamTest do
 
     assert results == [["ab", "c"], ["ab", "c"]]
   end
+
+  test "parse a success after a failure" do
+    parser = seq([string("ab"), string("c")])
+
+    [failure, success] = Stream.unfold("abdabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+                         |> Paco.stream(parser)
+                         |> Enum.to_list
+
+    assert Paco.Failure.format(failure) ==
+      """
+      Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
+      """
+    assert success == ["ab", "c"]
+  end
 end

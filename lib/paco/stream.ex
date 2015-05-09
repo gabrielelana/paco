@@ -40,8 +40,7 @@ defmodule Paco.Stream do
         {[parsed], {start_link(parser), parser}}
       {^running_parser, {:error, failure}} ->
         # IO.puts("FAILURE! #{inspect(failure)}")
-        # TODO: if Paco.stream, restart the parser, you will need the parser beside the parser process
-        {[failure], {running_parser, parser}}
+        {[failure], {start_link(parser), parser}}
         # TODO: if Paco.stream!, {:halt, nil}
     end
   end
