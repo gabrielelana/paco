@@ -99,6 +99,43 @@ defmodule Paco.StreamTest do
            "downstream must never be called since downstream asked to halt as first command"
   end
 
+  test "parse stream when downstream halts" do
+    count = fn key, _ -> Process.put(key, Process.get(key, 0) + 1) end
+
+    results = stream_of("abcabc")
+             |> Stream.each(&count.(:upstream_called, &1))
+             |> Paco.stream(string("abc"))
+             # Same problem with Stream.chunk(3) seems that
+             # is not related to the paser's stream implementation
+             # |> Stream.chunk(3)
+             |> Stream.each(&count.(:downstream_called, &1))
+             |> Stream.take(1)
+             |> Enum.to_list
+
+    assert results == ["abc"]
+    assert Process.get(:upstream_called, 0) == 6     # should have been 3???
+    assert Process.get(:downstream_called, 0) == 2   # should have been 1???
+  end
+
+  test "parse stream when upstream halts" do
+    count = fn key, x -> Process.put(key, Process.get(key, 0) + 1) end
+
+    results = stream_of("abcabc")
+             |> Stream.each(&count.(:upstream_called, &1))
+             |> Stream.take(4)
+             |> Paco.stream(string("abc"))
+             |> Stream.each(&count.(:downstream_called, &1))
+             |> Enum.to_list
+
+    # When the stream is halted from upstream and the parser is waiting
+    # for more input we don't return a failure but we truncate the stream.
+    # This behaviour is compatibile with Stream.chunk
+    assert results == ["abc"]
+    assert Process.get(:upstream_called, 0) == 5    # should have been 4???
+    assert Process.get(:downstream_called, 0) == 1
+  end
+
+
 
   defp stream_of(string) do
     Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
