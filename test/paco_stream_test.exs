@@ -38,4 +38,14 @@ defmodule Paco.StreamTest do
       Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
   end
+
+  test "parse stream of one success" do
+    parser = seq([string("ab"), string("c")])
+
+    result = Stream.unfold("abc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+             |> Paco.stream(parser)
+             |> Enum.to_list
+
+    assert result == [["ab", "c"]]
+  end
 end

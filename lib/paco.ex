@@ -47,6 +47,8 @@ defmodule Paco do
     report
   end
 
+  def stream(enum, %Paco.Parser{} = parser), do: Paco.Stream.from(enum, parser)
+
   def describe("\n"), do: "\\n"
   def describe(string) when is_binary(string), do: string
   def describe(%Paco.Parser{name: name, combine: []}), do: name
