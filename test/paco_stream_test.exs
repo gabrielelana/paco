@@ -78,6 +78,27 @@ defmodule Paco.StreamTest do
     assert success == ["ab", "c"]
   end
 
+  test "parse stream when downstream halts the pipe as first command" do
+    stream = stream_of("abc")
+             |> Stream.each(fn _ -> Process.put(:upstream_called, true) end)
+             |> Paco.stream(string("a"))
+
+    downstream_accumulator = make_ref
+    result = Enumerable.reduce(stream,
+                               {:halt, downstream_accumulator},
+                               fn(_, _) ->
+                                 Process.put(:downstream_called, true)
+                                 {:cont, nil}
+                               end)
+
+    assert result == {:halted, downstream_accumulator},
+           "the pipeline must halt with the downstream accumulator"
+    refute Process.get(:upstream_called, false),
+           "upstream must never be called since downstream asked to halt as first command"
+    refute Process.get(:downstream_called, false)
+           "downstream must never be called since downstream asked to halt as first command"
+  end
+
 
   defp stream_of(string) do
     Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
