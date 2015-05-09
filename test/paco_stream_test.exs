@@ -42,9 +42,7 @@ defmodule Paco.StreamTest do
   test "parse stream of one success" do
     parser = seq([string("ab"), string("c")])
 
-    [result] = Stream.unfold("abc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-               |> Paco.stream(parser)
-               |> Enum.to_list
+    [result] = stream_of("abc") |> Paco.stream(parser) |> Enum.to_list
 
     assert result == ["ab", "c"]
   end
@@ -52,9 +50,7 @@ defmodule Paco.StreamTest do
   test "parse stream of one failure" do
     parser = seq([string("ab"), string("c")])
 
-    [failure] = Stream.unfold("abd", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-               |> Paco.stream(parser)
-               |> Enum.to_list
+    [failure] = stream_of("abd") |> Paco.stream(parser) |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==
       """
@@ -65,9 +61,7 @@ defmodule Paco.StreamTest do
   test "parse stream of more successes" do
     parser = seq([string("ab"), string("c")])
 
-    results = Stream.unfold("abcabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-              |> Paco.stream(parser)
-              |> Enum.to_list
+    results = stream_of("abcabc") |> Paco.stream(parser) |> Enum.to_list
 
     assert results == [["ab", "c"], ["ab", "c"]]
   end
@@ -75,14 +69,17 @@ defmodule Paco.StreamTest do
   test "parse a success after a failure" do
     parser = seq([string("ab"), string("c")])
 
-    [failure, success] = Stream.unfold("abdabc", fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-                         |> Paco.stream(parser)
-                         |> Enum.to_list
+    [failure, success] = stream_of("abdabc") |> Paco.stream(parser) |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==
       """
       Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
       """
     assert success == ["ab", "c"]
+  end
+
+
+  defp stream_of(string) do
+    Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
   end
 end
