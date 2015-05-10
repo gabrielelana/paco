@@ -80,18 +80,16 @@ defmodule Paco.Parser do
     fn %Paco.Input{at: from, text: text, collector: _collector, stream: _stream} = _input, this ->
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
-        [{from, len}] ->
-          to = from + len
-          {s, tail} = String.split_at(text, to)
-          %Paco.Success{from: from, to: to, at: to + 1, tail: tail, result: s}
-        [{from, len}|captures] ->
-          to = from + len
-          {s, tail} = String.split_at(text, to)
+        [{_, len}] ->
+          {s, tail, to, at} = seek(text, from, from, len)
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+        [{_, len}|captures] ->
+          {s, tail, to, at} = seek(text, from, from, len)
           captures = case Regex.names(r) do
             [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
             _ -> [Regex.named_captures(r, text)]
           end
-          %Paco.Success{from: from, to: to, at: to + 1, tail: tail, result: [s|captures]}
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
         nil ->
           %Paco.Failure{at: from, what: description}
       end
@@ -163,18 +161,27 @@ defmodule Paco.Parser do
        "\x{2029}"          # PS:    Paragraph Separator, U+2029
       ]
 
+  defp seek(tail, to, at, len), do: seek("", tail, to, at, len)
+  defp seek(between, tail, to, at, 0), do: {between, tail, to, at}
+  Enum.each @nl, fn nl ->
+    defp seek(between, <<unquote(nl)::utf8, tail::binary>>, _, {n, l, _} = at, len) do
+      seek(between <> unquote(nl), tail, at, {n+1, l+1, 1}, len-1)
+    end
+  end
+  defp seek(between, <<h::utf8, tail::binary>>, _, {n, l, c} = at, len) do
+    seek(between <> <<h>>, tail, at, {n+1, l, c+1}, len-1)
+  end
+
   Enum.each @nl, fn nl ->
     defp consume(<<unquote(nl)::utf8, t1::binary>>,
                  <<unquote(nl)::utf8, t2::binary>>,
-                 _to,
-                 {n, l, _} = at) do
+                 _to, {n, l, _} = at) do
       consume(t1, t2, at, {n + 1, l + 1, 1})
     end
   end
   defp consume(<<h::utf8, t1::binary>>,
                <<h::utf8, t2::binary>>,
-               _to,
-               {n, l, c} = at) do
+               _to, {n, l, c} = at) do
     consume(t1, t2, at, {n + 1, l, c + 1})
   end
   defp consume("", tail, to, at), do: {to, at, tail}
