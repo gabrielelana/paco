@@ -184,13 +184,4 @@ defmodule Paco.StreamTest do
     assert counted(:upstream_called) == 5    # should have been 4???
     assert counted(:downstream_called) == 1
   end
-
-
-
-  defp count(key), do: count(key, nil)
-  defp count(key, _) do
-    Process.put(key, Process.get(key, 0) + 1)
-  end
-
-  defp counted(key), do: Process.get(key, 0)
 end

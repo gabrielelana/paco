@@ -77,11 +77,13 @@ defmodule Paco.Parser do
   end
 
   parser_ re(r, opts \\ []) do
-    fn %Paco.Input{at: from, text: text, collector: _collector, stream: stream} = input, this ->
+    fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
           {s, tail, to, at} = seek(text, from, from, len)
+          notify(collector, {:started, description})
+          notify(collector, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         [{_, len}|captures] ->
           {s, tail, to, at} = seek(text, from, from, len)
@@ -89,10 +91,14 @@ defmodule Paco.Parser do
             [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
             _ -> [Regex.named_captures(r, text)]
           end
+          notify(collector, {:started, description})
+          notify(collector, {:matched, from, to})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
         nil when is_pid(stream) ->
           wait_for = Keyword.get(opts, :wait_for, 1_000)
           if String.length(text) >= wait_for do
+            notify(collector, {:started, description})
+            notify(collector, {:failed, from})
             %Paco.Failure{at: from, what: description}
           else
             send(stream, {self, :more})
@@ -100,10 +106,14 @@ defmodule Paco.Parser do
               {:load, more_text} ->
                 this.parse.(%Paco.Input{input|text: text <> more_text}, this)
               :halt ->
+                notify(collector, {:started, description})
+                notify(collector, {:failed, from})
                 %Paco.Failure{at: from, what: description}
             end
           end
         nil ->
+          notify(collector, {:started, description})
+          notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: description}
       end
     end

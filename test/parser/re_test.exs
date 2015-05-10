@@ -3,7 +3,9 @@ defmodule Paco.Parser.ReTest do
 
   import Paco
   import Paco.Parser
-  import Paco.Test.Helper
+
+  alias Paco.Test.Helper
+  alias Paco.Test.EventRecorder
 
   test "parse" do
     assert parse(re(~r/a+/), "a") == {:ok, "a"}
@@ -49,7 +51,7 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "wait for more input in stream mode" do
-    [result] = stream_of("aaab")
+    [result] = Helper.stream_of("aaab")
              |> stream(re(~r/a+b/))
              |> Enum.to_list
 
@@ -57,7 +59,7 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "don't wait for more input if we have enough" do
-    results = stream_of("aaa")
+    results = Helper.stream_of("aaa")
              |> stream(re(~r/a+/))
              |> Enum.to_list
 
@@ -68,11 +70,41 @@ defmodule Paco.Parser.ReTest do
     # we are telling the parser to wait for 3 characters before giving up
     # return a failure, since 3 characters are not enough (given the input)
     # to make the parser succeed then the parser fails
-    result = stream_of("aaab")
+    result = Helper.stream_of("aaab")
              |> stream(re(~r/a+b/, wait_for: 3))
              |> Enum.to_list
 
     assert result == []
+  end
+
+  test "notify events on success" do
+    {:ok, collector} = EventRecorder.start_link
+    try do
+      parse(re(~r/a+/), "aaa", collector: collector)
+      events = EventRecorder.events_recorded(collector)
+      assert events == [
+        {:loaded, "aaa"},
+        {:started, "re(~r/a+/)"},
+        {:matched, {0, 1, 1}, {2, 1, 3}},
+      ]
+    after
+      EventRecorder.stop(collector)
+    end
+  end
+
+  test "notify events on failure" do
+    {:ok, collector} = EventRecorder.start_link
+    try do
+      parse(re(~r/b+/), "aaa", collector: collector)
+      events = EventRecorder.events_recorded(collector)
+      assert events == [
+        {:loaded, "aaa"},
+        {:started, "re(~r/b+/)"},
+        {:failed, {0, 1, 1}},
+      ]
+    after
+      EventRecorder.stop(collector)
+    end
   end
 
   test "increment indexes for a match" do
