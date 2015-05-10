@@ -26,6 +26,13 @@ defmodule Paco.Parser.ReTest do
     assert parse(re(~r/c(?<As>a+)(?<Bs>b+)/), "cab") == {:ok, ["cab", %{"As" => "a", "Bs" => "b"}]}
   end
 
+  test "patterns are anchored at the beginning of the text" do
+    assert {:error, _} = parse(re(~r/a+/), "baaa")
+    assert {:error, _} = parse(re(~r/.*a+/), "b\naaa")
+    assert {:ok, _}    = parse(re(~r/.*\na+/m), "b\naaa")
+    assert {:error, _} = parse(re(~r/\Aa+/), "baaa")
+  end
+
   test "describe" do
     assert describe(re(~r/a+/)) == "re(~r/a+/)"
     assert describe(re(~r/a+/i)) == "re(~r/a+/i)"

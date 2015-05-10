@@ -96,17 +96,6 @@ defmodule Paco.Parser do
     end
   end
 
-  defp anchor(r) do
-    source = Regex.source(r)
-    if String.starts_with?(source, "\\A") do
-      r
-    else
-      {:ok, r} = Regex.compile("\\A#{source}")
-      r
-    end
-  end
-
-
   parser_ string(s) do
     fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->
       description = Paco.describe(this)
@@ -187,4 +176,14 @@ defmodule Paco.Parser do
   defp consume("", tail, to, at), do: {to, at, tail}
   defp consume(_, "", _, _), do: :end_of_input
   defp consume(_, _, _, _), do: :failure
+
+  defp anchor(r) do
+    source = Regex.source(r)
+    if String.starts_with?(source, "\\A") do
+      r
+    else
+      {:ok, r} = Regex.compile("\\A#{source}")
+      r
+    end
+  end
 end
