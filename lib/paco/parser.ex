@@ -87,7 +87,10 @@ defmodule Paco.Parser do
         [{from, len}|captures] ->
           to = from + len
           {s, tail} = String.split_at(text, to)
-          captures = captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+          captures = case Regex.names(r) do
+            [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+            _ -> [Regex.named_captures(r, text)]
+          end
           %Paco.Success{from: from, to: to, at: to + 1, tail: tail, result: [s|captures]}
         nil ->
           %Paco.Failure{at: from, what: description}

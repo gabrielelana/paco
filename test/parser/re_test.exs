@@ -18,6 +18,14 @@ defmodule Paco.Parser.ReTest do
     assert parse(re(~r/c(a+)(b*)/), "caaa") == {:ok, ["caaa", "aaa", ""]}
   end
 
+  test "parse with named captures" do
+    assert parse(re(~r/c(?<As>a+)/), "ca") == {:ok, ["ca", %{"As" => "a"}]}
+    assert parse(re(~r/c(?<As>a+)/), "caaa") == {:ok, ["caaa", %{"As" => "aaa"}]}
+    # repeated subpatterns are not supported by regular expressions
+    assert parse(re(~r/c(?<As>a)+/), "caaa") == {:ok, ["caaa", %{"As" => "a"}]}
+    assert parse(re(~r/c(?<As>a+)(?<Bs>b+)/), "cab") == {:ok, ["cab", %{"As" => "a", "Bs" => "b"}]}
+  end
+
   test "describe" do
     assert describe(re(~r/a+/)) == "re(~r/a+/)"
     assert describe(re(~r/a+/i)) == "re(~r/a+/i)"
@@ -32,7 +40,6 @@ defmodule Paco.Parser.ReTest do
       """
   end
 
-  # captures with names
   # check indexes in %Success
   # wait_for in stream mode
   # wait_for could be a function
