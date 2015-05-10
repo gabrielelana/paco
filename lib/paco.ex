@@ -40,7 +40,6 @@ defmodule Paco do
   def explain(%Paco.Parser{} = parser, text) do
     {:ok, pid} = GenEvent.start_link()
     GenEvent.add_handler(pid, Paco.Explainer, [])
-    GenEvent.notify(pid, {:loaded, text})
     parse(parser, text, collector: pid)
     report = GenEvent.call(pid, Paco.Explainer, :report)
     GenEvent.stop(pid)
