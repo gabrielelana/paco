@@ -39,11 +39,13 @@ defmodule Paco do
 
   def explain(%Paco.Parser{} = parser, text) do
     {:ok, pid} = GenEvent.start_link()
-    GenEvent.add_handler(pid, Paco.Explainer, [])
-    parse(parser, text, collector: pid)
-    report = GenEvent.call(pid, Paco.Explainer, :report)
-    GenEvent.stop(pid)
-    report
+    try do
+      GenEvent.add_handler(pid, Paco.Explainer, [])
+      parse(parser, text, collector: pid)
+      GenEvent.call(pid, Paco.Explainer, :report)
+    after
+      GenEvent.stop(pid)
+    end
   end
 
   def stream!(enum, %Paco.Parser{} = parser) do
