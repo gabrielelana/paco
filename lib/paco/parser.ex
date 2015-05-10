@@ -76,6 +76,37 @@ defmodule Paco.Parser do
     end
   end
 
+  parser_ re(r, _opts \\ []) do
+    fn %Paco.Input{at: from, text: text, collector: _collector, stream: _stream} = _input, this ->
+      description = Paco.describe(this)
+      case Regex.run(anchor(r), text, return: :index) do
+        [{from, len}] ->
+          to = from + len
+          {s, tail} = String.split_at(text, to)
+          %Paco.Success{from: from, to: to, at: to + 1, tail: tail, result: s}
+        # [{from, len}|captures] ->
+        #   to = from + len
+        #   {s, tail} = String.split_at(text, to)
+        #   result = Enum.map(captures, fn({from, len}) ->
+        #     String.slice(text, from, len)
+        #   end)
+        #   %Paco.Success{from: from, to: to, at: to + 1, tail: tail, result: s}
+        nil ->
+          %Paco.Failure{at: from, what: description}
+      end
+    end
+  end
+
+  defp anchor(r) do
+    source = Regex.source(r)
+    if String.starts_with?(source, "\\A") do
+      r
+    else
+      {:ok, r} = Regex.compile("\\A#{source}")
+      r
+    end
+  end
+
 
   parser_ string(s) do
     fn %Paco.Input{at: from, text: text, collector: collector, stream: stream} = input, this ->

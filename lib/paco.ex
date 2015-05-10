@@ -63,6 +63,7 @@ defmodule Paco do
 
   def describe("\n"), do: "\\n"
   def describe(string) when is_binary(string), do: string
+  def describe(%Regex{} = r), do: inspect(r)
   def describe(%Paco.Parser{name: name, combine: []}), do: name
   def describe(%Paco.Parser{name: name, combine: parsers}) when is_list(parsers) do
     parsers = parsers |> Enum.map(&describe/1) |> Enum.join(", ")
