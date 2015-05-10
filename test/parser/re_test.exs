@@ -78,33 +78,19 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "notify events on success" do
-    {:ok, collector} = EventRecorder.start_link
-    try do
-      parse(re(~r/a+/), "aaa", collector: collector)
-      events = EventRecorder.events_recorded(collector)
-      assert events == [
-        {:loaded, "aaa"},
-        {:started, "re(~r/a+/)"},
-        {:matched, {0, 1, 1}, {2, 1, 3}},
-      ]
-    after
-      EventRecorder.stop(collector)
-    end
+    assert EventRecorder.on(re(~r/a+/), "aaa") == [
+      {:loaded, "aaa"},
+      {:started, "re(~r/a+/)"},
+      {:matched, {0, 1, 1}, {2, 1, 3}},
+    ]
   end
 
   test "notify events on failure" do
-    {:ok, collector} = EventRecorder.start_link
-    try do
-      parse(re(~r/b+/), "aaa", collector: collector)
-      events = EventRecorder.events_recorded(collector)
-      assert events == [
-        {:loaded, "aaa"},
-        {:started, "re(~r/b+/)"},
-        {:failed, {0, 1, 1}},
-      ]
-    after
-      EventRecorder.stop(collector)
-    end
+    assert EventRecorder.on(re(~r/b+/), "aaa") == [
+      {:loaded, "aaa"},
+      {:started, "re(~r/b+/)"},
+      {:failed, {0, 1, 1}},
+    ]
   end
 
   test "increment indexes for a match" do
