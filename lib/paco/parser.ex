@@ -76,8 +76,8 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ re(r, _opts \\ []) do
-    fn %Paco.Input{at: from, text: text, collector: _collector, stream: _stream} = _input, this ->
+  parser_ re(r, opts \\ []) do
+    fn %Paco.Input{at: from, text: text, collector: _collector, stream: stream} = input, this ->
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
@@ -90,6 +90,19 @@ defmodule Paco.Parser do
             _ -> [Regex.named_captures(r, text)]
           end
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
+        nil when is_pid(stream) ->
+          wait_for = Keyword.get(opts, :wait_for, 1_000)
+          if String.length(text) >= wait_for do
+            %Paco.Failure{at: from, what: description}
+          else
+            send(stream, {self, :more})
+            receive do
+              {:load, more_text} ->
+                this.parse.(%Paco.Input{input|text: text <> more_text}, this)
+              :halt ->
+                %Paco.Failure{at: from, what: description}
+            end
+          end
         nil ->
           %Paco.Failure{at: from, what: description}
       end

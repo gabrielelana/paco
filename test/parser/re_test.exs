@@ -47,6 +47,33 @@ defmodule Paco.Parser.ReTest do
       """
   end
 
+  test "wait for more input in stream mode" do
+    [result] = stream_of("aaab")
+             |> stream(re(~r/a+b/))
+             |> Enum.to_list
+
+    assert result == "aaab"
+  end
+
+  test "don't wait for more input if we have enough" do
+    results = stream_of("aaa")
+             |> stream(re(~r/a+/))
+             |> Enum.to_list
+
+    assert results == ["a", "a", "a"]
+  end
+
+  test "don't wait for more input in stream mode when input is enough" do
+    # we are telling the parser to wait for 3 characters before giving up
+    # return a failure, since 3 characters are not enough (given the input)
+    # to make the parser succeed then the parser fails
+    result = stream_of("aaab")
+             |> stream(re(~r/a+b/, wait_for: 3))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
   test "increment indexes for a match" do
     input = Paco.Input.from("aaabbb")
     parser = re(~r/a+/)
@@ -97,8 +124,9 @@ defmodule Paco.Parser.ReTest do
     assert success.tail == "bbb"
   end
 
-  # wait_for in stream mode
-  # wait_for could be a function
   # notify events
-  # anchoring
+
+  defp stream_of(string) do
+    Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+  end
 end
