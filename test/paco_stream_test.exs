@@ -2,6 +2,7 @@ defmodule Paco.StreamTest do
   use ExUnit.Case, async: true
 
   import Paco.Parser
+  import Paco.Test.Helper
 
   test "parser in stream mode will wait for more input" do
     parser = seq([string("ab"), string("c")])
@@ -185,10 +186,6 @@ defmodule Paco.StreamTest do
   end
 
 
-
-  defp stream_of(string) do
-    Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
-  end
 
   defp count(key), do: count(key, nil)
   defp count(key, _) do

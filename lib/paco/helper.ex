@@ -1,6 +1,5 @@
 defmodule Paco.Helper do
 
-
   defmacro parser_(definition, do: {:__block__, [], _} = block) do
     parser__(definition, do: block)
   end
@@ -12,6 +11,7 @@ defmodule Paco.Helper do
       def unquote(definition), do: unquote(expression)
     end
   end
+
 
   defp parser__({name, _, arguments} = definition, do: block) do
     quote do

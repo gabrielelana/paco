@@ -3,6 +3,7 @@ defmodule Paco.Parser.ReTest do
 
   import Paco
   import Paco.Parser
+  import Paco.Test.Helper
 
   test "parse" do
     assert parse(re(~r/a+/), "a") == {:ok, "a"}
@@ -122,11 +123,5 @@ defmodule Paco.Parser.ReTest do
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
     assert success.tail == "bbb"
-  end
-
-  # notify events
-
-  defp stream_of(string) do
-    Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
   end
 end
