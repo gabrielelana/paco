@@ -4,6 +4,8 @@ defmodule Paco.Parser.StringTest do
   import Paco
   import Paco.Parser
 
+  alias Paco.Test.Helper
+
   test "parse string" do
     assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
   end
@@ -47,6 +49,22 @@ defmodule Paco.Parser.StringTest do
       Failed to match string(aaa) at 1:1
       """
     }
+  end
+
+  test "notify events on success" do
+    assert Helper.events_notified_by(string("aaa"), "aaa") == [
+      {:loaded, "aaa"},
+      {:started, "string(aaa)"},
+      {:matched, {0, 1, 1}, {2, 1, 3}},
+    ]
+  end
+
+  test "notify events on failure" do
+    assert Helper.events_notified_by(string("bbb"), "aaa") == [
+      {:loaded, "aaa"},
+      {:started, "string(bbb)"},
+      {:failed, {0, 1, 1}},
+    ]
   end
 
   test "increment indexes for a match" do
