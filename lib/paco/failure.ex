@@ -3,7 +3,9 @@ defmodule Paco.Failure do
                          what: String.t,
                          because: t | nil}
 
-  defstruct at: {0, 0, 0}, what: "", because: nil
+  defexception at: {0, 0, 0}, what: "", because: nil
+
+  def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
   def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}, :flat) do

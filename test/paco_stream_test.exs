@@ -68,6 +68,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one failure when raise on failure is true" do
+    # Should have been a Paco.Failure exception but streams catch and re-raise exceptions
     assert_raise RuntimeError,
                  "Failed to match string(a) at 1:1\n",
                  fn ->
@@ -78,6 +79,7 @@ defmodule Paco.StreamTest do
   end
 
   test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
+    # Should have been a Paco.Failure exception but streams catch and re-raise exceptions
     assert_raise RuntimeError,
                  "Failed to match string(a) at 1:1\n",
                  fn ->

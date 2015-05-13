@@ -29,7 +29,7 @@ defmodule Paco do
       {:ok, result} ->
         result
       {:error, failure} ->
-        raise Error, message: Paco.Failure.format(failure)
+        raise failure
     end
   end
 

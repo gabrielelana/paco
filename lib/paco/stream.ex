@@ -42,7 +42,7 @@ defmodule Paco.Stream do
         case on_failure do
           :halt -> {:halt, failure}
           :yield -> {[{:error, failure}], {start_link(parser), parser, on_failure}}
-          :raise -> raise RuntimeError, message: failure
+          :raise -> raise failure
         end
     end
   end
