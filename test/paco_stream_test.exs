@@ -61,7 +61,7 @@ defmodule Paco.StreamTest do
 
   test "parse stream of one failure when continue on failure is true" do
     [failure] = stream_of("e")
-                |> Paco.Stream.parse(string("a"), on_failure: :continue)
+                |> Paco.Stream.parse(string("a"), on_failure: :yield)
                 |> Enum.to_list
 
     assert failure == {:error, "Failed to match string(a) at 1:1\n"}
@@ -101,7 +101,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")
-                         |> Paco.Stream.parse(parser, on_failure: :continue)
+                         |> Paco.Stream.parse(parser, on_failure: :yield)
                          |> Enum.to_list
 
     assert failure == {:error,

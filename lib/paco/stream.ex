@@ -41,7 +41,7 @@ defmodule Paco.Stream do
       {^running_parser, {:error, failure}} ->
         case on_failure do
           :halt -> {:halt, failure}
-          :continue -> {[{:error, failure}], {start_link(parser), parser, on_failure}}
+          :yield -> {[{:error, failure}], {start_link(parser), parser, on_failure}}
           :raise -> raise RuntimeError, message: failure
         end
     end
