@@ -6,8 +6,8 @@ defmodule PacoTest do
   defmodule UsePacoLastParserIsTheRoot do
     use Paco
 
-    parser aaa, do: string("aaa")
-    parser bbb, do: string("bbb")
+    parser aaa, do: literal("aaa")
+    parser bbb, do: literal("bbb")
   end
 
   test "use paco, last parser is the root" do
@@ -19,8 +19,8 @@ defmodule PacoTest do
     use Paco
 
     root aaa
-    parser aaa, do: string("aaa")
-    parser bbb, do: string("bbb")
+    parser aaa, do: literal("aaa")
+    parser bbb, do: literal("bbb")
   end
 
   test "use paco, mark root with root macro" do
@@ -31,8 +31,8 @@ defmodule PacoTest do
   defmodule UsePacoMarkRootWithRootMacroInline do
     use Paco
 
-    root parser aaa, do: string("aaa")
-    parser bbb, do: string("bbb")
+    root parser aaa, do: literal("aaa")
+    parser bbb, do: literal("bbb")
   end
 
   test "use paco, mark root with root macro inline" do
@@ -44,8 +44,8 @@ defmodule PacoTest do
     use Paco
 
     root parser all, do: sequence_of([aaa, bbb])
-    parser aaa, do: string("aaa")
-    parser bbb, do: string("bbb")
+    parser aaa, do: literal("aaa")
+    parser bbb, do: literal("bbb")
   end
 
   test "describe" do

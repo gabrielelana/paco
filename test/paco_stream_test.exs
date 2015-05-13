@@ -6,7 +6,7 @@ defmodule Paco.StreamTest do
 
   test "parser in stream mode will wait for more data" do
     stream = self
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
     parser_process = spawn_link(
       fn ->
         send(stream, {self, Paco.parse(parser, "", [stream: stream])})
@@ -28,7 +28,7 @@ defmodule Paco.StreamTest do
 
   test "parser in stream mode can be stopped when waiting for more data" do
     stream = self
-    parser = sequence_of([string("a"), string("b")])
+    parser = sequence_of([literal("a"), literal("b")])
     parser_process = spawn_link(
       fn ->
         send(stream, {self, Paco.parse(parser, "", [stream: stream])})
@@ -42,7 +42,7 @@ defmodule Paco.StreamTest do
     send(parser_process, :halt)
     assert_receive {^parser_process, {:error,
       """
-      Failed to match sequence_of([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
+      Failed to match sequence_of([literal(a), literal(b)]) at 1:1, because it failed to match literal(b) at 1:2
       """
     }}
 
@@ -50,7 +50,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser)
@@ -60,7 +60,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success with tagged format" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser, format: :tagged)
@@ -70,7 +70,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success with raw format" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser, format: :raw)
@@ -80,7 +80,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one failure" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     results = stream_of("abd")
               |> Paco.Stream.parse(parser)
@@ -91,34 +91,34 @@ defmodule Paco.StreamTest do
 
   test "parse stream of one failure with yield on failure and tagged format (default)" do
     [failure] = stream_of("e")
-                |> Paco.Stream.parse(string("a"), on_failure: :yield)
+                |> Paco.Stream.parse(literal("a"), on_failure: :yield)
                 |> Enum.to_list
 
-    assert failure == {:error, "Failed to match string(a) at 1:1\n"}
+    assert failure == {:error, "Failed to match literal(a) at 1:1\n"}
   end
 
   test "parse stream of one failure with raise on failure" do
     assert_raise Paco.Failure,
-                 "Failed to match string(a) at 1:1\n",
+                 "Failed to match literal(a) at 1:1\n",
                  fn ->
                    stream_of("e")
-                   |> Paco.Stream.parse(string("a"), on_failure: :raise)
+                   |> Paco.Stream.parse(literal("a"), on_failure: :raise)
                    |> Enum.to_list
                  end
   end
 
   test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
     assert_raise Paco.Failure,
-                 "Failed to match string(a) at 1:1\n",
+                 "Failed to match literal(a) at 1:1\n",
                  fn ->
                    stream_of("e")
-                   |> Paco.Stream.parse!(string("a"))
+                   |> Paco.Stream.parse!(literal("a"))
                    |> Enum.to_list
                  end
   end
 
   test "parse stream of more successes" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     results = stream_of("abcabc")
               |> Paco.Stream.parse(parser)
@@ -128,7 +128,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of more successes with tagged format option" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     results = stream_of("abcabc")
               |> Paco.Stream.parse(parser, format: :tagged)
@@ -138,7 +138,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse a success after a failure with yield on failure and with tagged format option (default)" do
-    parser = sequence_of([string("ab"), string("c")])
+    parser = sequence_of([literal("ab"), literal("c")])
 
     [failure, success] = stream_of("abdabc")
                          |> Paco.Stream.parse(parser, on_failure: :yield)
@@ -146,7 +146,7 @@ defmodule Paco.StreamTest do
 
     assert failure == {:error,
       """
-      Failed to match sequence_of([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
+      Failed to match sequence_of([literal(ab), literal(c)]) at 1:1, because it failed to match literal(c) at 1:3
       """
     }
     assert success == {:ok, ["ab", "c"]}
@@ -155,7 +155,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream halts the pipe as first command" do
     stream = stream_of("abc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.Stream.parse(string("a"))
+             |> Paco.Stream.parse(literal("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
@@ -176,7 +176,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream suspend the pipe as first command" do
     stream = stream_of("abc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.Stream.parse(string("a"))
+             |> Paco.Stream.parse(literal("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
@@ -199,7 +199,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream halts" do
     results = stream_of("abcabc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.Stream.parse(string("abc"))
+             |> Paco.Stream.parse(literal("abc"))
              |> Stream.each(&count(:downstream_called, &1))
              |> Stream.take(1)
              |> Enum.to_list
@@ -213,7 +213,7 @@ defmodule Paco.StreamTest do
     results = stream_of("abcabc")
              |> Stream.each(&count(:upstream_called, &1))
              |> Stream.take(4)
-             |> Paco.Stream.parse(string("abc"))
+             |> Paco.Stream.parse(literal("abc"))
              |> Stream.each(&count(:downstream_called, &1))
              |> Enum.to_list
 

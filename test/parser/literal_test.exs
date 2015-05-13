@@ -1,4 +1,4 @@
-defmodule Paco.Parser.StringTest do
+defmodule Paco.Parser.LiteralTest do
   use ExUnit.Case, async: true
 
   import Paco
@@ -6,69 +6,69 @@ defmodule Paco.Parser.StringTest do
 
   alias Paco.Test.Helper
 
-  test "parse string" do
-    assert parse(string("aaa"), "aaa") == {:ok, "aaa"}
+  test "parse literal" do
+    assert parse(literal("aaa"), "aaa") == {:ok, "aaa"}
   end
 
-  test "parse multibyte string" do
-    assert parse(string("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
+  test "parse multibyte literal" do
+    assert parse(literal("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
   end
 
-  test "parse empty string" do
-    assert parse(string(""), "") == {:ok, ""}
+  test "parse empty literal" do
+    assert parse(literal(""), "") == {:ok, ""}
   end
 
   test "describe" do
-    assert describe(string("a")) == "string(a)"
-    assert describe(string("\n")) == "string(\\n)"
+    assert describe(literal("a")) == "literal(a)"
+    assert describe(literal("\n")) == "literal(\\n)"
   end
 
   test "skipped parsers should be removed from result" do
-    assert parse(skip(string("a")), "a") == {:ok, []}
+    assert parse(skip(literal("a")), "a") == {:ok, []}
   end
 
-  test "fail to parse a string" do
-    assert parse(string("aaa"), "bbb") == {:error,
+  test "fail to parse a literal" do
+    assert parse(literal("aaa"), "bbb") == {:error,
       """
-      Failed to match string(aaa) at 1:1
+      Failed to match literal(aaa) at 1:1
       """
     }
   end
 
   test "skip doesn't influece failures" do
-    assert parse(skip(string("aaa")), "bbb") == {:error,
+    assert parse(skip(literal("aaa")), "bbb") == {:error,
       """
-      Failed to match string(aaa) at 1:1
+      Failed to match literal(aaa) at 1:1
       """
     }
   end
 
-  test "fail to parse empty string" do
-    assert parse(string("aaa"), "") == {:error,
+  test "fail to parse empty literal" do
+    assert parse(literal("aaa"), "") == {:error,
       """
-      Failed to match string(aaa) at 1:1
+      Failed to match literal(aaa) at 1:1
       """
     }
   end
 
   test "notify events on success" do
-    assert Helper.events_notified_by(string("aaa"), "aaa") == [
+    assert Helper.events_notified_by(literal("aaa"), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "string(aaa)"},
+      {:started, "literal(aaa)"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
   end
 
   test "notify events on failure" do
-    assert Helper.events_notified_by(string("bbb"), "aaa") == [
+    assert Helper.events_notified_by(literal("bbb"), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "string(bbb)"},
+      {:started, "literal(bbb)"},
       {:failed, {0, 1, 1}},
     ]
   end
 
   test "increment indexes for a match" do
-    parser = string("aaa")
+    parser = literal("aaa")
     success = parser.parse.(Paco.State.from("aaa"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
@@ -77,7 +77,7 @@ defmodule Paco.Parser.StringTest do
   end
 
   test "increment indexes for a match with newlines" do
-    parser = string("a\na\na\n")
+    parser = literal("a\na\na\n")
     success = parser.parse.(Paco.State.from("a\na\na\nbbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {5, 3, 2}
@@ -86,7 +86,7 @@ defmodule Paco.Parser.StringTest do
   end
 
   test "increment indexes for a single character match" do
-    parser = string("a")
+    parser = literal("a")
     success = parser.parse.(Paco.State.from("aaa"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
@@ -95,7 +95,7 @@ defmodule Paco.Parser.StringTest do
   end
 
   test "increment indexes for an empty match" do
-    parser = string("")
+    parser = literal("")
     success = parser.parse.(Paco.State.from("aaa"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}

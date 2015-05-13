@@ -66,12 +66,12 @@ defmodule Paco.ExplainTest do
   test "report matched without consuming any input (empty match)" do
     events = [
       {:loaded, ""},
-      {:started, "string()"},
+      {:started, "literal()"},
       {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}}
     ]
     assert report(events) ==
       """
-      Matched string() from 1:1 to 1:1
+      Matched literal() from 1:1 to 1:1
       1>
          ~
       """
@@ -138,98 +138,98 @@ defmodule Paco.ExplainTest do
   end
 
   test "explain success" do
-    assert explain(sequence_of([string("aaa"), string("bbb")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of([string(aaa), string(bbb)]) from 1:1 to 1:6
+      Matched sequence_of([literal(aaa), literal(bbb)]) from 1:1 to 1:6
       1> aaabbb
          ^    ^
-      └─ Matched string(aaa) from 1:1 to 1:3
+      └─ Matched literal(aaa) from 1:1 to 1:3
          1> aaabbb
             ^ ^
-      └─ Matched string(bbb) from 1:4 to 1:6
+      └─ Matched literal(bbb) from 1:4 to 1:6
          1> aaabbb
                ^ ^
       """}
   end
 
   test "explain success that didn't consume any text" do
-    assert explain(string(""), "aaabbb") == {:ok,
+    assert explain(literal(""), "aaabbb") == {:ok,
       """
-      Matched string() from 1:1 to 1:1
+      Matched literal() from 1:1 to 1:1
       1> aaabbb
          ~
       """}
-    assert explain(sequence_of([string("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of([string()]) from 1:1 to 1:1
+      Matched sequence_of([literal()]) from 1:1 to 1:1
       1> aaabbb
          ~
-      └─ Matched string() from 1:1 to 1:1
+      └─ Matched literal() from 1:1 to 1:1
          1> aaabbb
             ~
       """}
-    assert explain(sequence_of([string("a")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("a")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of([string(a)]) from 1:1 to 1:1
+      Matched sequence_of([literal(a)]) from 1:1 to 1:1
       1> aaabbb
          ^
-      └─ Matched string(a) from 1:1 to 1:1
+      └─ Matched literal(a) from 1:1 to 1:1
          1> aaabbb
             ^
       """}
-    assert explain(sequence_of([string("a"), string("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("a"), literal("")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of([string(a), string()]) from 1:1 to 1:2
+      Matched sequence_of([literal(a), literal()]) from 1:1 to 1:2
       1> aaabbb
          ^~
-      └─ Matched string(a) from 1:1 to 1:1
+      └─ Matched literal(a) from 1:1 to 1:1
          1> aaabbb
             ^
-      └─ Matched string() from 1:2 to 1:2
+      └─ Matched literal() from 1:2 to 1:2
          1> aaabbb
              ~
       """}
   end
 
   test "explain success on multiple lines" do
-    assert explain(sequence_of([string("aaa"), string("\n"), string("bbb")]), "aaa\nbbb") == {:ok,
+    assert explain(sequence_of([literal("aaa"), literal("\n"), literal("bbb")]), "aaa\nbbb") == {:ok,
       """
-      Matched sequence_of([string(aaa), string(\\n), string(bbb)]) from 1:1 to 2:3
+      Matched sequence_of([literal(aaa), literal(\\n), literal(bbb)]) from 1:1 to 2:3
       1> aaa
          ^
       2> bbb
            ^
-      └─ Matched string(aaa) from 1:1 to 1:3
+      └─ Matched literal(aaa) from 1:1 to 1:3
          1> aaa
             ^ ^
-      └─ Matched string(\\n) from 1:4 to 1:4
+      └─ Matched literal(\\n) from 1:4 to 1:4
          1> aaa
                ^
-      └─ Matched string(bbb) from 2:1 to 2:3
+      └─ Matched literal(bbb) from 2:1 to 2:3
          2> bbb
             ^ ^
       """}
   end
 
   test "explain failure" do
-    assert explain(sequence_of([string("aaa"), string("bbb")]), "aaaccc") == {:ok,
+    assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaaccc") == {:ok,
       """
-      Failed to match sequence_of([string(aaa), string(bbb)]) at 1:1
+      Failed to match sequence_of([literal(aaa), literal(bbb)]) at 1:1
       1> aaaccc
          ^
-      └─ Matched string(aaa) from 1:1 to 1:3
+      └─ Matched literal(aaa) from 1:1 to 1:3
          1> aaaccc
             ^ ^
-      └─ Failed to match string(bbb) at 1:4
+      └─ Failed to match literal(bbb) at 1:4
          1> aaaccc
                ^
       """}
   end
 
-  test "explain failure on empty string" do
-    assert explain(string("aaa"), "") == {:ok,
+  test "explain failure on empty literal" do
+    assert explain(literal("aaa"), "") == {:ok,
       """
-      Failed to match string(aaa) at 1:1
+      Failed to match literal(aaa) at 1:1
       1>
          ^
       """}

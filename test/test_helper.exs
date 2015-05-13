@@ -1,8 +1,8 @@
 ExUnit.start()
 
 defmodule Paco.Test.Helper do
-  def stream_of(string) do
-    Stream.unfold(string, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
+  def stream_of(text) do
+    Stream.unfold(text, fn <<h::utf8, t::binary>> -> {<<h>>, t}; <<>> -> nil end)
   end
 
   def count(key), do: count(key, nil)
