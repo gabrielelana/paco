@@ -1,26 +1,5 @@
 defmodule Paco do
 
-  defmacro __using__(_) do
-    quote do
-      import Paco.Helper
-      import Paco.Parser
-
-      Module.register_attribute(__MODULE__, :paco_root_parser, accumulate: false)
-      Module.register_attribute(__MODULE__, :paco_parsers, accumulate: true)
-
-      @before_compile Paco
-    end
-  end
-
-  defp format(%Paco.Success{} = success, how), do: Paco.Success.format(success, how)
-  defp format(%Paco.Failure{} = failure, how), do: Paco.Failure.format(failure, how)
-
-  defp deliver(result, nil), do: result
-  defp deliver(result, stream) when is_pid(stream), do: send(stream, {self, result})
-
-  defp handle_failure(%Paco.Failure{} = failure, :raise), do: raise failure
-  defp handle_failure(result, _), do: result
-
   def parse!(%Paco.Parser{} = parser, text, opts \\ []) do
     parse(parser, text, Keyword.merge(opts, [on_failure: :raise]))
   end
@@ -29,7 +8,6 @@ defmodule Paco do
     parser.parse.(Paco.Input.from(text, opts), parser)
       |> handle_failure(Keyword.get(opts, :on_failure, :yield))
       |> format(Keyword.get(opts, :format, :flat_tagged))
-      |> deliver(Keyword.get(opts, :stream, nil))
   end
 
   def explain(%Paco.Parser{} = parser, text) do
@@ -55,6 +33,18 @@ defmodule Paco do
     "#{name}(#{describe(parser)})"
   end
 
+  @doc false
+  defmacro __using__(_) do
+    quote do
+      import Paco.Helper
+      import Paco.Parser
+
+      Module.register_attribute(__MODULE__, :paco_root_parser, accumulate: false)
+      Module.register_attribute(__MODULE__, :paco_parsers, accumulate: true)
+
+      @before_compile Paco
+    end
+  end
 
   @doc false
   defmacro __before_compile__(env) do
@@ -73,4 +63,10 @@ defmodule Paco do
   defp pick_root_parser_between(nil, [_|pns]), do: pick_root_parser_between(nil, pns)
   defp pick_root_parser_between(pn, _) when is_atom(pn), do: pn
   defp pick_root_parser_between(pn, _) when is_binary(pn), do: String.to_atom(pn)
+
+  defp format(%Paco.Success{} = success, how), do: Paco.Success.format(success, how)
+  defp format(%Paco.Failure{} = failure, how), do: Paco.Failure.format(failure, how)
+
+  defp handle_failure(%Paco.Failure{} = failure, :raise), do: raise failure
+  defp handle_failure(result, _), do: result
 end

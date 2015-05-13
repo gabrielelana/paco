@@ -4,40 +4,50 @@ defmodule Paco.StreamTest do
   import Paco.Parser
   import Paco.Test.Helper
 
-  test "parser in stream mode will wait for more input" do
-    parser = seq([string("ab"), string("c")])
-    parser_process = spawn_link(Paco, :parse, [parser, "", [stream: self]])
-    assert_receive {^parser_process, :more}
+  # test "parser in stream mode will wait for more input" do
+  #   stream = self
+  #   parser = seq([string("ab"), string("c")])
+  #   parser_process = spawn_link(
+  #     fn ->
+  #       send(stream, {self, Paco.parse(parser, "", [stream: stream])})
+  #     end
+  #   )
+  #   assert_receive {^parser_process, :more}
 
-    send(parser_process, {:load, "a"})
-    assert_receive {^parser_process, :more}
+  #   send(parser_process, {:load, "a"})
+  #   assert_receive {^parser_process, :more}
 
-    send(parser_process, {:load, "b"})
-    assert_receive {^parser_process, :more}
+  #   send(parser_process, {:load, "b"})
+  #   assert_receive {^parser_process, :more}
 
-    send(parser_process, {:load, "c"})
-    assert_receive {^parser_process, {:ok, ["ab", "c"]}}
+  #   send(parser_process, {:load, "c"})
+  #   assert_receive {^parser_process, {:ok, ["ab", "c"]}}
 
-    refute Process.alive?(parser_process)
-  end
+  #   refute Process.alive?(parser_process)
+  # end
 
-  test "parser in stream mode can be stopped when waiting for more input" do
-    parser = seq([string("a"), string("b")])
-    parser_process = spawn_link(Paco, :parse, [parser, "", [stream: self]])
-    assert_receive {^parser_process, :more}
+  # test "parser in stream mode can be stopped when waiting for more input" do
+  #   stream = self
+  #   parser = seq([string("a"), string("b")])
+  #   parser_process = spawn_link(
+  #     fn ->
+  #       send(stream, {self, Paco.parse(parser, "", [stream: stream])})
+  #     end
+  #   )
+  #   assert_receive {^parser_process, :more}
 
-    send(parser_process, {:load, "a"})
-    assert_receive {^parser_process, :more}
+  #   send(parser_process, {:load, "a"})
+  #   assert_receive {^parser_process, :more}
 
-    send(parser_process, :halt)
-    assert_receive {^parser_process, {:error,
-      """
-      Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
-      """
-    }}
+  #   send(parser_process, :halt)
+  #   assert_receive {^parser_process, {:error,
+  #     """
+  #     Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
+  #     """
+  #   }}
 
-    refute Process.alive?(parser_process)
-  end
+  #   refute Process.alive?(parser_process)
+  # end
 
   test "parse stream of one success" do
     parser = seq([string("ab"), string("c")])
@@ -47,6 +57,26 @@ defmodule Paco.StreamTest do
                |> Enum.to_list
 
     assert result == ["ab", "c"]
+  end
+
+  test "parse stream of one success with flat_tagged format" do
+    parser = seq([string("ab"), string("c")])
+
+    [result] = stream_of("abc")
+               |> Paco.Stream.parse(parser, format: :flat_tagged)
+               |> Enum.to_list
+
+    assert result == {:ok, ["ab", "c"]}
+  end
+
+  test "parse stream of one success with raw format" do
+    parser = seq([string("ab"), string("c")])
+
+    [result] = stream_of("abc")
+               |> Paco.Stream.parse(parser, format: :raw)
+               |> Enum.to_list
+
+    assert %Paco.Success{} = result
   end
 
   test "parse stream of one failure" do
@@ -59,7 +89,7 @@ defmodule Paco.StreamTest do
     assert results == []
   end
 
-  test "parse stream of one failure when continue on failure is true" do
+  test "parse stream of one failure with yield on failure and flat_tagged format (default)" do
     [failure] = stream_of("e")
                 |> Paco.Stream.parse(string("a"), on_failure: :yield)
                 |> Enum.to_list
@@ -67,9 +97,8 @@ defmodule Paco.StreamTest do
     assert failure == {:error, "Failed to match string(a) at 1:1\n"}
   end
 
-  test "parse stream of one failure when raise on failure is true" do
-    # Should have been a Paco.Failure exception but streams catch and re-raise exceptions
-    assert_raise RuntimeError,
+  test "parse stream of one failure with raise on failure" do
+    assert_raise Paco.Failure,
                  "Failed to match string(a) at 1:1\n",
                  fn ->
                    stream_of("e")
@@ -79,8 +108,7 @@ defmodule Paco.StreamTest do
   end
 
   test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
-    # Should have been a Paco.Failure exception but streams catch and re-raise exceptions
-    assert_raise RuntimeError,
+    assert_raise Paco.Failure,
                  "Failed to match string(a) at 1:1\n",
                  fn ->
                    stream_of("e")
@@ -99,7 +127,17 @@ defmodule Paco.StreamTest do
     assert results == [["ab", "c"], ["ab", "c"]]
   end
 
-  test "parse a success after a failure" do
+  test "parse stream of more successes with flat_tagged format option" do
+    parser = seq([string("ab"), string("c")])
+
+    results = stream_of("abcabc")
+              |> Paco.Stream.parse(parser, format: :flat_tagged)
+              |> Enum.to_list
+
+    assert results == [{:ok, ["ab", "c"]}, {:ok, ["ab", "c"]}]
+  end
+
+  test "parse a success after a failure with yield on failure and with flat_tagged format option (default)" do
     parser = seq([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")
@@ -111,7 +149,7 @@ defmodule Paco.StreamTest do
       Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
       """
     }
-    assert success == ["ab", "c"]
+    assert success == {:ok, ["ab", "c"]}
   end
 
   test "parse stream when downstream halts the pipe as first command" do
