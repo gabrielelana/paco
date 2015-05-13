@@ -43,7 +43,7 @@ defmodule PacoTest do
   defmodule UsePacoReferenceOtherParsers do
     use Paco
 
-    root parser all, do: seq([aaa, bbb])
+    root parser all, do: sequence_of([aaa, bbb])
     parser aaa, do: string("aaa")
     parser bbb, do: string("bbb")
   end

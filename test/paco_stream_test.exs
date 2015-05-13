@@ -6,7 +6,7 @@ defmodule Paco.StreamTest do
 
   test "parser in stream mode will wait for more data" do
     stream = self
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
     parser_process = spawn_link(
       fn ->
         send(stream, {self, Paco.parse(parser, "", [stream: stream])})
@@ -28,7 +28,7 @@ defmodule Paco.StreamTest do
 
   test "parser in stream mode can be stopped when waiting for more data" do
     stream = self
-    parser = seq([string("a"), string("b")])
+    parser = sequence_of([string("a"), string("b")])
     parser_process = spawn_link(
       fn ->
         send(stream, {self, Paco.parse(parser, "", [stream: stream])})
@@ -42,7 +42,7 @@ defmodule Paco.StreamTest do
     send(parser_process, :halt)
     assert_receive {^parser_process, {:error,
       """
-      Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
+      Failed to match sequence_of([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
     }}
 
@@ -50,7 +50,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser)
@@ -60,7 +60,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success with tagged format" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser, format: :tagged)
@@ -70,7 +70,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one success with raw format" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     [result] = stream_of("abc")
                |> Paco.Stream.parse(parser, format: :raw)
@@ -80,7 +80,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of one failure" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     results = stream_of("abd")
               |> Paco.Stream.parse(parser)
@@ -118,7 +118,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of more successes" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     results = stream_of("abcabc")
               |> Paco.Stream.parse(parser)
@@ -128,7 +128,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse stream of more successes with tagged format option" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     results = stream_of("abcabc")
               |> Paco.Stream.parse(parser, format: :tagged)
@@ -138,7 +138,7 @@ defmodule Paco.StreamTest do
   end
 
   test "parse a success after a failure with yield on failure and with tagged format option (default)" do
-    parser = seq([string("ab"), string("c")])
+    parser = sequence_of([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")
                          |> Paco.Stream.parse(parser, on_failure: :yield)
@@ -146,7 +146,7 @@ defmodule Paco.StreamTest do
 
     assert failure == {:error,
       """
-      Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
+      Failed to match sequence_of([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
       """
     }
     assert success == {:ok, ["ab", "c"]}

@@ -138,9 +138,9 @@ defmodule Paco.ExplainTest do
   end
 
   test "explain success" do
-    assert explain(seq([string("aaa"), string("bbb")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([string("aaa"), string("bbb")]), "aaabbb") == {:ok,
       """
-      Matched seq([string(aaa), string(bbb)]) from 1:1 to 1:6
+      Matched sequence_of([string(aaa), string(bbb)]) from 1:1 to 1:6
       1> aaabbb
          ^    ^
       └─ Matched string(aaa) from 1:1 to 1:3
@@ -159,27 +159,27 @@ defmodule Paco.ExplainTest do
       1> aaabbb
          ~
       """}
-    assert explain(seq([string("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([string("")]), "aaabbb") == {:ok,
       """
-      Matched seq([string()]) from 1:1 to 1:1
+      Matched sequence_of([string()]) from 1:1 to 1:1
       1> aaabbb
          ~
       └─ Matched string() from 1:1 to 1:1
          1> aaabbb
             ~
       """}
-    assert explain(seq([string("a")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([string("a")]), "aaabbb") == {:ok,
       """
-      Matched seq([string(a)]) from 1:1 to 1:1
+      Matched sequence_of([string(a)]) from 1:1 to 1:1
       1> aaabbb
          ^
       └─ Matched string(a) from 1:1 to 1:1
          1> aaabbb
             ^
       """}
-    assert explain(seq([string("a"), string("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([string("a"), string("")]), "aaabbb") == {:ok,
       """
-      Matched seq([string(a), string()]) from 1:1 to 1:2
+      Matched sequence_of([string(a), string()]) from 1:1 to 1:2
       1> aaabbb
          ^~
       └─ Matched string(a) from 1:1 to 1:1
@@ -192,9 +192,9 @@ defmodule Paco.ExplainTest do
   end
 
   test "explain success on multiple lines" do
-    assert explain(seq([string("aaa"), string("\n"), string("bbb")]), "aaa\nbbb") == {:ok,
+    assert explain(sequence_of([string("aaa"), string("\n"), string("bbb")]), "aaa\nbbb") == {:ok,
       """
-      Matched seq([string(aaa), string(\\n), string(bbb)]) from 1:1 to 2:3
+      Matched sequence_of([string(aaa), string(\\n), string(bbb)]) from 1:1 to 2:3
       1> aaa
          ^
       2> bbb
@@ -212,9 +212,9 @@ defmodule Paco.ExplainTest do
   end
 
   test "explain failure" do
-    assert explain(seq([string("aaa"), string("bbb")]), "aaaccc") == {:ok,
+    assert explain(sequence_of([string("aaa"), string("bbb")]), "aaaccc") == {:ok,
       """
-      Failed to match seq([string(aaa), string(bbb)]) at 1:1
+      Failed to match sequence_of([string(aaa), string(bbb)]) at 1:1
       1> aaaccc
          ^
       └─ Matched string(aaa) from 1:1 to 1:3

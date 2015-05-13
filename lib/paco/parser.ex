@@ -17,8 +17,10 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ seq([]), do: (raise ArgumentError, message: "Must give at least one parser to seq combinator")
-  parser_ seq(parsers) do
+  parser_ sequence_of([]) do
+    raise ArgumentError, message: "Must give at least one parser to sequence_of combinator"
+  end
+  parser_ sequence_of(parsers) do
     fn %Paco.State{at: from, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, {state, from, []},
