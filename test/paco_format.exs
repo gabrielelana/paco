@@ -5,21 +5,21 @@ defmodule PacoFormatTest do
   import Paco.Parser
 
   test "flat_tagged format of success (default)" do
-    assert parse(string("a"), "a", format: :flat_tagged) == {:ok, "a"}
-    assert parse(string("a"), "a") == {:ok, "a"}
+    assert {:ok, <<_::binary>>} = parse(string("a"), "a", format: :flat_tagged)
+    assert {:ok, <<_::binary>>} = parse(string("a"), "a")
   end
 
   test "flat_tagged format of failure (default)" do
-    assert parse(string("a"), "b", format: :flat_tagged) == {:error, "Failed to match string(a) at 1:1\n"}
-    assert parse(string("a"), "b") == {:error, "Failed to match string(a) at 1:1\n"}
+    assert {:error, <<_::binary>>} = parse(string("a"), "b", format: :flat_tagged)
+    assert {:error, <<_::binary>>} = parse(string("a"), "b")
   end
 
   test "flat format of success" do
-    assert parse(string("a"), "a", format: :flat) == "a"
+    assert <<_::binary>> = parse(string("a"), "a", format: :flat)
   end
 
   test "flat format of failure" do
-    assert parse(string("a"), "b", format: :flat) == "Failed to match string(a) at 1:1\n"
+    assert <<_::binary>> = parse(string("a"), "b", format: :flat)
   end
 
   test "raw format of success" do
