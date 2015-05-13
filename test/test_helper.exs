@@ -11,20 +11,21 @@ defmodule Paco.Test.Helper do
   end
 
   def counted(key), do: Process.get(key, 0)
+
+  def events_notified_by(parser, text) do
+    alias Paco.Test.EventRecorder
+    {:ok, collector} = EventRecorder.start_link
+    try do
+      Paco.parse(parser, text, collector: collector)
+      EventRecorder.events_recorded(collector)
+    after
+      EventRecorder.stop(collector)
+    end
+  end
 end
 
 defmodule Paco.Test.EventRecorder do
   use GenEvent
-
-  def on(parser, state) do
-    {:ok, collector} = start_link
-    try do
-      Paco.parse(parser, state, collector: collector)
-      events_recorded(collector)
-    after
-      stop(collector)
-    end
-  end
 
   def start_link do
     {:ok, pid} = GenEvent.start_link()

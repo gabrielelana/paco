@@ -5,7 +5,6 @@ defmodule Paco.Parser.ReTest do
   import Paco.Parser
 
   alias Paco.Test.Helper
-  alias Paco.Test.EventRecorder
 
   test "parse" do
     assert parse(re(~r/a+/), "a") == {:ok, "a"}
@@ -78,7 +77,7 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "notify events on success" do
-    assert EventRecorder.on(re(~r/a+/), "aaa") == [
+    assert Helper.events_notified_by(re(~r/a+/), "aaa") == [
       {:loaded, "aaa"},
       {:started, "re(~r/a+/)"},
       {:matched, {0, 1, 1}, {2, 1, 3}},
@@ -86,7 +85,7 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "notify events on failure" do
-    assert EventRecorder.on(re(~r/b+/), "aaa") == [
+    assert Helper.events_notified_by(re(~r/b+/), "aaa") == [
       {:loaded, "aaa"},
       {:started, "re(~r/b+/)"},
       {:failed, {0, 1, 1}},
