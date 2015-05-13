@@ -62,7 +62,7 @@ defmodule Paco.StreamTest do
 
   test "parse stream of one failure when continue on failure is true" do
     [failure] = stream_of("e")
-                |> Paco.Stream.parse(string("a"), continue_on_failure: true)
+                |> Paco.Stream.parse(string("a"), on_failure: :continue)
                 |> Enum.to_list
 
     assert Paco.Failure.format(failure) == "Failed to match string(a) at 1:1\n"
@@ -73,12 +73,12 @@ defmodule Paco.StreamTest do
                  "Failed to match string(a) at 1:1\n",
                  fn ->
                    stream_of("e")
-                   |> Paco.Stream.parse(string("a"), raise_on_failure: true)
+                   |> Paco.Stream.parse(string("a"), on_failure: :raise)
                    |> Enum.to_list
                  end
   end
 
-  test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, raise_on_failure: true)" do
+  test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
     assert_raise RuntimeError,
                  "Failed to match string(a) at 1:1\n",
                  fn ->
@@ -102,7 +102,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")
-                         |> Paco.Stream.parse(parser, continue_on_failure: true)
+                         |> Paco.Stream.parse(parser, on_failure: :continue)
                          |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==

@@ -1,20 +1,11 @@
 defmodule Paco.Stream do
 
-  def parse(enum, %Paco.Parser{} = parser, opts \\ []) do
-    cof = Keyword.get(opts, :continue_on_failure, false)
-    rof = Keyword.get(opts, :raise_on_failure, false)
-    case {cof, rof} do
-      {false, false} -> from(enum, parser, :halt)
-      {_, true} -> from(enum, parser, :raise)
-      {_, _} -> from(enum, parser, :continue)
-    end
+  def parse!(upstream, %Paco.Parser{} = parser) do
+    parse(upstream, parser, on_failure: :raise)
   end
 
-  def parse!(enum, %Paco.Parser{} = parser) do
-    parse(enum, parser, raise_on_failure: true)
-  end
-
-  defp from(upstream, %Paco.Parser{} = parser, on_failure) do
+  def parse(upstream, %Paco.Parser{} = parser, opts \\ []) do
+    on_failure = Keyword.get(opts, :on_failure, :halt)
     &do_parse(upstream, {start_link(parser), parser, on_failure}, &1, &2)
   end
 
