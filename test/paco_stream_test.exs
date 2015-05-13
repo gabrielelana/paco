@@ -30,14 +30,13 @@ defmodule Paco.StreamTest do
     assert_receive {^parser_process, :more}
 
     send(parser_process, :halt)
-    assert_receive {^parser_process, {:error, failure}}
-
-    refute Process.alive?(parser_process)
-
-    assert Paco.Failure.format(failure) ==
+    assert_receive {^parser_process, {:error,
       """
       Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
+    }}
+
+    refute Process.alive?(parser_process)
   end
 
   test "parse stream of one success" do
@@ -65,7 +64,7 @@ defmodule Paco.StreamTest do
                 |> Paco.Stream.parse(string("a"), on_failure: :continue)
                 |> Enum.to_list
 
-    assert Paco.Failure.format(failure) == "Failed to match string(a) at 1:1\n"
+    assert failure == {:error, "Failed to match string(a) at 1:1\n"}
   end
 
   test "parse stream of one failure when raise on failure is true" do
@@ -105,10 +104,11 @@ defmodule Paco.StreamTest do
                          |> Paco.Stream.parse(parser, on_failure: :continue)
                          |> Enum.to_list
 
-    assert Paco.Failure.format(failure) ==
+    assert failure == {:error,
       """
       Failed to match seq([string(ab), string(c)]) at 1:1, because it failed to match string(c) at 1:3
       """
+    }
     assert success == ["ab", "c"]
   end
 

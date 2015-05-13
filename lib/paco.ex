@@ -19,7 +19,7 @@ defmodule Paco do
               end
     deliver.(case parser.parse.(input, parser) do
                %Paco.Failure{} = failure ->
-                 {:error, failure}
+                 {:error, Paco.Failure.format(failure)}
                %Paco.Success{skip: true} ->
                  {:ok, []}
                %Paco.Success{result: result} ->

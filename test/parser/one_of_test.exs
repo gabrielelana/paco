@@ -28,20 +28,19 @@ defmodule Paco.Parser.OneOfTest do
   end
 
   test "fail to parse" do
-    {:error, failure} = parse(one_of([string("a"), string("b")]), "c")
-    assert Paco.Failure.format(failure) ==
+    assert parse(one_of([string("a"), string("b")]), "c") == {:error,
       """
       Failed to match one_of([string(a), string(b)]) at 1:1
       """
+    }
   end
 
   test "one parser optimization, one_of is removed" do
     assert parse(one_of([string("a")]), "a") == {:ok, "a"}
-
-    {:error, failure} = parse(one_of([string("a")]), "c")
-    assert Paco.Failure.format(failure) ==
+    assert parse(one_of([string("a")]), "c") == {:error,
       """
       Failed to match string(a) at 1:1
       """
+    }
   end
 end

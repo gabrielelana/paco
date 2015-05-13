@@ -26,27 +26,27 @@ defmodule Paco.Parser.StringTest do
   end
 
   test "fail to parse a string" do
-    {:error, failure} = parse(string("aaa"), "bbb")
-    assert Paco.Failure.format(failure) ==
+    assert parse(string("aaa"), "bbb") == {:error,
       """
       Failed to match string(aaa) at 1:1
       """
+    }
   end
 
   test "skip doesn't influece failures" do
-    {:error, failure} = parse(skip(string("aaa")), "bbb")
-    assert Paco.Failure.format(failure) ==
+    assert parse(skip(string("aaa")), "bbb") == {:error,
       """
       Failed to match string(aaa) at 1:1
       """
+    }
   end
 
   test "fail to parse empty string" do
-    {:error, failure} = parse(string("aaa"), "")
-    assert Paco.Failure.format(failure) ==
+    assert parse(string("aaa"), "") == {:error,
       """
       Failed to match string(aaa) at 1:1
       """
+    }
   end
 
   test "increment indexes for a match" do
@@ -88,6 +88,4 @@ defmodule Paco.Parser.StringTest do
     assert success.at == {0, 1, 1}
     assert success.tail == "aaa"
   end
-
-
 end

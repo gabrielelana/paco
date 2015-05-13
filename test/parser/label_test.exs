@@ -14,10 +14,10 @@ defmodule Paco.Parser.LabelTest do
 
   test "label shows up in the failure message" do
     labeled = label(string("a"), "an a")
-    {:error, failure} = parse(labeled, "b")
-    assert Paco.Failure.format(failure) ==
+    assert parse(labeled, "b") == {:error,
       """
       Failed to match an a at 1:1
       """
+    }
   end
 end

@@ -43,11 +43,11 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "failure" do
-    assert {:error, failure} = parse(re(~r/a+/), "b")
-    assert Paco.Failure.format(failure) ==
+    assert parse(re(~r/a+/), "b") == {:error,
       """
       Failed to match re(~r/a+/) at 1:1
       """
+    }
   end
 
   test "wait for more input in stream mode" do

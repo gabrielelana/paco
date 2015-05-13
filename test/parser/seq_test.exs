@@ -23,27 +23,26 @@ defmodule Paco.Parser.SeqTest do
   end
 
   test "fail to parse because of the first parser" do
-    {:error, failure} = parse(seq([string("a"), string("b")]), "bb")
-    assert Paco.Failure.format(failure) ==
+    assert parse(seq([string("a"), string("b")]), "bb") == {:error,
       """
       Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(a) at 1:1
       """
+    }
   end
 
   test "fail to parse because of the last parser" do
-    {:error, failure} = parse(seq([string("a"), string("b")]), "aa")
-    assert Paco.Failure.format(failure) ==
+    assert parse(seq([string("a"), string("b")]), "aa") == {:error,
       """
       Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
       """
+    }
   end
 
   test "fail to parse for end of input" do
-    {:error, failure} = parse(seq([string("aaa"), string("bbb")]), "a")
-    assert Paco.Failure.format(failure) ==
+    assert parse(seq([string("aaa"), string("bbb")]), "a") == {:error,
       """
       Failed to match seq([string(aaa), string(bbb)]) at 1:1, because it failed to match string(aaa) at 1:1
       """
+    }
   end
-
 end
