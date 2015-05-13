@@ -59,11 +59,11 @@ defmodule Paco.StreamTest do
     assert result == ["ab", "c"]
   end
 
-  test "parse stream of one success with flat_tagged format" do
+  test "parse stream of one success with tagged format" do
     parser = seq([string("ab"), string("c")])
 
     [result] = stream_of("abc")
-               |> Paco.Stream.parse(parser, format: :flat_tagged)
+               |> Paco.Stream.parse(parser, format: :tagged)
                |> Enum.to_list
 
     assert result == {:ok, ["ab", "c"]}
@@ -89,7 +89,7 @@ defmodule Paco.StreamTest do
     assert results == []
   end
 
-  test "parse stream of one failure with yield on failure and flat_tagged format (default)" do
+  test "parse stream of one failure with yield on failure and tagged format (default)" do
     [failure] = stream_of("e")
                 |> Paco.Stream.parse(string("a"), on_failure: :yield)
                 |> Enum.to_list
@@ -127,17 +127,17 @@ defmodule Paco.StreamTest do
     assert results == [["ab", "c"], ["ab", "c"]]
   end
 
-  test "parse stream of more successes with flat_tagged format option" do
+  test "parse stream of more successes with tagged format option" do
     parser = seq([string("ab"), string("c")])
 
     results = stream_of("abcabc")
-              |> Paco.Stream.parse(parser, format: :flat_tagged)
+              |> Paco.Stream.parse(parser, format: :tagged)
               |> Enum.to_list
 
     assert results == [{:ok, ["ab", "c"]}, {:ok, ["ab", "c"]}]
   end
 
-  test "parse a success after a failure with yield on failure and with flat_tagged format option (default)" do
+  test "parse a success after a failure with yield on failure and with tagged format option (default)" do
     parser = seq([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")

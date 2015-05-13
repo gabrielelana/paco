@@ -7,7 +7,7 @@ defmodule Paco.Stream do
   def parse(upstream, %Paco.Parser{} = parser, opts \\ []) do
     opts = case Keyword.get(opts, :on_failure, :halt) do
              :halt -> Keyword.merge([format: :flat, on_failure: :halt], opts)
-             :yield -> Keyword.merge([format: :flat_tagged], opts)
+             :yield -> Keyword.merge([format: :tagged], opts)
              :raise -> Keyword.merge([format: :flat], opts)
            end
     &do_parse(upstream, {start_link(parser), parser, opts}, &1, &2)

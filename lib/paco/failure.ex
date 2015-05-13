@@ -19,5 +19,5 @@ defmodule Paco.Failure do
     Failed to match #{what} at #{line}:#{column}, because it #{failure}
     """
   end
-  def format(%Paco.Failure{} = failure, :flat_tagged), do: {:error, Paco.Failure.format(failure, :flat)}
+  def format(%Paco.Failure{} = failure, :tagged), do: {:error, Paco.Failure.format(failure, :flat)}
 end
