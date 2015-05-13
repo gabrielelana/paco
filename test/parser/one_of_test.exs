@@ -54,7 +54,6 @@ defmodule Paco.Parser.OneOfTest do
       {:matched, {0, 1, 1}, {0, 1, 1}},
       {:matched, {0, 1, 1}, {0, 1, 1}},
     ]
-
     assert Helper.events_notified_by(one_of([string("a"), string("b")]), "b") == [
       {:loaded, "b"},
       {:started, "one_of([string(a), string(b)])"},

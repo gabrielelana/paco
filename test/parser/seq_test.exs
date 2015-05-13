@@ -4,6 +4,8 @@ defmodule Paco.Parser.SeqTest do
   import Paco
   import Paco.Parser
 
+  alias Paco.Test.Helper
+
   test "parse seq of parsers" do
     assert parse(seq([string("a"), string("b")]), "ab") == {:ok, ["a", "b"]}
     assert parse(seq([string("a")]), "a") == {:ok, ["a"]}
@@ -44,5 +46,36 @@ defmodule Paco.Parser.SeqTest do
       Failed to match seq([string(aaa), string(bbb)]) at 1:1, because it failed to match string(aaa) at 1:1
       """
     }
+  end
+
+  test "notify events on success" do
+    assert Helper.events_notified_by(seq([string("a"), string("b")]), "ab") == [
+      {:loaded, "ab"},
+      {:started, "seq([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:started, "string(b)"},
+      {:matched, {1, 1, 2}, {1, 1, 2}},
+      {:matched, {0, 1, 1}, {1, 1, 2}},
+    ]
+  end
+
+  test "notify events on failure" do
+    assert Helper.events_notified_by(seq([string("a"), string("b")]), "cc") == [
+      {:loaded, "cc"},
+      {:started, "seq([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:failed, {0, 1, 1}},
+      {:failed, {0, 1, 1}},
+    ]
+    assert Helper.events_notified_by(seq([string("a"), string("b")]), "ac") == [
+      {:loaded, "ac"},
+      {:started, "seq([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:started, "string(b)"},
+      {:failed, {1, 1, 2}},
+      {:failed, {0, 1, 1}},
+    ]
   end
 end
