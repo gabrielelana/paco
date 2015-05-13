@@ -5,6 +5,7 @@ defmodule Paco.Failure do
 
   defstruct at: {0, 0, 0}, what: "", because: nil
 
+  def format(%Paco.Failure{} = failure, :raw), do: failure
   def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}, :flat) do
     """
     Failed to match #{what} at #{line}:#{column}
@@ -17,4 +18,5 @@ defmodule Paco.Failure do
     """
   end
   def format(%Paco.Failure{} = failure, :flat_tagged), do: {:error, Paco.Failure.format(failure, :flat)}
+  def format(%Paco.Failure{} = failure, :raw_tagged), do: {:error, Paco.Failure.format(failure, :raw)}
 end
