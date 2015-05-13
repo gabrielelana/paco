@@ -4,6 +4,8 @@ defmodule Paco.Parser.OneOfTest do
   import Paco
   import Paco.Parser
 
+  alias Paco.Test.Helper
+
   test "parse one of the parsers" do
     assert parse(one_of([string("a"), string("b"), string("c")]), "a") == {:ok, "a"}
     assert parse(one_of([string("a"), string("b"), string("c")]), "b") == {:ok, "b"}
@@ -42,5 +44,37 @@ defmodule Paco.Parser.OneOfTest do
       Failed to match string(a) at 1:1
       """
     }
+  end
+
+  test "notify events on success" do
+    assert Helper.events_notified_by(one_of([string("a"), string("b")]), "a") == [
+      {:loaded, "a"},
+      {:started, "one_of([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+    ]
+
+    assert Helper.events_notified_by(one_of([string("a"), string("b")]), "b") == [
+      {:loaded, "b"},
+      {:started, "one_of([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:failed, {0, 1, 1}},
+      {:started, "string(b)"},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}},
+    ]
+  end
+
+  test "notify events on failure" do
+    assert Helper.events_notified_by(one_of([string("a"), string("b")]), "c") == [
+      {:loaded, "c"},
+      {:started, "one_of([string(a), string(b)])"},
+      {:started, "string(a)"},
+      {:failed, {0, 1, 1}},
+      {:started, "string(b)"},
+      {:failed, {0, 1, 1}},
+      {:failed, {0, 1, 1}},
+    ]
   end
 end
