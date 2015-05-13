@@ -33,10 +33,10 @@ defmodule Paco.Helper do
         %Paco.Parser{
           name: to_string(unquote(name)),
           combine: unquote(normalize_parser_arguments(arguments)),
-          parse: fn %Paco.Input{} = input, _this ->
+          parse: fn %Paco.State{} = state, _this ->
                    case (unquote(block)) do
                      %Paco.Parser{} = parser ->
-                       case parser.parse.(input, parser) do
+                       case parser.parse.(state, parser) do
                          %Paco.Success{} = success ->
                            success
                          %Paco.Failure{} = failure ->

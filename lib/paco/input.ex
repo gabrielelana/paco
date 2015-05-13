@@ -1,17 +1,18 @@
-defmodule Paco.Input do
+defmodule Paco.State do
   @type position :: {non_neg_integer, non_neg_integer, non_neg_integer}
-  @type t :: %__MODULE__{at: non_neg_integer,
-                         text: String.t,
+  @type t :: %__MODULE__{text: String.t,
+                         at: position,
+                         accumulator: term | nil,
                          collector: pid | nil,
                          stream: pid | nil}
 
-  defstruct at: {0, 1, 1}, text: "", collector: nil, stream: nil
+  defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil
 
   def from(text, opts \\ []) when is_binary(text) do
     %__MODULE__{at: {0, 1, 1},
                 text: text,
-                collector: Keyword.get(opts, :collector, nil)
-                           |> notify_loaded(text),
+                accumulator: nil,
+                collector: Keyword.get(opts, :collector, nil) |> notify_loaded(text),
                 stream: Keyword.get(opts, :stream, nil)}
   end
 

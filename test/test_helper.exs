@@ -16,10 +16,10 @@ end
 defmodule Paco.Test.EventRecorder do
   use GenEvent
 
-  def on(parser, input) do
+  def on(parser, state) do
     {:ok, collector} = start_link
     try do
-      Paco.parse(parser, input, collector: collector)
+      Paco.parse(parser, state, collector: collector)
       events_recorded(collector)
     after
       stop(collector)

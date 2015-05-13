@@ -4,50 +4,50 @@ defmodule Paco.StreamTest do
   import Paco.Parser
   import Paco.Test.Helper
 
-  # test "parser in stream mode will wait for more input" do
-  #   stream = self
-  #   parser = seq([string("ab"), string("c")])
-  #   parser_process = spawn_link(
-  #     fn ->
-  #       send(stream, {self, Paco.parse(parser, "", [stream: stream])})
-  #     end
-  #   )
-  #   assert_receive {^parser_process, :more}
+  test "parser in stream mode will wait for more data" do
+    stream = self
+    parser = seq([string("ab"), string("c")])
+    parser_process = spawn_link(
+      fn ->
+        send(stream, {self, Paco.parse(parser, "", [stream: stream])})
+      end
+    )
+    assert_receive {^parser_process, :more}
 
-  #   send(parser_process, {:load, "a"})
-  #   assert_receive {^parser_process, :more}
+    send(parser_process, {:load, "a"})
+    assert_receive {^parser_process, :more}
 
-  #   send(parser_process, {:load, "b"})
-  #   assert_receive {^parser_process, :more}
+    send(parser_process, {:load, "b"})
+    assert_receive {^parser_process, :more}
 
-  #   send(parser_process, {:load, "c"})
-  #   assert_receive {^parser_process, {:ok, ["ab", "c"]}}
+    send(parser_process, {:load, "c"})
+    assert_receive {^parser_process, {:ok, ["ab", "c"]}}
 
-  #   refute Process.alive?(parser_process)
-  # end
+    refute Process.alive?(parser_process)
+  end
 
-  # test "parser in stream mode can be stopped when waiting for more input" do
-  #   stream = self
-  #   parser = seq([string("a"), string("b")])
-  #   parser_process = spawn_link(
-  #     fn ->
-  #       send(stream, {self, Paco.parse(parser, "", [stream: stream])})
-  #     end
-  #   )
-  #   assert_receive {^parser_process, :more}
+  test "parser in stream mode can be stopped when waiting for more data" do
+    stream = self
+    parser = seq([string("a"), string("b")])
+    parser_process = spawn_link(
+      fn ->
+        send(stream, {self, Paco.parse(parser, "", [stream: stream])})
+      end
+    )
+    assert_receive {^parser_process, :more}
 
-  #   send(parser_process, {:load, "a"})
-  #   assert_receive {^parser_process, :more}
+    send(parser_process, {:load, "a"})
+    assert_receive {^parser_process, :more}
 
-  #   send(parser_process, :halt)
-  #   assert_receive {^parser_process, {:error,
-  #     """
-  #     Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
-  #     """
-  #   }}
+    send(parser_process, :halt)
+    assert_receive {^parser_process, {:error,
+      """
+      Failed to match seq([string(a), string(b)]) at 1:1, because it failed to match string(b) at 1:2
+      """
+    }}
 
-  #   refute Process.alive?(parser_process)
-  # end
+    refute Process.alive?(parser_process)
+  end
 
   test "parse stream of one success" do
     parser = seq([string("ab"), string("c")])
@@ -218,7 +218,7 @@ defmodule Paco.StreamTest do
              |> Enum.to_list
 
     # When the stream is halted from upstream and the parser is waiting
-    # for more input we don't return a failure but we truncate the stream.
+    # for more data we don't return a failure but we truncate the stream.
     # This behaviour is compatibile with Stream.chunk
     assert results == ["abc"]
     assert counted(:upstream_called) == 5    # should have been 4???

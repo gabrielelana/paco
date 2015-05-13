@@ -50,7 +50,7 @@ defmodule Paco.Parser.ReTest do
     }
   end
 
-  test "wait for more input in stream mode" do
+  test "wait for more state in stream mode" do
     [result] = Helper.stream_of("aaab")
              |> Paco.Stream.parse(re(~r/a+b/))
              |> Enum.to_list
@@ -58,7 +58,7 @@ defmodule Paco.Parser.ReTest do
     assert result == "aaab"
   end
 
-  test "don't wait for more input if we have enough" do
+  test "don't wait for more state if we have enough" do
     results = Helper.stream_of("aaa")
              |> Paco.Stream.parse(re(~r/a+/))
              |> Enum.to_list
@@ -66,9 +66,9 @@ defmodule Paco.Parser.ReTest do
     assert results == ["a", "a", "a"]
   end
 
-  test "don't wait for more input in stream mode when input is enough" do
+  test "don't wait for more state in stream mode when state is enough" do
     # we are telling the parser to wait for 3 characters before giving up
-    # return a failure, since 3 characters are not enough (given the input)
+    # return a failure, since 3 characters are not enough (given the state)
     # to make the parser succeed then the parser fails
     result = Helper.stream_of("aaab")
              |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
@@ -94,9 +94,8 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "increment indexes for a match" do
-    input = Paco.Input.from("aaabbb")
     parser = re(~r/a+/)
-    success = parser.parse.(input, parser)
+    success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
     assert success.at == {3, 1, 4}
@@ -104,9 +103,8 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "increment indexes for a match with newlines" do
-    input = Paco.Input.from("a\na\na\nbbb")
     parser = re(~r/(?:a\n)+/m)
-    success = parser.parse.(input, parser)
+    success = parser.parse.(Paco.State.from("a\na\na\nbbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {5, 3, 2}
     assert success.at == {6, 4, 1}
@@ -114,9 +112,8 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "increment indexes for a match with captures" do
-    input = Paco.Input.from("aaabbb")
     parser = re(~r/(a+)/m)
-    success = parser.parse.(input, parser)
+    success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
     assert success.at == {3, 1, 4}
@@ -124,9 +121,8 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "increment indexes for a single character match" do
-    input = Paco.Input.from("aaabbb")
     parser = re(~r/a/)
-    success = parser.parse.(input, parser)
+    success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {1, 1, 2}
@@ -134,9 +130,8 @@ defmodule Paco.Parser.ReTest do
   end
 
   test "increment indexes for an empty match" do
-    input = Paco.Input.from("bbb")
     parser = re(~r/a*/)
-    success = parser.parse.(input, parser)
+    success = parser.parse.(Paco.State.from("bbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}

@@ -1,5 +1,5 @@
 defmodule Paco.Failure do
-  @type t :: %__MODULE__{at: Paco.Input.position,
+  @type t :: %__MODULE__{at: Paco.State.position,
                          what: String.t,
                          because: t | nil}
 

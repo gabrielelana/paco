@@ -5,9 +5,9 @@ defmodule Paco do
   end
 
   def parse(%Paco.Parser{} = parser, text, opts \\ []) do
-    parser.parse.(Paco.Input.from(text, opts), parser)
-      |> handle_failure(Keyword.get(opts, :on_failure, :yield))
-      |> format(Keyword.get(opts, :format, :tagged))
+    parser.parse.(Paco.State.from(text, opts), parser)
+    |> handle_failure(Keyword.get(opts, :on_failure, :yield))
+    |> format(Keyword.get(opts, :format, :tagged))
   end
 
   def explain(%Paco.Parser{} = parser, text) do

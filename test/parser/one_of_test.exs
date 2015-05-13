@@ -10,7 +10,7 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([string("a"), string("b"), string("c")]), "c") == {:ok, "c"}
   end
 
-  test "doesn't need to consume all the input" do
+  test "doesn't need to consume all the text" do
     assert parse(one_of([string("a"), string("b"), string("c")]), "abc") == {:ok, "a"}
   end
 

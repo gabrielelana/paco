@@ -28,7 +28,7 @@ defmodule Paco.Stream do
   defp start_link(parser) do
     # IO.puts("START PARSER PROCESS")
     running_parser = spawn_link(parse_and_send_back_to(self, parser))
-    consume_request_for_more_input_from(running_parser)
+    consume_request_for_more_data_from(running_parser)
     running_parser
   end
 
@@ -92,7 +92,7 @@ defmodule Paco.Stream do
     end
   end
 
-  defp consume_request_for_more_input_from(running_parser) do
+  defp consume_request_for_more_data_from(running_parser) do
     receive do
       {^running_parser, :more} -> :ok
     end
