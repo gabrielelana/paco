@@ -3,6 +3,9 @@ defmodule Paco.Parser do
 
   defstruct name: nil, combine: [], parse: nil
 
+  def from(%Paco.Parser{} = p), do: p
+  def from(%Regex{} = r), do: regex(r)
+
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 

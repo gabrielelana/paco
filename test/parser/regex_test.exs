@@ -12,6 +12,11 @@ defmodule Paco.Parser.RegexTest do
     assert parse(regex(~r/a+/), "aaa") == {:ok, "aaa"}
   end
 
+  test "from" do
+    assert %Paco.Parser{name: "regex"} = from(~r/a+/)
+    assert %Paco.Parser{name: "regex"} = from(~R/a+/)
+  end
+
   test "parse with captures" do
     assert parse(regex(~r/c(a+)/), "ca") == {:ok, ["ca", "a"]}
     # repeated subpatterns are not supported by regular expressions
