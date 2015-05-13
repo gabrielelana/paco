@@ -18,19 +18,18 @@ defmodule Paco do
   defp deliver(result, nil), do: result
   defp deliver(result, stream) when is_pid(stream), do: send(stream, {self, result})
 
-  def parse(%Paco.Parser{} = parser, text, opts \\ []) do
-    parser.parse.(Paco.Input.from(text, opts), parser)
-      |> format(Keyword.get(opts, :format, :flat_tagged))
-      |> deliver(Keyword.get(opts, :stream, nil))
-  end
+  defp handle_failure(%Paco.Failure{} = failure, :raise), do: raise failure
+  defp handle_failure(result, _), do: result
 
   def parse!(%Paco.Parser{} = parser, text, opts \\ []) do
-    case parse(parser, text, opts) do
-      {:ok, result} ->
-        result
-      {:error, failure} ->
-        raise failure
-    end
+    parse(parser, text, Keyword.merge(opts, [on_failure: :raise]))
+  end
+
+  def parse(%Paco.Parser{} = parser, text, opts \\ []) do
+    parser.parse.(Paco.Input.from(text, opts), parser)
+      |> handle_failure(Keyword.get(opts, :on_failure, :yield))
+      |> format(Keyword.get(opts, :format, :flat_tagged))
+      |> deliver(Keyword.get(opts, :stream, nil))
   end
 
   def explain(%Paco.Parser{} = parser, text) do
