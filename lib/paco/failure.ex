@@ -5,15 +5,16 @@ defmodule Paco.Failure do
 
   defstruct at: {0, 0, 0}, what: "", because: nil
 
-  def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}) do
+  def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}, :flat) do
     """
     Failed to match #{what} at #{line}:#{column}
     """
   end
-  def format(%Paco.Failure{at: {_, line, column}, what: what, because: failure}) do
-    failure = Regex.replace(~r/^F/, String.strip(format(failure)), "f")
+  def format(%Paco.Failure{at: {_, line, column}, what: what, because: failure}, :flat) do
+    failure = Regex.replace(~r/^F/, String.strip(format(failure, :flat)), "f")
     """
     Failed to match #{what} at #{line}:#{column}, because it #{failure}
     """
   end
+  def format(%Paco.Failure{} = failure, :flat_tagged), do: {:error, Paco.Failure.format(failure, :flat)}
 end

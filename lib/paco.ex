@@ -12,20 +12,16 @@ defmodule Paco do
     end
   end
 
+  defp format(%Paco.Success{} = success, how), do: Paco.Success.format(success, how)
+  defp format(%Paco.Failure{} = failure, how), do: Paco.Failure.format(failure, how)
+
+  defp deliver(result, nil), do: result
+  defp deliver(result, stream) when is_pid(stream), do: send(stream, {self, result})
+
   def parse(%Paco.Parser{} = parser, text, opts \\ []) do
-    input = Paco.Input.from(text, opts)
-    deliver = fn(result, nil)    -> result
-                (result, stream) -> send(stream, {self, result})
-              end
-    deliver.(case parser.parse.(input, parser) do
-               %Paco.Failure{} = failure ->
-                 {:error, Paco.Failure.format(failure)}
-               %Paco.Success{skip: true} ->
-                 {:ok, []}
-               %Paco.Success{result: result} ->
-                 {:ok, result}
-             end,
-             input.stream)
+    parser.parse.(Paco.Input.from(text, opts), parser)
+      |> format(Keyword.get(opts, :format, :flat_tagged))
+      |> deliver(Keyword.get(opts, :stream, nil))
   end
 
   def parse!(%Paco.Parser{} = parser, text, opts \\ []) do
