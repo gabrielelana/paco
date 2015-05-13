@@ -1,5 +1,5 @@
 defmodule Paco.ExplainTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Paco
   import Paco.Parser

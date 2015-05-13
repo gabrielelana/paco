@@ -1,5 +1,5 @@
 defmodule Paco.Parser.OneOfTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Paco
   import Paco.Parser
