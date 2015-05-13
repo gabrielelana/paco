@@ -17,7 +17,7 @@ defmodule Paco.Explainer do
     {:ok, %Paco.Explainer{state| events: [event|state.events], level: state.level + 1}}
   end
 
-  def handle_event({:matched, _from, _to} = event, state) do
+  def handle_event({:matched, _from, _to, _at} = event, state) do
     # IO.puts("event #{inspect(event)} at level #{state.level}")
     # :timer.sleep(1000)
     {:ok, %Paco.Explainer{state| events: [event|state.events], level: state.level - 1}}
@@ -47,34 +47,34 @@ defmodule Paco.Explainer do
   defp process([{:started, what}|events], report, text, started, _is_combinator) do
     process(events, report, text, [what|started], false)
   end
-  defp process([{:matched, {fp, fl, fc}, {tp, tl, tc}}|events], report, text, [what|started], is_combinator) do
+  defp process([{:matched, from, to, at}|events], report, text, [what|started], is_combinator) do
+    {{fp, fl, fc}, {tp, tl, tc}, {_, _, ac}} = {from, to, at}
     level = Enum.count(started)
-    line_pointer_from = "#{fl}>"
-    line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
     matched_report =
-      if fl == tl do
-        indent(
+      indent(
+        if fl == tl do
+          line_pointer_from = "#{fl}>"
+          line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
           #{line_pointer_from} #{line(text, fp)}
-          #{line_pointer_spacer_from} #{pointers(fc, tc)}
-          """,
-          level
-        )
-      else
-        line_pointer_to = "#{tl}>"
-        line_pointer_spacer_to = String.duplicate(" ", String.length(line_pointer_to))
-        indent(
+          #{line_pointer_spacer_from} #{pointers(fc, tc, ac)}
+          """
+        else
+          line_pointer_from = "#{fl}>"
+          line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
+          line_pointer_to = "#{tl}>"
+          line_pointer_spacer_to = String.duplicate(" ", String.length(line_pointer_to))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
           #{line_pointer_from} #{line(text, fp)}
-          #{line_pointer_spacer_from} #{pointers(fc)}
+          #{line_pointer_spacer_from} #{pointers(fc, fc, ac)}
           #{line_pointer_to} #{line(text, tp)}
-          #{line_pointer_spacer_to} #{pointers(tc)}
-          """,
-          level
-        )
-      end
+          #{line_pointer_spacer_to} #{pointers(tc, tc, ac)}
+          """
+        end,
+        level
+      )
     report = if is_combinator, do: matched_report <> report, else: report <> matched_report
     process(events, report, text, started, true)
   end
@@ -87,7 +87,7 @@ defmodule Paco.Explainer do
         """
         Failed to match #{failed} at #{l}:#{c}
         #{line_pointer} #{line(text, p)}
-        #{line_pointer_spacer} #{pointers(c)}
+        #{line_pointer_spacer} #{pointers(c, c, nil)}
         """,
         level
       )
@@ -102,16 +102,24 @@ defmodule Paco.Explainer do
     |> trim_leading_spaces
   end
 
-  defp pointers(from_column, from_column), do: pointers(from_column)
-  defp pointers(from_column, to_column) do
+  defp pointers(at_column, at_column, at_column) do
+    String.duplicate(" ", at_column - 1) <>
+    "~"
+  end
+  defp pointers(at_column, at_column, _) do
+    String.duplicate(" ", at_column - 1) <>
+    "^"
+  end
+  defp pointers(from_column, to_column, to_column) do
     String.duplicate(" ", from_column - 1) <>
     "^" <>
     String.duplicate(" ", to_column - from_column - 1) <>
-    "^"
+    "~"
   end
-
-  defp pointers(at_column) do
-    String.duplicate(" ", at_column - 1) <>
+  defp pointers(from_column, to_column, _) do
+    String.duplicate(" ", from_column - 1) <>
+    "^" <>
+    String.duplicate(" ", to_column - from_column - 1) <>
     "^"
   end
 

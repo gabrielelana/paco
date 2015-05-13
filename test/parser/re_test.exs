@@ -80,7 +80,7 @@ defmodule Paco.Parser.ReTest do
     assert Helper.events_notified_by(re(~r/a+/), "aaa") == [
       {:loaded, "aaa"},
       {:started, "re(~r/a+/)"},
-      {:matched, {0, 1, 1}, {2, 1, 3}},
+      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
   end
 

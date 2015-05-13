@@ -38,7 +38,7 @@ defmodule Paco.Parser do
 
       case result do
         {%Paco.State{at: at, text: text}, to, results} ->
-          notify(collector, {:matched, from, to})
+          notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
           notify(collector, {:failed, from})
@@ -66,8 +66,8 @@ defmodule Paco.Parser do
                            end)
 
       case result do
-        %Paco.Success{from: from, to: to} = success ->
-          notify(collector, {:matched, from, to})
+        %Paco.Success{from: from, to: to, at: at} = success ->
+          notify(collector, {:matched, from, to, at})
           success
         _ ->
           notify(collector, {:failed, from})
@@ -83,7 +83,7 @@ defmodule Paco.Parser do
         [{_, len}] ->
           {s, tail, to, at} = seek(text, from, from, len)
           notify(collector, {:started, description})
-          notify(collector, {:matched, from, to})
+          notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         [{_, len}|captures] ->
           {s, tail, to, at} = seek(text, from, from, len)
@@ -92,7 +92,7 @@ defmodule Paco.Parser do
             _ -> [Regex.named_captures(r, text)]
           end
           notify(collector, {:started, description})
-          notify(collector, {:matched, from, to})
+          notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
         nil when is_pid(stream) ->
           wait_for = Keyword.get(opts, :wait_for, 1_000)
@@ -125,7 +125,7 @@ defmodule Paco.Parser do
       case consume(s, text, from, from) do
         {to, at, tail} ->
           notify(collector, {:started, description})
-          notify(collector, {:matched, from, to})
+          notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
           send(stream, {self, :more})

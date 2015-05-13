@@ -5,11 +5,11 @@ defmodule Paco.ExplainTest do
   import Paco.Parser
   import Paco.Explainer
 
-  test "report matched with one level in the same line" do
+  test "report single parser matched on a single line" do
     events = [
       {:loaded, "aaabbb"},
       {:started, "p1"},
-      {:matched, {0, 1, 1}, {5, 1, 6}}
+      {:matched, {0, 1, 1}, {5, 1, 6}, {6, 1, 7}}
     ]
     assert report(events) ==
       """
@@ -19,21 +19,23 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report matched one character outside of the visible line" do
+  test "report single parser matched on multiple lines" do
     events = [
-      {:loaded, "\n"},
-      {:started, "nl"},
-      {:matched, {0, 1, 1}, {0, 1, 1}}
+      {:loaded, "aaa\nbbb"},
+      {:started, "p1"},
+      {:matched, {0, 1, 1}, {6, 2, 3}, {7, 2, 4}}
     ]
     assert report(events) ==
       """
-      Matched nl from 1:1 to 1:1
-      1>
+      Matched p1 from 1:1 to 2:3
+      1> aaa
          ^
+      2> bbb
+           ^
       """
   end
 
-  test "report failed with one level" do
+  test "report single parser failed" do
     events = [
       {:loaded, "aaabbb"},
       {:started, "p1"},
@@ -47,33 +49,45 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report matched with one level in two different lines" do
+  test "report matched one character outside of the visible line" do
     events = [
-      {:loaded, "aaa\nbbb"},
-      {:started, "p1"},
-      {:matched, {0, 1, 1}, {6, 2, 3}}
+      {:loaded, "\n"},
+      {:started, "nl"},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 2, 2}}
     ]
     assert report(events) ==
       """
-      Matched p1 from 1:1 to 2:3
-      1> aaa
+      Matched nl from 1:1 to 1:1
+      1>
          ^
-      2> bbb
-           ^
       """
   end
 
-  test "report matched at different levels and in different lines" do
+  test "report matched without consuming any input (empty match)" do
+    events = [
+      {:loaded, ""},
+      {:started, "string()"},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}}
+    ]
+    assert report(events) ==
+      """
+      Matched string() from 1:1 to 1:1
+      1>
+         ~
+      """
+  end
+
+  test "report multiple parsers match on multiple lines" do
     events = [
       {:loaded, "aaa\nbbb"},
       {:started, "aaabbb"},
       {:started, "aaa"},
-      {:matched, {0, 1, 1}, {2, 1, 3}},
+      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
       {:started, "nl"},
-      {:matched, {3, 1, 4}, {3, 1, 4}},
+      {:matched, {3, 1, 4}, {3, 1, 4}, {4, 2, 1}},
       {:started, "bbb"},
-      {:matched, {4, 2, 1}, {6, 2, 3}},
-      {:matched, {0, 1, 1}, {6, 2, 3}},
+      {:matched, {4, 2, 1}, {6, 2, 3}, {7, 3, 4}},
+      {:matched, {0, 1, 1}, {6, 2, 3}, {7, 3, 4}},
     ]
     assert report(events) ==
       """
@@ -101,10 +115,10 @@ defmodule Paco.ExplainTest do
       {:started, "bcd"},
       {:started, "cd"},
       {:started, "d"},
-      {:matched, {3, 1, 4}, {3, 1, 4}},
-      {:matched, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {1, 1, 2}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {3, 1, 4}},
+      {:matched, {3, 1, 4}, {3, 1, 4}, {4, 1, 5}},
+      {:matched, {2, 1, 3}, {3, 1, 4}, {4, 1, 5}},
+      {:matched, {1, 1, 2}, {3, 1, 4}, {4, 1, 5}},
+      {:matched, {0, 1, 1}, {3, 1, 4}, {4, 1, 5}},
     ]
     assert report(events) ==
       """
@@ -135,6 +149,45 @@ defmodule Paco.ExplainTest do
       └─ Matched string(bbb) from 1:4 to 1:6
          1> aaabbb
                ^ ^
+      """}
+  end
+
+  test "explain success that didn't consume any text" do
+    assert explain(string(""), "aaabbb") == {:ok,
+      """
+      Matched string() from 1:1 to 1:1
+      1> aaabbb
+         ~
+      """}
+    assert explain(seq([string("")]), "aaabbb") == {:ok,
+      """
+      Matched seq([string()]) from 1:1 to 1:1
+      1> aaabbb
+         ~
+      └─ Matched string() from 1:1 to 1:1
+         1> aaabbb
+            ~
+      """}
+    assert explain(seq([string("a")]), "aaabbb") == {:ok,
+      """
+      Matched seq([string(a)]) from 1:1 to 1:1
+      1> aaabbb
+         ^
+      └─ Matched string(a) from 1:1 to 1:1
+         1> aaabbb
+            ^
+      """}
+    assert explain(seq([string("a"), string("")]), "aaabbb") == {:ok,
+      """
+      Matched seq([string(a), string()]) from 1:1 to 1:2
+      1> aaabbb
+         ^~
+      └─ Matched string(a) from 1:1 to 1:1
+         1> aaabbb
+            ^
+      └─ Matched string() from 1:2 to 1:2
+         1> aaabbb
+             ~
       """}
   end
 

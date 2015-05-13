@@ -55,7 +55,7 @@ defmodule Paco.Parser.StringTest do
     assert Helper.events_notified_by(string("aaa"), "aaa") == [
       {:loaded, "aaa"},
       {:started, "string(aaa)"},
-      {:matched, {0, 1, 1}, {2, 1, 3}},
+      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
   end
 

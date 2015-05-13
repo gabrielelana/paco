@@ -51,8 +51,8 @@ defmodule Paco.Parser.OneOfTest do
       {:loaded, "a"},
       {:started, "one_of([string(a), string(b)])"},
       {:started, "string(a)"},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ]
     assert Helper.events_notified_by(one_of([string("a"), string("b")]), "b") == [
       {:loaded, "b"},
@@ -60,8 +60,8 @@ defmodule Paco.Parser.OneOfTest do
       {:started, "string(a)"},
       {:failed, {0, 1, 1}},
       {:started, "string(b)"},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ]
   end
 

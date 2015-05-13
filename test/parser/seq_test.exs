@@ -53,10 +53,10 @@ defmodule Paco.Parser.SeqTest do
       {:loaded, "ab"},
       {:started, "seq([string(a), string(b)])"},
       {:started, "string(a)"},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:started, "string(b)"},
-      {:matched, {1, 1, 2}, {1, 1, 2}},
-      {:matched, {0, 1, 1}, {1, 1, 2}},
+      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
+      {:matched, {0, 1, 1}, {1, 1, 2}, {2, 1, 3}},
     ]
   end
 
@@ -72,7 +72,7 @@ defmodule Paco.Parser.SeqTest do
       {:loaded, "ac"},
       {:started, "seq([string(a), string(b)])"},
       {:started, "string(a)"},
-      {:matched, {0, 1, 1}, {0, 1, 1}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:started, "string(b)"},
       {:failed, {1, 1, 2}},
       {:failed, {0, 1, 1}},
