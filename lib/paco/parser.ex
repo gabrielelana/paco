@@ -78,7 +78,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ re(r, opts \\ []) do
+  parser_ regex(r, opts \\ []) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
