@@ -20,5 +20,4 @@ defmodule Paco.Failure do
     """
   end
   def format(%Paco.Failure{} = failure, :flat_tagged), do: {:error, Paco.Failure.format(failure, :flat)}
-  def format(%Paco.Failure{} = failure, :raw_tagged), do: {:error, Paco.Failure.format(failure, :raw)}
 end

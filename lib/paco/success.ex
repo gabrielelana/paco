@@ -14,5 +14,4 @@ defmodule Paco.Success do
   def format(%Paco.Success{} = success, :raw), do: success
   def format(%Paco.Success{result: result}, :flat), do: result
   def format(%Paco.Success{} = success, :flat_tagged), do: {:ok, Paco.Success.format(success, :flat)}
-  def format(%Paco.Success{} = success, :raw_tagged), do: {:ok, Paco.Success.format(success, :raw)}
 end

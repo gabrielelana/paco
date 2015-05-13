@@ -29,12 +29,4 @@ defmodule PacoFormatTest do
   test "raw format of failure" do
     assert %Paco.Failure{} = parse(string("a"), "b", format: :raw)
   end
-
-  test "raw_tagged format of success" do
-    assert {:ok, %Paco.Success{}} = parse(string("a"), "a", format: :raw_tagged)
-  end
-
-  test "raw_tagged format of failure" do
-    assert {:error, %Paco.Failure{}} = parse(string("a"), "b", format: :raw_tagged)
-  end
 end
