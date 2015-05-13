@@ -48,20 +48,6 @@ defmodule Paco do
     end
   end
 
-  def stream!(enum, %Paco.Parser{} = parser) do
-    stream(enum, parser, raise_on_failure: true)
-  end
-
-  def stream(enum, %Paco.Parser{} = parser, opts \\ []) do
-    cof = Keyword.get(opts, :continue_on_failure, false)
-    rof = Keyword.get(opts, :raise_on_failure, false)
-    case {cof, rof} do
-      {false, false} -> Paco.Stream.from(enum, parser, :halt)
-      {_, true} -> Paco.Stream.from(enum, parser, :raise)
-      {_, _} -> Paco.Stream.from(enum, parser, :continue)
-    end
-  end
-
   def describe("\n"), do: "\\n"
   def describe(string) when is_binary(string), do: string
   def describe(%Regex{} = r), do: inspect(r)

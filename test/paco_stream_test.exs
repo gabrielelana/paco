@@ -44,7 +44,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     [result] = stream_of("abc")
-               |> Paco.stream(parser)
+               |> Paco.Stream.parse(parser)
                |> Enum.to_list
 
     assert result == ["ab", "c"]
@@ -54,7 +54,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     results = stream_of("abd")
-              |> Paco.stream(parser)
+              |> Paco.Stream.parse(parser)
               |> Enum.to_list
 
     assert results == []
@@ -62,7 +62,7 @@ defmodule Paco.StreamTest do
 
   test "parse stream of one failure when continue on failure is true" do
     [failure] = stream_of("e")
-                |> Paco.stream(string("a"), continue_on_failure: true)
+                |> Paco.Stream.parse(string("a"), continue_on_failure: true)
                 |> Enum.to_list
 
     assert Paco.Failure.format(failure) == "Failed to match string(a) at 1:1\n"
@@ -73,17 +73,17 @@ defmodule Paco.StreamTest do
                  "Failed to match string(a) at 1:1\n",
                  fn ->
                    stream_of("e")
-                   |> Paco.stream(string("a"), raise_on_failure: true)
+                   |> Paco.Stream.parse(string("a"), raise_on_failure: true)
                    |> Enum.to_list
                  end
   end
 
-  test "Paco.stream!(e, p) is same as Paco.stream(e, p, raise_on_failure: true)" do
+  test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, raise_on_failure: true)" do
     assert_raise RuntimeError,
                  "Failed to match string(a) at 1:1\n",
                  fn ->
                    stream_of("e")
-                   |> Paco.stream!(string("a"))
+                   |> Paco.Stream.parse!(string("a"))
                    |> Enum.to_list
                  end
   end
@@ -92,7 +92,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     results = stream_of("abcabc")
-              |> Paco.stream(parser)
+              |> Paco.Stream.parse(parser)
               |> Enum.to_list
 
     assert results == [["ab", "c"], ["ab", "c"]]
@@ -102,7 +102,7 @@ defmodule Paco.StreamTest do
     parser = seq([string("ab"), string("c")])
 
     [failure, success] = stream_of("abdabc")
-                         |> Paco.stream(parser, continue_on_failure: true)
+                         |> Paco.Stream.parse(parser, continue_on_failure: true)
                          |> Enum.to_list
 
     assert Paco.Failure.format(failure) ==
@@ -115,7 +115,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream halts the pipe as first command" do
     stream = stream_of("abc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.stream(string("a"))
+             |> Paco.Stream.parse(string("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
@@ -136,7 +136,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream suspend the pipe as first command" do
     stream = stream_of("abc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.stream(string("a"))
+             |> Paco.Stream.parse(string("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
@@ -159,7 +159,7 @@ defmodule Paco.StreamTest do
   test "parse stream when downstream halts" do
     results = stream_of("abcabc")
              |> Stream.each(&count(:upstream_called, &1))
-             |> Paco.stream(string("abc"))
+             |> Paco.Stream.parse(string("abc"))
              |> Stream.each(&count(:downstream_called, &1))
              |> Stream.take(1)
              |> Enum.to_list
@@ -173,7 +173,7 @@ defmodule Paco.StreamTest do
     results = stream_of("abcabc")
              |> Stream.each(&count(:upstream_called, &1))
              |> Stream.take(4)
-             |> Paco.stream(string("abc"))
+             |> Paco.Stream.parse(string("abc"))
              |> Stream.each(&count(:downstream_called, &1))
              |> Enum.to_list
 

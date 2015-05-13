@@ -52,7 +52,7 @@ defmodule Paco.Parser.ReTest do
 
   test "wait for more input in stream mode" do
     [result] = Helper.stream_of("aaab")
-             |> stream(re(~r/a+b/))
+             |> Paco.Stream.parse(re(~r/a+b/))
              |> Enum.to_list
 
     assert result == "aaab"
@@ -60,7 +60,7 @@ defmodule Paco.Parser.ReTest do
 
   test "don't wait for more input if we have enough" do
     results = Helper.stream_of("aaa")
-             |> stream(re(~r/a+/))
+             |> Paco.Stream.parse(re(~r/a+/))
              |> Enum.to_list
 
     assert results == ["a", "a", "a"]
@@ -71,7 +71,7 @@ defmodule Paco.Parser.ReTest do
     # return a failure, since 3 characters are not enough (given the input)
     # to make the parser succeed then the parser fails
     result = Helper.stream_of("aaab")
-             |> stream(re(~r/a+b/, wait_for: 3))
+             |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
              |> Enum.to_list
 
     assert result == []

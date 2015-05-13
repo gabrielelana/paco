@@ -1,17 +1,31 @@
 defmodule Paco.Stream do
 
-  def from(upstream, %Paco.Parser{} = parser, on_failure) do
-    &parse(upstream, {start_link(parser), parser, on_failure}, &1, &2)
+  def parse(enum, %Paco.Parser{} = parser, opts \\ []) do
+    cof = Keyword.get(opts, :continue_on_failure, false)
+    rof = Keyword.get(opts, :raise_on_failure, false)
+    case {cof, rof} do
+      {false, false} -> from(enum, parser, :halt)
+      {_, true} -> from(enum, parser, :raise)
+      {_, _} -> from(enum, parser, :continue)
+    end
   end
 
-  defp parse(upstream, configuration, {:suspend, downstream_accumulator}, downstream_reducer) do
-    {:suspended, downstream_accumulator, &parse(upstream, configuration, &1, downstream_reducer)}
+  def parse!(enum, %Paco.Parser{} = parser) do
+    parse(enum, parser, raise_on_failure: true)
   end
-  defp parse(_, {running_parser, _, _}, {:halt, downstream_accumulator}, _) do
+
+  defp from(upstream, %Paco.Parser{} = parser, on_failure) do
+    &do_parse(upstream, {start_link(parser), parser, on_failure}, &1, &2)
+  end
+
+  defp do_parse(upstream, configuration, {:suspend, downstream_accumulator}, downstream_reducer) do
+    {:suspended, downstream_accumulator, &do_parse(upstream, configuration, &1, downstream_reducer)}
+  end
+  defp do_parse(_, {running_parser, _, _}, {:halt, downstream_accumulator}, _) do
     stop(running_parser)
     {:halted, downstream_accumulator}
   end
-  defp parse(upstream, {running_parser, _, _} = configuration, downstream_command, downstream_reducer) do
+  defp do_parse(upstream, {running_parser, _, _} = configuration, downstream_command, downstream_reducer) do
     stream = Stream.transform(upstream, configuration, &transform/2)
     run(stream, running_parser, downstream_command, downstream_reducer)
   end
