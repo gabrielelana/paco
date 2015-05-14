@@ -1,4 +1,4 @@
-defmodule Paco.Parser.SeqTest do
+defmodule Paco.Parser.SequenceOfTest do
   use ExUnit.Case, async: true
 
   import Paco
