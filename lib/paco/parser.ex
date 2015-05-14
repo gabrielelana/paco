@@ -6,15 +6,6 @@ defmodule Paco.Parser do
   def from(%Paco.Parser{} = p), do: p
   def from(%Regex{} = r), do: regex(r)
 
-  defmacro sigil_l(term, modifiers)
-  defmacro sigil_l({:<<>>, _line, [string]}, _modifiers) when is_binary(string) do
-    quote do: literal(unquote(string))
-  end
-  defmacro sigil_l({:<<>>, line, pieces}, _modifiers) do
-    binary = {:<<>>, line, Macro.unescape_tokens(pieces, fn(x) -> Regex.unescape_map(x) end)}
-    quote do: literal(unquote(binary))
-  end
-
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 

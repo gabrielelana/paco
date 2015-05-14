@@ -23,11 +23,6 @@ defmodule Paco.Parser.LiteralTest do
     assert describe(literal("\n")) == "literal(\\n)"
   end
 
-  test "sigil" do
-    assert %Paco.Parser{name: "literal", combine: "a"} = ~l"a"
-    assert %Paco.Parser{name: "literal", combine: "a2"} = ~l"a#{1+1}"
-  end
-
   test "skipped parsers should be removed from result" do
     assert parse(skip(literal("a")), "a") == {:ok, []}
   end
