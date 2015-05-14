@@ -53,7 +53,7 @@ defmodule Paco.Explainer do
     matched_report =
       indent(
         if fl == tl do
-          line_pointer_from = "#{fl}>"
+          line_pointer_from = "#{fl}:"
           line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
@@ -61,9 +61,9 @@ defmodule Paco.Explainer do
           #{line_pointer_spacer_from} #{pointers(fc, tc, ac)}
           """
         else
-          line_pointer_from = "#{fl}>"
+          line_pointer_from = "#{fl}:"
           line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
-          line_pointer_to = "#{tl}>"
+          line_pointer_to = "#{tl}:"
           line_pointer_spacer_to = String.duplicate(" ", String.length(line_pointer_to))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
@@ -80,7 +80,7 @@ defmodule Paco.Explainer do
   end
   defp process([{:failed, {p, l, c}}|events], report, text, [failed|started], is_combinator) do
     level = Enum.count(started)
-    line_pointer = "#{l}>"
+    line_pointer = "#{l}:"
     line_pointer_spacer = String.duplicate(" ", String.length(line_pointer))
     failed_report =
       indent(

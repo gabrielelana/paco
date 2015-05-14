@@ -14,7 +14,7 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched p1 from 1:1 to 1:6
-      1> aaabbb
+      1: aaabbb
          ^    ^
       """
   end
@@ -28,9 +28,9 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched p1 from 1:1 to 2:3
-      1> aaa
+      1: aaa
          ^
-      2> bbb
+      2: bbb
            ^
       """
   end
@@ -44,7 +44,7 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Failed to match p1 at 1:1
-      1> aaabbb
+      1: aaabbb
          ^
       """
   end
@@ -58,7 +58,7 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched nl from 1:1 to 1:1
-      1>
+      1:
          ^
       """
   end
@@ -72,7 +72,7 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched literal() from 1:1 to 1:1
-      1>
+      1:
          ~
       """
   end
@@ -92,18 +92,18 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched aaabbb from 1:1 to 2:3
-      1> aaa
+      1: aaa
          ^
-      2> bbb
+      2: bbb
            ^
       └─ Matched aaa from 1:1 to 1:3
-         1> aaa
+         1: aaa
             ^ ^
       └─ Matched nl from 1:4 to 1:4
-         1> aaa
+         1: aaa
                ^
       └─ Matched bbb from 2:1 to 2:3
-         2> bbb
+         2: bbb
             ^ ^
       """
   end
@@ -123,16 +123,16 @@ defmodule Paco.ExplainTest do
     assert report(events) ==
       """
       Matched abcd from 1:1 to 1:4
-      1> abcd
+      1: abcd
          ^  ^
       └─ Matched bcd from 1:2 to 1:4
-         1> abcd
+         1: abcd
              ^ ^
          └─ Matched cd from 1:3 to 1:4
-            1> abcd
+            1: abcd
                  ^^
             └─ Matched d from 1:4 to 1:4
-               1> abcd
+               1: abcd
                      ^
       """
   end
@@ -141,13 +141,13 @@ defmodule Paco.ExplainTest do
     assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaabbb") == {:ok,
       """
       Matched sequence_of([literal(aaa), literal(bbb)]) from 1:1 to 1:6
-      1> aaabbb
+      1: aaabbb
          ^    ^
       └─ Matched literal(aaa) from 1:1 to 1:3
-         1> aaabbb
+         1: aaabbb
             ^ ^
       └─ Matched literal(bbb) from 1:4 to 1:6
-         1> aaabbb
+         1: aaabbb
                ^ ^
       """}
   end
@@ -156,37 +156,37 @@ defmodule Paco.ExplainTest do
     assert explain(literal(""), "aaabbb") == {:ok,
       """
       Matched literal() from 1:1 to 1:1
-      1> aaabbb
+      1: aaabbb
          ~
       """}
     assert explain(sequence_of([literal("")]), "aaabbb") == {:ok,
       """
       Matched sequence_of([literal()]) from 1:1 to 1:1
-      1> aaabbb
+      1: aaabbb
          ~
       └─ Matched literal() from 1:1 to 1:1
-         1> aaabbb
+         1: aaabbb
             ~
       """}
     assert explain(sequence_of([literal("a")]), "aaabbb") == {:ok,
       """
       Matched sequence_of([literal(a)]) from 1:1 to 1:1
-      1> aaabbb
+      1: aaabbb
          ^
       └─ Matched literal(a) from 1:1 to 1:1
-         1> aaabbb
+         1: aaabbb
             ^
       """}
     assert explain(sequence_of([literal("a"), literal("")]), "aaabbb") == {:ok,
       """
       Matched sequence_of([literal(a), literal()]) from 1:1 to 1:2
-      1> aaabbb
+      1: aaabbb
          ^~
       └─ Matched literal(a) from 1:1 to 1:1
-         1> aaabbb
+         1: aaabbb
             ^
       └─ Matched literal() from 1:2 to 1:2
-         1> aaabbb
+         1: aaabbb
              ~
       """}
   end
@@ -195,18 +195,18 @@ defmodule Paco.ExplainTest do
     assert explain(sequence_of([literal("aaa"), literal("\n"), literal("bbb")]), "aaa\nbbb") == {:ok,
       """
       Matched sequence_of([literal(aaa), literal(\\n), literal(bbb)]) from 1:1 to 2:3
-      1> aaa
+      1: aaa
          ^
-      2> bbb
+      2: bbb
            ^
       └─ Matched literal(aaa) from 1:1 to 1:3
-         1> aaa
+         1: aaa
             ^ ^
       └─ Matched literal(\\n) from 1:4 to 1:4
-         1> aaa
+         1: aaa
                ^
       └─ Matched literal(bbb) from 2:1 to 2:3
-         2> bbb
+         2: bbb
             ^ ^
       """}
   end
@@ -215,13 +215,13 @@ defmodule Paco.ExplainTest do
     assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaaccc") == {:ok,
       """
       Failed to match sequence_of([literal(aaa), literal(bbb)]) at 1:1
-      1> aaaccc
+      1: aaaccc
          ^
       └─ Matched literal(aaa) from 1:1 to 1:3
-         1> aaaccc
+         1: aaaccc
             ^ ^
       └─ Failed to match literal(bbb) at 1:4
-         1> aaaccc
+         1: aaaccc
                ^
       """}
   end
@@ -230,7 +230,7 @@ defmodule Paco.ExplainTest do
     assert explain(literal("aaa"), "") == {:ok,
       """
       Failed to match literal(aaa) at 1:1
-      1>
+      1:
          ^
       """}
   end
