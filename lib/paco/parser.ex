@@ -9,6 +9,21 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
+
+  parser_ maybe(%Paco.Parser{} = parser) do
+    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
+      notify(collector, {:started, Paco.describe(this)})
+      case parser.parse.(state, parser) do
+        %Paco.Success{from: from, to: to, at: at} = success ->
+          notify(collector, {:matched, from, to, at})
+          success
+        %Paco.Failure{} ->
+          notify(collector, {:matched, at, at, at})
+          %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
+      end
+    end
+  end
+
   parser_ skip(%Paco.Parser{} = parser) do
     fn %Paco.State{} = state, _this ->
       case parser.parse.(state, parser) do
