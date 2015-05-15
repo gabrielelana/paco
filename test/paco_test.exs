@@ -49,9 +49,9 @@ defmodule PacoTest do
   end
 
   test "describe" do
-    assert Paco.describe(UsePacoReferenceOtherParsers.all) == "all"
-    assert Paco.describe(UsePacoReferenceOtherParsers.aaa) == "aaa"
-    assert Paco.describe(UsePacoReferenceOtherParsers.bbb) == "bbb"
+    assert Paco.describe(UsePacoReferenceOtherParsers.all) == "all#1"
+    assert Paco.describe(UsePacoReferenceOtherParsers.aaa) == "aaa#2"
+    assert Paco.describe(UsePacoReferenceOtherParsers.bbb) == "bbb#3"
   end
 
   test "use paco, reference other parsers" do

@@ -41,15 +41,15 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "describe" do
-    assert describe(regex(~r/a+/)) == "regex(~r/a+/)"
-    assert describe(regex(~r/a+/i)) == "regex(~r/a+/i)"
-    assert describe(regex(~r/a+/i, wait_for: 1_000)) == "regex(~r/a+/i)"
+    assert describe(regex(~r/a+/)) == "regex#1(~r/a+/, [])"
+    assert describe(regex(~r/a+/i)) == "regex#2(~r/a+/i, [])"
+    assert describe(regex(~r/a+/i, wait_for: 1_000)) == "regex#3(~r/a+/i, [wait_for: 1000])"
   end
 
   test "failure" do
     assert parse(regex(~r/a+/), "b") == {:error,
       """
-      Failed to match regex(~r/a+/) at 1:1
+      Failed to match regex#1(~r/a+/, []) at 1:1
       """
     }
   end
@@ -84,7 +84,7 @@ defmodule Paco.Parser.RegexTest do
   test "notify events on success" do
     assert Helper.events_notified_by(regex(~r/a+/), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "regex(~r/a+/)"},
+      {:started, "regex#1(~r/a+/, [])"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
   end
@@ -92,7 +92,7 @@ defmodule Paco.Parser.RegexTest do
   test "notify events on failure" do
     assert Helper.events_notified_by(regex(~r/b+/), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "regex(~r/b+/)"},
+      {:started, "regex#1(~r/b+/, [])"},
       {:failed, {0, 1, 1}},
     ]
   end

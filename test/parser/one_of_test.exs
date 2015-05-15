@@ -21,7 +21,7 @@ defmodule Paco.Parser.OneOfTest do
   end
 
   test "describe" do
-    assert describe(one_of([literal("a"), literal("b")])) == "one_of([literal(a), literal(b)])"
+    assert describe(one_of([literal("a"), literal("b")])) == "one_of#3([literal#1, literal#2])"
   end
 
   test "skipped parsers should be removed from result" do
@@ -32,7 +32,7 @@ defmodule Paco.Parser.OneOfTest do
   test "fail to parse" do
     assert parse(one_of([literal("a"), literal("b")]), "c") == {:error,
       """
-      Failed to match one_of([literal(a), literal(b)]) at 1:1
+      Failed to match one_of#3([literal#1, literal#2]) at 1:1
       """
     }
   end
@@ -41,7 +41,7 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([literal("a")]), "a") == {:ok, "a"}
     assert parse(one_of([literal("a")]), "c") == {:error,
       """
-      Failed to match literal(a) at 1:1
+      Failed to match literal#2("a") at 1:1
       """
     }
   end
@@ -49,17 +49,17 @@ defmodule Paco.Parser.OneOfTest do
   test "notify events on success" do
     assert Helper.events_notified_by(one_of([literal("a"), literal("b")]), "a") == [
       {:loaded, "a"},
-      {:started, "one_of([literal(a), literal(b)])"},
-      {:started, "literal(a)"},
+      {:started, "one_of#3([literal#1, literal#2])"},
+      {:started, ~s|literal#1("a")|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ]
     assert Helper.events_notified_by(one_of([literal("a"), literal("b")]), "b") == [
       {:loaded, "b"},
-      {:started, "one_of([literal(a), literal(b)])"},
-      {:started, "literal(a)"},
+      {:started, "one_of#6([literal#4, literal#5])"},
+      {:started, ~s|literal#4("a")|},
       {:failed, {0, 1, 1}},
-      {:started, "literal(b)"},
+      {:started, ~s|literal#5("b")|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ]
@@ -68,10 +68,10 @@ defmodule Paco.Parser.OneOfTest do
   test "notify events on failure" do
     assert Helper.events_notified_by(one_of([literal("a"), literal("b")]), "c") == [
       {:loaded, "c"},
-      {:started, "one_of([literal(a), literal(b)])"},
-      {:started, "literal(a)"},
+      {:started, "one_of#3([literal#1, literal#2])"},
+      {:started, ~s|literal#1("a")|},
       {:failed, {0, 1, 1}},
-      {:started, "literal(b)"},
+      {:started, ~s|literal#2("b")|},
       {:failed, {0, 1, 1}},
       {:failed, {0, 1, 1}},
     ]

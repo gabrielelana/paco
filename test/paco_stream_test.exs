@@ -42,7 +42,7 @@ defmodule Paco.StreamTest do
     send(parser_process, :halt)
     assert_receive {^parser_process, {:error,
       """
-      Failed to match sequence_of([literal(a), literal(b)]) at 1:1, because it failed to match literal(b) at 1:2
+      Failed to match sequence_of#3([literal#1, literal#2]) at 1:1, because it failed to match literal#2("b") at 1:2
       """
     }}
 
@@ -94,12 +94,18 @@ defmodule Paco.StreamTest do
                 |> Paco.Stream.parse(literal("a"), on_failure: :yield)
                 |> Enum.to_list
 
-    assert failure == {:error, "Failed to match literal(a) at 1:1\n"}
+    assert failure == {:error,
+      """
+      Failed to match literal#1("a") at 1:1
+      """
+    }
   end
 
   test "parse stream of one failure with raise on failure" do
     assert_raise Paco.Failure,
-                 "Failed to match literal(a) at 1:1\n",
+                 """
+                 Failed to match literal#1("a") at 1:1
+                 """,
                  fn ->
                    stream_of("e")
                    |> Paco.Stream.parse(literal("a"), on_failure: :raise)
@@ -109,7 +115,9 @@ defmodule Paco.StreamTest do
 
   test "Paco.Stream.parse!(e, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
     assert_raise Paco.Failure,
-                 "Failed to match literal(a) at 1:1\n",
+                 """
+                 Failed to match literal#1("a") at 1:1
+                 """,
                  fn ->
                    stream_of("e")
                    |> Paco.Stream.parse!(literal("a"))
@@ -146,7 +154,7 @@ defmodule Paco.StreamTest do
 
     assert failure == {:error,
       """
-      Failed to match sequence_of([literal(ab), literal(c)]) at 1:1, because it failed to match literal(c) at 1:3
+      Failed to match sequence_of#3([literal#1, literal#2]) at 1:1, because it failed to match literal#2("c") at 1:3
       """
     }
     assert success == {:ok, ["ab", "c"]}

@@ -12,27 +12,27 @@ defmodule Paco.Helper do
     end
   end
 
-
-  defp parser__({name, _, arguments} = definition, do: block) do
+  defp parser__({name, _, args} = definition, do: block) do
     quote do
       def unquote(definition) do
         %Paco.Parser{
+          id: id,
           name: to_string(unquote(name)),
-          combine: unquote(normalize_parser_arguments(arguments)),
+          combine: unquote(normalize(args)),
           parse: unquote(block)
         }
       end
     end
   end
 
-
-  defmacro parser({name, _, arguments} = definition, do: block) do
+  defmacro parser({name, _, args} = definition, do: block) do
     quote do
       @paco_parsers unquote(name)
       def unquote(definition) do
         %Paco.Parser{
+          id: id,
           name: to_string(unquote(name)),
-          combine: unquote(normalize_parser_arguments(arguments)),
+          combine: unquote(normalize(args)),
           parse: fn %Paco.State{} = state, _this ->
                    case (unquote(block)) do
                      %Paco.Parser{} = parser ->
@@ -43,15 +43,23 @@ defmodule Paco.Helper do
                            %Paco.Failure{failure | what: unquote(name)}
                        end
                      _ ->
-                       raise RuntimeError, message: "A parser must return a %Paco.Parser"
+                       raise RuntimeError, message: "Expected a %Paco.Parser"
                    end
                  end}
       end
     end
   end
 
-  defp normalize_parser_arguments([parsers | _options]), do: parsers
-  defp normalize_parser_arguments(nil), do: []
+  def id do
+    id = Process.get(:paco, 1)
+    Process.put(:paco, id + 1)
+    id
+  end
+
+  def normalize(nil), do: []
+  def normalize(args) do
+    args |> Enum.map(fn({:\\, _, [arg, _]}) -> arg; a -> a end)
+  end
 
   # root parser aaa do ...
   defmacro root({:parser, _, [{name, _, nil} = definition]}, do: block) do

@@ -140,53 +140,53 @@ defmodule Paco.ExplainTest do
   test "explain success" do
     assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of([literal(aaa), literal(bbb)]) from 1:1 to 1:6
+      Matched sequence_of#3([literal#1, literal#2]) from 1:1 to 1:6
       1: aaabbb
          ^    ^
-      └─ Matched literal(aaa) from 1:1 to 1:3
+      └─ Matched literal#1("aaa") from 1:1 to 1:3
          1: aaabbb
             ^ ^
-      └─ Matched literal(bbb) from 1:4 to 1:6
+      └─ Matched literal#2("bbb") from 1:4 to 1:6
          1: aaabbb
                ^ ^
       """}
   end
 
   test "explain success that didn't consume any text" do
-    assert explain(literal(""), "aaabbb") == {:ok,
+    assert explain(literal(""), "aaa") == {:ok,
       """
-      Matched literal() from 1:1 to 1:1
-      1: aaabbb
+      Matched literal#1("") from 1:1 to 1:1
+      1: aaa
          ~
       """}
-    assert explain(sequence_of([literal("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("")]), "aaa") == {:ok,
       """
-      Matched sequence_of([literal()]) from 1:1 to 1:1
-      1: aaabbb
+      Matched sequence_of#3([literal#2]) from 1:1 to 1:1
+      1: aaa
          ~
-      └─ Matched literal() from 1:1 to 1:1
-         1: aaabbb
+      └─ Matched literal#2("") from 1:1 to 1:1
+         1: aaa
             ~
       """}
-    assert explain(sequence_of([literal("a")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("a")]), "aaa") == {:ok,
       """
-      Matched sequence_of([literal(a)]) from 1:1 to 1:1
-      1: aaabbb
+      Matched sequence_of#5([literal#4]) from 1:1 to 1:1
+      1: aaa
          ^
-      └─ Matched literal(a) from 1:1 to 1:1
-         1: aaabbb
+      └─ Matched literal#4("a") from 1:1 to 1:1
+         1: aaa
             ^
       """}
-    assert explain(sequence_of([literal("a"), literal("")]), "aaabbb") == {:ok,
+    assert explain(sequence_of([literal("a"), literal("")]), "aaa") == {:ok,
       """
-      Matched sequence_of([literal(a), literal()]) from 1:1 to 1:2
-      1: aaabbb
+      Matched sequence_of#8([literal#6, literal#7]) from 1:1 to 1:2
+      1: aaa
          ^~
-      └─ Matched literal(a) from 1:1 to 1:1
-         1: aaabbb
+      └─ Matched literal#6("a") from 1:1 to 1:1
+         1: aaa
             ^
-      └─ Matched literal() from 1:2 to 1:2
-         1: aaabbb
+      └─ Matched literal#7("") from 1:2 to 1:2
+         1: aaa
              ~
       """}
   end
@@ -194,18 +194,18 @@ defmodule Paco.ExplainTest do
   test "explain success on multiple lines" do
     assert explain(sequence_of([literal("aaa"), literal("\n"), literal("bbb")]), "aaa\nbbb") == {:ok,
       """
-      Matched sequence_of([literal(aaa), literal(\\n), literal(bbb)]) from 1:1 to 2:3
+      Matched sequence_of#4([literal#1, literal#2, literal#3]) from 1:1 to 2:3
       1: aaa
          ^
       2: bbb
            ^
-      └─ Matched literal(aaa) from 1:1 to 1:3
+      └─ Matched literal#1("aaa") from 1:1 to 1:3
          1: aaa
             ^ ^
-      └─ Matched literal(\\n) from 1:4 to 1:4
+      └─ Matched literal#2("\\n") from 1:4 to 1:4
          1: aaa
                ^
-      └─ Matched literal(bbb) from 2:1 to 2:3
+      └─ Matched literal#3("bbb") from 2:1 to 2:3
          2: bbb
             ^ ^
       """}
@@ -214,13 +214,13 @@ defmodule Paco.ExplainTest do
   test "explain failure" do
     assert explain(sequence_of([literal("aaa"), literal("bbb")]), "aaaccc") == {:ok,
       """
-      Failed to match sequence_of([literal(aaa), literal(bbb)]) at 1:1
+      Failed to match sequence_of#3([literal#1, literal#2]) at 1:1
       1: aaaccc
          ^
-      └─ Matched literal(aaa) from 1:1 to 1:3
+      └─ Matched literal#1("aaa") from 1:1 to 1:3
          1: aaaccc
             ^ ^
-      └─ Failed to match literal(bbb) at 1:4
+      └─ Failed to match literal#2("bbb") at 1:4
          1: aaaccc
                ^
       """}
@@ -229,10 +229,9 @@ defmodule Paco.ExplainTest do
   test "explain failure on empty literal" do
     assert explain(literal("aaa"), "") == {:ok,
       """
-      Failed to match literal(aaa) at 1:1
+      Failed to match literal#1("aaa") at 1:1
       1:
          ^
       """}
   end
 end
-

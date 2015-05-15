@@ -19,8 +19,8 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "describe" do
-    assert describe(literal("a")) == "literal(a)"
-    assert describe(literal("\n")) == "literal(\\n)"
+    assert describe(literal("a")) == ~s|literal#1("a")|
+    assert describe(literal("\n")) == ~S|literal#2("\n")|
   end
 
   test "skipped parsers should be removed from result" do
@@ -30,7 +30,7 @@ defmodule Paco.Parser.LiteralTest do
   test "fail to parse a literal" do
     assert parse(literal("aaa"), "bbb") == {:error,
       """
-      Failed to match literal(aaa) at 1:1
+      Failed to match literal#1("aaa") at 1:1
       """
     }
   end
@@ -38,7 +38,7 @@ defmodule Paco.Parser.LiteralTest do
   test "skip doesn't influece failures" do
     assert parse(skip(literal("aaa")), "bbb") == {:error,
       """
-      Failed to match literal(aaa) at 1:1
+      Failed to match literal#1("aaa") at 1:1
       """
     }
   end
@@ -46,7 +46,7 @@ defmodule Paco.Parser.LiteralTest do
   test "fail to parse empty literal" do
     assert parse(literal("aaa"), "") == {:error,
       """
-      Failed to match literal(aaa) at 1:1
+      Failed to match literal#1("aaa") at 1:1
       """
     }
   end
@@ -54,7 +54,7 @@ defmodule Paco.Parser.LiteralTest do
   test "notify events on success" do
     assert Helper.events_notified_by(literal("aaa"), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "literal(aaa)"},
+      {:started, ~s|literal#1("aaa")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
   end
@@ -62,7 +62,7 @@ defmodule Paco.Parser.LiteralTest do
   test "notify events on failure" do
     assert Helper.events_notified_by(literal("bbb"), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "literal(bbb)"},
+      {:started, ~s|literal#1("bbb")|},
       {:failed, {0, 1, 1}},
     ]
   end

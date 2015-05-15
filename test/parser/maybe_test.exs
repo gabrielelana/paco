@@ -16,14 +16,14 @@ defmodule Paco.Parser.MaybeTest do
   end
 
   test "describe" do
-    assert describe(maybe(literal("a"))) == "maybe(literal(a))"
+    assert describe(maybe(literal("a"))) == "maybe#2(literal#1)"
   end
 
   test "notify events on combined success" do
     assert Helper.events_notified_by(maybe(literal("aaa")), "aaa") == [
       {:loaded, "aaa"},
-      {:started, "maybe(literal(aaa))"},
-      {:started, "literal(aaa)"},
+      {:started, "maybe#2(literal#1)"},
+      {:started, ~s|literal#1("aaa")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ]
@@ -32,8 +32,8 @@ defmodule Paco.Parser.MaybeTest do
   test "notify events on combined failure" do
     assert Helper.events_notified_by(maybe(literal("aaa")), "bbb") == [
       {:loaded, "bbb"},
-      {:started, "maybe(literal(aaa))"},
-      {:started, "literal(aaa)"},
+      {:started, "maybe#2(literal#1)"},
+      {:started, ~s|literal#1("aaa")|},
       {:failed, {0, 1, 1}},
       {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
     ]
