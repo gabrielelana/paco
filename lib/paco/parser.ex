@@ -10,6 +10,23 @@ defmodule Paco.Parser do
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
 
+  parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
+  parser_ surrounded_by(parser, left, right) do
+    parser = sequence_of([skip(left), parser, skip(right)])
+    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
+      notify(collector, {:started, Paco.describe(this)})
+      case parser.parse.(state, parser) do
+        %Paco.Success{from: from, to: to, at: at, result: [result]} = success ->
+          notify(collector, {:matched, from, to, at})
+          %Paco.Success{success|result: result}
+        %Paco.Failure{because: because} ->
+          notify(collector, {:failed, at})
+          %Paco.Failure{at: at, what: Paco.describe(this), because: because}
+      end
+    end
+  end
+
+
   parser_ maybe(%Paco.Parser{} = parser) do
     fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
