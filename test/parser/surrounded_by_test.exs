@@ -42,37 +42,21 @@ defmodule Paco.Parser.SurroundedByTest do
 
   test "notify events on success" do
     parser = lit("a") |> surrounded_by(lit("["), lit("]"))
-    assert Helper.events_notified_by(parser, "[a]") == [
-      {:loaded, "[a]"},
+    Helper.assert_events_notified(parser, "[a]", [
       {:started, "surrounded_by#4(lit#1, lit#2, lit#3)"},
-      {:started, "sequence_of#7([skip#5, lit#1, skip#6])"},
-      {:started, "skip#5(lit#2)"},
-      {:started, ~s|lit#2("[")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:started, ~s|lit#1("a")|},
       {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
-      {:started, "skip#6(lit#3)"},
-      {:started, ~s|lit#3("]")|},
-      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}}]
+      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}}
+    ])
   end
 
   test "notify events on failure" do
     parser = lit("a") |> surrounded_by(lit("["), lit("]"))
-    assert Helper.events_notified_by(parser, "[b]") == [
-      {:loaded, "[b]"},
+    Helper.assert_events_notified(parser, "[b]", [
       {:started, "surrounded_by#4(lit#1, lit#2, lit#3)"},
-      {:started, "sequence_of#7([skip#5, lit#1, skip#6])"},
-      {:started, "skip#5(lit#2)"},
-      {:started, ~s|lit#2("[")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
       {:started, ~s|lit#1("a")|},
       {:failed, {1, 1, 2}},
-      {:failed, {0, 1, 1}},
-      {:failed, {0, 1, 1}}]
+      {:failed, {0, 1, 1}}
+    ])
   end
 end

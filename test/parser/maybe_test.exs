@@ -20,22 +20,16 @@ defmodule Paco.Parser.MaybeTest do
   end
 
   test "notify events on combined success" do
-    assert Helper.events_notified_by(maybe(lit("aaa")), "aaa") == [
-      {:loaded, "aaa"},
+    Helper.assert_events_notified(maybe(lit("aaa")), "aaa", [
       {:started, "maybe#2(lit#1)"},
-      {:started, ~s|lit#1("aaa")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ]
+    ])
   end
 
   test "notify events on combined failure" do
-    assert Helper.events_notified_by(maybe(lit("aaa")), "bbb") == [
-      {:loaded, "bbb"},
+    Helper.assert_events_notified(maybe(lit("aaa")), "bbb", [
       {:started, "maybe#2(lit#1)"},
-      {:started, ~s|lit#1("aaa")|},
-      {:failed, {0, 1, 1}},
       {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
-    ]
+    ])
   end
 end

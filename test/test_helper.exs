@@ -12,16 +12,24 @@ defmodule Paco.Test.Helper do
 
   def counted(key), do: Process.get(key, 0)
 
-  def events_notified_by(parser, text) do
+  def assert_events_notified(parser, text, expected) do
     alias Paco.Test.EventRecorder
     {:ok, collector} = EventRecorder.start_link
     try do
       Paco.parse(parser, text, collector: collector)
-      EventRecorder.events_recorded(collector)
+      notified = EventRecorder.events_recorded(collector)
+      do_assert_events_notified(notified, expected)
     after
       EventRecorder.stop(collector)
     end
   end
+
+  defp do_assert_events_notified([], []), do: true
+  defp do_assert_events_notified([], [_|_]=r) do
+    ExUnit.Assertions.flunk "Some events were not notified:\n#{inspect(r)}"
+  end
+  defp do_assert_events_notified([hl|tl], [hl|tr]), do: do_assert_events_notified(tl, tr)
+  defp do_assert_events_notified([_|tl], r), do: do_assert_events_notified(tl, r)
 end
 
 defmodule Paco.Test.EventRecorder do

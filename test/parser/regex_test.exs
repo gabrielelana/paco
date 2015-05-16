@@ -82,19 +82,17 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "notify events on success" do
-    assert Helper.events_notified_by(regex(~r/a+/), "aaa") == [
-      {:loaded, "aaa"},
+    Helper.assert_events_notified(regex(~r/a+/), "aaa", [
       {:started, "regex#1(~r/a+/, [])"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ]
+    ])
   end
 
   test "notify events on failure" do
-    assert Helper.events_notified_by(regex(~r/b+/), "aaa") == [
-      {:loaded, "aaa"},
+    Helper.assert_events_notified(regex(~r/b+/), "aaa", [
       {:started, "regex#1(~r/b+/, [])"},
       {:failed, {0, 1, 1}},
-    ]
+    ])
   end
 
   test "increment indexes for a match" do

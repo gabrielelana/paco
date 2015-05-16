@@ -30,23 +30,16 @@ defmodule Paco.Parser.LexemeTest do
   end
 
   test "notify events on success" do
-    assert Helper.events_notified_by(lex("a"), " a ") == [
-      {:loaded, " a "},
-      {:started, "lex#1(\"a\")"},
-      {:started, "surrounded_by#4(lit#2, regex#3, regex#3)"},
-      {:started, "sequence_of#7([skip#5, lit#2, skip#6])"},
-      {:started, "skip#5(regex#3)"},
-      {:started, "regex#3(~r/\\s*/, [])"},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:started, "lit#2(\"a\")"},
-      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
-      {:started, "skip#6(regex#3)"},
-      {:started, "regex#3(~r/\\s*/, [])"},
-      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
+    Helper.assert_events_notified(lex("a"), " a ", [
+      {:started, ~s|lex#1("a")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}}]
+    ])
+  end
+
+  test "notify events on failure" do
+    Helper.assert_events_notified(lex("a"), " b ", [
+      {:started, ~s|lex#1("a")|},
+      {:failed, {0, 1, 1}},
+    ])
   end
 end

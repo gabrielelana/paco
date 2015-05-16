@@ -52,19 +52,17 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "notify events on success" do
-    assert Helper.events_notified_by(lit("aaa"), "aaa") == [
-      {:loaded, "aaa"},
+    Helper.assert_events_notified(lit("aaa"), "aaa", [
       {:started, ~s|lit#1("aaa")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ]
+    ])
   end
 
   test "notify events on failure" do
-    assert Helper.events_notified_by(lit("bbb"), "aaa") == [
-      {:loaded, "aaa"},
+    Helper.assert_events_notified(lit("bbb"), "aaa", [
       {:started, ~s|lit#1("bbb")|},
       {:failed, {0, 1, 1}},
-    ]
+    ])
   end
 
   test "increment indexes for a match" do

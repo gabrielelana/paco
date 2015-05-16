@@ -49,33 +49,23 @@ defmodule Paco.Parser.SequenceOfTest do
   end
 
   test "notify events on success" do
-    assert Helper.events_notified_by(sequence_of([lit("a"), lit("b")]), "ab") == [
-      {:loaded, "ab"},
+    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ab", [
       {:started, "sequence_of#3([lit#1, lit#2])"},
-      {:started, ~s|lit#1("a")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:started, ~s|lit#2("b")|},
-      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
       {:matched, {0, 1, 1}, {1, 1, 2}, {2, 1, 3}},
-    ]
+    ])
   end
 
-  test "notify events on failure" do
-    assert Helper.events_notified_by(sequence_of([lit("a"), lit("b")]), "cc") == [
-      {:loaded, "cc"},
+  test "notify events on failure because of first failed" do
+    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "cc", [
       {:started, "sequence_of#3([lit#1, lit#2])"},
-      {:started, ~s|lit#1("a")|},
       {:failed, {0, 1, 1}},
+    ])
+  end
+
+  test "notify events on failure because of last failed" do
+    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ac", [
+      {:started, "sequence_of#3([lit#1, lit#2])"},
       {:failed, {0, 1, 1}},
-    ]
-    assert Helper.events_notified_by(sequence_of([lit("a"), lit("b")]), "ac") == [
-      {:loaded, "ac"},
-      {:started, "sequence_of#6([lit#4, lit#5])"},
-      {:started, ~s|lit#4("a")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:started, ~s|lit#5("b")|},
-      {:failed, {1, 1, 2}},
-      {:failed, {0, 1, 1}},
-    ]
+    ])
   end
 end

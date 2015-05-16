@@ -46,34 +46,24 @@ defmodule Paco.Parser.OneOfTest do
     }
   end
 
-  test "notify events on success" do
-    assert Helper.events_notified_by(one_of([lit("a"), lit("b")]), "a") == [
-      {:loaded, "a"},
+  test "notify events on success because first succeeded" do
+    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "a", [
       {:started, "one_of#3([lit#1, lit#2])"},
-      {:started, ~s|lit#1("a")|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
+    ])
+  end
+
+  test "notify events on success because last succeeded" do
+    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "b", [
+      {:started, "one_of#3([lit#1, lit#2])"},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-    ]
-    assert Helper.events_notified_by(one_of([lit("a"), lit("b")]), "b") == [
-      {:loaded, "b"},
-      {:started, "one_of#6([lit#4, lit#5])"},
-      {:started, ~s|lit#4("a")|},
-      {:failed, {0, 1, 1}},
-      {:started, ~s|lit#5("b")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-    ]
+    ])
   end
 
   test "notify events on failure" do
-    assert Helper.events_notified_by(one_of([lit("a"), lit("b")]), "c") == [
-      {:loaded, "c"},
+    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "c", [
       {:started, "one_of#3([lit#1, lit#2])"},
-      {:started, ~s|lit#1("a")|},
       {:failed, {0, 1, 1}},
-      {:started, ~s|lit#2("b")|},
-      {:failed, {0, 1, 1}},
-      {:failed, {0, 1, 1}},
-    ]
+    ])
   end
 end
