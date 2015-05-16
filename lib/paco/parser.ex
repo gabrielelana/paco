@@ -159,7 +159,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ literal(s) do
+  parser_ lit(s) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
       case consume(s, text, from, from) do
