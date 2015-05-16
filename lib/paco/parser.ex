@@ -9,6 +9,20 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
+  parser_ lex(s) do
+    parser = lit(s) |> surrounded_by(regex(~r/\s*/))
+    fn %Paco.State{at: at, collector: collector} = state, this ->
+      notify(collector, {:started, Paco.describe(this)})
+      case parser.parse.(state, parser) do
+        %Paco.Success{from: from, to: to, at: at} = success ->
+          notify(collector, {:matched, from, to, at})
+          success
+        %Paco.Failure{} ->
+          notify(collector, {:failed, at})
+          %Paco.Failure{at: at, what: Paco.describe(this)}
+      end
+    end
+  end
 
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
   parser_ surrounded_by(parser, left, right) do
