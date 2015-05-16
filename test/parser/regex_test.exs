@@ -7,56 +7,56 @@ defmodule Paco.Parser.RegexTest do
   alias Paco.Test.Helper
 
   test "parse" do
-    assert parse(regex(~r/a+/), "a") == {:ok, "a"}
-    assert parse(regex(~r/a+/), "aa") == {:ok, "aa"}
-    assert parse(regex(~r/a+/), "aaa") == {:ok, "aaa"}
+    assert parse(re(~r/a+/), "a") == {:ok, "a"}
+    assert parse(re(~r/a+/), "aa") == {:ok, "aa"}
+    assert parse(re(~r/a+/), "aaa") == {:ok, "aaa"}
   end
 
   test "from" do
-    assert %Paco.Parser{name: "regex"} = from(~r/a+/)
-    assert %Paco.Parser{name: "regex"} = from(~R/a+/)
+    assert %Paco.Parser{name: "re"} = from(~r/a+/)
+    assert %Paco.Parser{name: "re"} = from(~R/a+/)
   end
 
   test "parse with captures" do
-    assert parse(regex(~r/c(a+)/), "ca") == {:ok, ["ca", "a"]}
+    assert parse(re(~r/c(a+)/), "ca") == {:ok, ["ca", "a"]}
     # repeated subpatterns are not supported by regular expressions
-    assert parse(regex(~r/c(a)+/), "caa") == {:ok, ["caa", "a"]}
-    assert parse(regex(~r/c(a+)(b+)/), "caaabbb") == {:ok, ["caaabbb", "aaa", "bbb"]}
-    assert parse(regex(~r/c(a+)(b*)/), "caaa") == {:ok, ["caaa", "aaa", ""]}
+    assert parse(re(~r/c(a)+/), "caa") == {:ok, ["caa", "a"]}
+    assert parse(re(~r/c(a+)(b+)/), "caaabbb") == {:ok, ["caaabbb", "aaa", "bbb"]}
+    assert parse(re(~r/c(a+)(b*)/), "caaa") == {:ok, ["caaa", "aaa", ""]}
   end
 
   test "parse with named captures" do
-    assert parse(regex(~r/c(?<As>a+)/), "ca") == {:ok, ["ca", %{"As" => "a"}]}
-    assert parse(regex(~r/c(?<As>a+)/), "caaa") == {:ok, ["caaa", %{"As" => "aaa"}]}
+    assert parse(re(~r/c(?<As>a+)/), "ca") == {:ok, ["ca", %{"As" => "a"}]}
+    assert parse(re(~r/c(?<As>a+)/), "caaa") == {:ok, ["caaa", %{"As" => "aaa"}]}
     # repeated subpatterns are not supported by regular expressions
-    assert parse(regex(~r/c(?<As>a)+/), "caaa") == {:ok, ["caaa", %{"As" => "a"}]}
-    assert parse(regex(~r/c(?<As>a+)(?<Bs>b+)/), "cab") == {:ok, ["cab", %{"As" => "a", "Bs" => "b"}]}
+    assert parse(re(~r/c(?<As>a)+/), "caaa") == {:ok, ["caaa", %{"As" => "a"}]}
+    assert parse(re(~r/c(?<As>a+)(?<Bs>b+)/), "cab") == {:ok, ["cab", %{"As" => "a", "Bs" => "b"}]}
   end
 
   test "patterns are anchored at the beginning of the text" do
-    assert {:error, _} = parse(regex(~r/a+/), "baaa")
-    assert {:error, _} = parse(regex(~r/.*a+/), "b\naaa")
-    assert {:ok, _}    = parse(regex(~r/.*\na+/m), "b\naaa")
-    assert {:error, _} = parse(regex(~r/\Aa+/), "baaa")
+    assert {:error, _} = parse(re(~r/a+/), "baaa")
+    assert {:error, _} = parse(re(~r/.*a+/), "b\naaa")
+    assert {:ok, _}    = parse(re(~r/.*\na+/m), "b\naaa")
+    assert {:error, _} = parse(re(~r/\Aa+/), "baaa")
   end
 
   test "describe" do
-    assert describe(regex(~r/a+/)) == "regex#1(~r/a+/, [])"
-    assert describe(regex(~r/a+/i)) == "regex#2(~r/a+/i, [])"
-    assert describe(regex(~r/a+/i, wait_for: 1_000)) == "regex#3(~r/a+/i, [wait_for: 1000])"
+    assert describe(re(~r/a+/)) == "re#1(~r/a+/, [])"
+    assert describe(re(~r/a+/i)) == "re#2(~r/a+/i, [])"
+    assert describe(re(~r/a+/i, wait_for: 1_000)) == "re#3(~r/a+/i, [wait_for: 1000])"
   end
 
   test "failure" do
-    assert parse(regex(~r/a+/), "b") == {:error,
+    assert parse(re(~r/a+/), "b") == {:error,
       """
-      Failed to match regex#1(~r/a+/, []) at 1:1
+      Failed to match re#1(~r/a+/, []) at 1:1
       """
     }
   end
 
   test "wait for more state in stream mode" do
     [result] = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(regex(~r/a+b/))
+             |> Paco.Stream.parse(re(~r/a+b/))
              |> Enum.to_list
 
     assert result == "aaab"
@@ -64,7 +64,7 @@ defmodule Paco.Parser.RegexTest do
 
   test "don't wait for more state if we have enough" do
     results = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(regex(~r/a+/))
+             |> Paco.Stream.parse(re(~r/a+/))
              |> Enum.to_list
 
     assert results == ["a", "a", "a"]
@@ -75,28 +75,28 @@ defmodule Paco.Parser.RegexTest do
     # return a failure, since 3 characters are not enough (given the state)
     # to make the parser succeed then the parser fails
     result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(regex(~r/a+b/, wait_for: 3))
+             |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
              |> Enum.to_list
 
     assert result == []
   end
 
   test "notify events on success" do
-    Helper.assert_events_notified(regex(~r/a+/), "aaa", [
-      {:started, "regex#1(~r/a+/, [])"},
+    Helper.assert_events_notified(re(~r/a+/), "aaa", [
+      {:started, "re#1(~r/a+/, [])"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
 
   test "notify events on failure" do
-    Helper.assert_events_notified(regex(~r/b+/), "aaa", [
-      {:started, "regex#1(~r/b+/, [])"},
+    Helper.assert_events_notified(re(~r/b+/), "aaa", [
+      {:started, "re#1(~r/b+/, [])"},
       {:failed, {0, 1, 1}},
     ])
   end
 
   test "increment indexes for a match" do
-    parser = regex(~r/a+/)
+    parser = re(~r/a+/)
     success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
@@ -105,7 +105,7 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "increment indexes for a match with newlines" do
-    parser = regex(~r/(?:a\n)+/m)
+    parser = re(~r/(?:a\n)+/m)
     success = parser.parse.(Paco.State.from("a\na\na\nbbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {5, 3, 2}
@@ -114,7 +114,7 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "increment indexes for a match with captures" do
-    parser = regex(~r/(a+)/m)
+    parser = re(~r/(a+)/m)
     success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
@@ -123,7 +123,7 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "increment indexes for a single character match" do
-    parser = regex(~r/a/)
+    parser = re(~r/a/)
     success = parser.parse.(Paco.State.from("aaabbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
@@ -132,7 +132,7 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "increment indexes for an empty match" do
-    parser = regex(~r/a*/)
+    parser = re(~r/a*/)
     success = parser.parse.(Paco.State.from("bbb"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}

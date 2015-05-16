@@ -4,13 +4,13 @@ defmodule Paco.Parser do
   defstruct id: nil, name: nil, combine: nil, parse: nil
 
   def from(%Paco.Parser{} = p), do: p
-  def from(%Regex{} = r), do: regex(r)
+  def from(%Regex{} = r), do: re(r)
 
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
   parser_ lex(s) do
-    parser = lit(s) |> surrounded_by(regex(~r/\s*/))
+    parser = lit(s) |> surrounded_by(re(~r/\s*/))
     fn %Paco.State{at: at, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
@@ -130,7 +130,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ regex(r, opts \\ []) do
+  parser_ re(r, opts \\ []) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
