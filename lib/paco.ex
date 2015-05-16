@@ -26,7 +26,7 @@ defmodule Paco do
   @doc false
   defmacro __using__(_) do
     quote do
-      import Paco.Helper
+      import Paco.Macro
       import Paco.Parser
 
       Module.register_attribute(__MODULE__, :paco_root_parser, accumulate: false)

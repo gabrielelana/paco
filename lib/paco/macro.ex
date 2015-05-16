@@ -1,4 +1,4 @@
-defmodule Paco.Helper do
+defmodule Paco.Macro do
 
   defmacro parser_(definition, do: {:__block__, [], _} = block) do
     parser__(definition, do: block)

@@ -1,5 +1,5 @@
 defmodule Paco.Parser do
-  import Paco.Helper
+  import Paco.Macro
 
   defstruct id: nil, name: nil, combine: nil, parse: nil
 
