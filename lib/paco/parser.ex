@@ -13,7 +13,7 @@ defmodule Paco.Parser do
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
   parser_ surrounded_by(parser, left, right) do
     parser = sequence_of([skip(left), parser, skip(right)])
-    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
+    fn %Paco.State{at: at, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at, result: [result]} = success ->
@@ -42,11 +42,14 @@ defmodule Paco.Parser do
   end
 
   parser_ skip(%Paco.Parser{} = parser) do
-    fn %Paco.State{} = state, _this ->
+    fn %Paco.State{at: at, collector: collector} = state, this ->
+      notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
-        %Paco.Success{} = success ->
+        %Paco.Success{from: from, to: to, at: at} = success ->
+          notify(collector, {:matched, from, to, at})
           %Paco.Success{success | skip: true}
         %Paco.Failure{} = failure ->
+          notify(collector, {:failed, at})
           failure
       end
     end
