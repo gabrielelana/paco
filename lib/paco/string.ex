@@ -67,10 +67,25 @@ defmodule Paco.String do
   end
 
   def consume_until(text, 0, to, at), do: {text, to, at}
-  def consume_until("", _n, _to, _at), do: :end_of_input
   def consume_until(text, n, _to, at) when is_number(n) and n > 0 do
-    {h, tail} = next_grapheme(text)
-    consume_until(tail, n - 1, at, position_after(at, h))
+    case next_grapheme(text) do
+      {h, tail} ->
+        consume_until(tail, n - 1, at, position_after(at, h))
+      nil ->
+        :end_of_input
+    end
+  end
+  def consume_until(text, f, to, at) when is_function(f) do
+    case next_grapheme(text) do
+      {h, tail} ->
+        if (f.(h)) do
+          consume_until(tail, f, at, position_after(at, h))
+        else
+          {h <> tail, to, at}
+        end
+      nil ->
+        {text, to, at}
+    end
   end
 
   def seek(tail, to, at, len), do: seek("", tail, to, at, len)
