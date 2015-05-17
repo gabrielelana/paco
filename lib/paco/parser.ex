@@ -135,12 +135,12 @@ defmodule Paco.Parser do
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
-          {s, tail, to, at} = Paco.String.seek(text, from, from, len)
+          {s, tail, to, at} = Paco.String.seek(text, from, len)
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         [{_, len}|captures] ->
-          {s, tail, to, at} = Paco.String.seek(text, from, from, len)
+          {s, tail, to, at} = Paco.String.seek(text, from, len)
           captures = case Regex.names(r) do
             [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
             _ -> [Regex.named_captures(r, text)]

@@ -123,12 +123,13 @@ defmodule Paco.String do
     end
   end
 
-  def seek(tail, to, at, len), do: seek("", tail, to, at, len)
-  def seek(between, tail, to, at, 0), do: {between, tail, to, at}
-  def seek(between, "", to, at, _), do: {between, "", to, at}
-  def seek(between, tail, _, at, len) do
-    {h, tail} = next_grapheme(tail)
-    seek(between <> h, tail, at, position_after(at, h), len-1)
+  def seek(text, at, len), do: seek(text, "", at, at, len)
+
+  defp seek(text, seeked, to, at, 0), do: {seeked, text, to, at}
+  defp seek("", seeked, to, at, _), do: {seeked, "", to, at}
+  defp seek(text, seeked, _, at, len) do
+    {h, tail} = next_grapheme(text)
+    seek(tail, seeked <> h, at, position_after(at, h), len-1)
   end
 
   def line_at(text, at) do

@@ -24,9 +24,9 @@ defmodule Paco.StringTest do
   end
 
   test "seek" do
-    assert seek("", "aaa", {0, 1, 1}, {0, 1, 1}, 3) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
-    assert seek("", "aaab", {0, 1, 1}, {0, 1, 1}, 3) == {"aaa", "b", {2, 1, 3}, {3, 1, 4}}
-    assert seek("", "a\na", {0, 1, 1}, {0, 1, 1}, 3) == {"a\na", "", {2, 2, 1}, {3, 2, 2}}
+    assert seek("aaa", {0, 1, 1}, 3) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert seek("aaab", {0, 1, 1}, 3) == {"aaa", "b", {2, 1, 3}, {3, 1, 4}}
+    assert seek("a\na", {0, 1, 1}, 3) == {"a\na", "", {2, 2, 1}, {3, 2, 2}}
   end
 
   test "line_at" do
