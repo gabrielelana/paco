@@ -77,6 +77,21 @@ defmodule Paco.String do
         :end_of_input
     end
   end
+  defp consume_until(text, consumed, boundary, to, at) when is_binary(boundary) do
+    case consume(boundary, text, to, at) do
+      {_, _, _} ->
+        {consumed, text, to, at}
+      :error ->
+        case next_grapheme(text) do
+          {h, tail} ->
+            consume_until(tail, consumed <> h, boundary, at, position_after(at, h))
+          nil ->
+            :end_of_input
+        end
+      :end_of_input ->
+        :end_of_input
+    end
+  end
   defp consume_until(text, consumed, f, to, at) when is_function(f) do
     case next_grapheme(text) do
       {h, tail} ->
