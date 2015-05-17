@@ -8,6 +8,7 @@ defmodule Paco.StringTest do
     assert consume("aa", "aa", {0, 1, 1}, {0, 1, 1}) == {{1, 1, 2}, {2, 1, 3}, ""}
     assert consume("aaa", "aaa", {0, 1, 1}, {0, 1, 1}) == {{2, 1, 3}, {3, 1, 4}, ""}
     assert consume("aaa", "aaab", {0, 1, 1}, {0, 1, 1}) == {{2, 1, 3}, {3, 1, 4}, "b"}
+    assert consume("a", "", {0, 1, 1}, {0, 1, 1}) == :end_of_input
   end
 
   test "consume with newlines" do
@@ -42,5 +43,13 @@ defmodule Paco.StringTest do
     assert line_at("a\nb\nc", 3) == "b"
     assert line_at("a\nb\nc", 4) == "c"
     assert line_at("a\nb\nc", 5) == ""
+  end
+
+  test "consume_until a number of graphemes are counted" do
+    assert consume_until("aaa", 1, {0, 1, 1}, {0, 1, 1}) == {"aa", {0, 1, 1}, {1, 1, 2}}
+    assert consume_until("aaa", 2, {0, 1, 1}, {0, 1, 1}) == {"a", {1, 1, 2}, {2, 1, 3}}
+    assert consume_until("aaa", 3, {0, 1, 1}, {0, 1, 1}) == {"", {2, 1, 3}, {3, 1, 4}}
+    assert consume_until("a\na", 3, {0, 1, 1}, {0, 1, 1}) == {"", {2, 2, 1}, {3, 2, 2}}
+    assert consume_until("aaa", 4, {0, 1, 1}, {0, 1, 1}) == :end_of_input
   end
 end
