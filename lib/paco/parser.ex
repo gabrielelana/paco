@@ -211,6 +211,33 @@ defmodule Paco.Parser do
       end
     end
   end
+
+  parser_ until(p) do
+    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
+      description = Paco.describe(this)
+      case Paco.String.consume_until(text, p, from) do
+        {consumed, tail, to, at} ->
+          notify(collector, {:started, description})
+          notify(collector, {:matched, from, to, at})
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        :end_of_input when is_pid(stream) ->
+          send(stream, {self, :more})
+          receive do
+            {:load, more_text} ->
+              notify(collector, {:loaded, more_text})
+              this.parse.(%Paco.State{state|text: text <> more_text}, this)
+            :halt ->
+              notify(collector, {:started, description})
+              notify(collector, {:failed, from})
+              %Paco.Failure{at: from, what: description}
+          end
+        _ ->
+          notify(collector, {:started, description})
+          notify(collector, {:failed, from})
+          %Paco.Failure{at: from, what: description}
+      end
+    end
+  end
 end
 
 defimpl Inspect, for: Paco.Parser do
