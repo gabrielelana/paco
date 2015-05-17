@@ -54,7 +54,7 @@ defmodule Paco.Parser.RegexTest do
     }
   end
 
-  test "wait for more state in stream mode" do
+  test "wait for more text in stream mode" do
     [result] = Helper.stream_of("aaab")
              |> Paco.Stream.parse(re(~r/a+b/))
              |> Enum.to_list
@@ -62,7 +62,7 @@ defmodule Paco.Parser.RegexTest do
     assert result == "aaab"
   end
 
-  test "don't wait for more state if we have enough" do
+  test "don't wait for more text if we have enough" do
     results = Helper.stream_of("aaa")
              |> Paco.Stream.parse(re(~r/a+/))
              |> Enum.to_list
@@ -70,10 +70,10 @@ defmodule Paco.Parser.RegexTest do
     assert results == ["a", "a", "a"]
   end
 
-  test "don't wait for more state in stream mode when state is enough" do
+  test "don't wait for more text in stream mode when initial text is enough" do
     # we are telling the parser to wait for 3 characters before giving up
-    # return a failure, since 3 characters are not enough (given the state)
-    # to make the parser succeed then the parser fails
+    # return a failure, since 3 characters are not enough to make the parser
+    # succeed then the parser fails
     result = Helper.stream_of("aaab")
              |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
              |> Enum.to_list
