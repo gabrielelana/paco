@@ -201,20 +201,6 @@ defmodule Paco.Parser do
   end
 
 
-  def label(parser, name) do
-    %Paco.Parser{
-      name: name,
-      combine: [],
-      parse: fn %Paco.State{} = state, _this ->
-               case parser.parse.(state, parser) do
-                 %Paco.Success{} = success ->
-                   success
-                 %Paco.Failure{} = failure ->
-                   %Paco.Failure{failure | what: name}
-               end
-             end}
-  end
-
 
 
   @nl ["\x{000A}",         # LF:    Line Feed, U+000A
