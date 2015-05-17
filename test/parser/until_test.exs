@@ -6,12 +6,23 @@ defmodule Paco.Parser.UntilTest do
 
   alias Paco.Test.Helper
 
-  test "parse success" do
+  test "success" do
     assert parse(until(1), "abc") == {:ok, "a"}
     assert parse(until(3), "abc") == {:ok, "abc"}
     assert parse(until(&uppercase?/1), "ABc") == {:ok, "AB"}
     assert parse(until("c"), "abc") == {:ok, "ab"}
     assert parse(until({"c", "\\"}), "ab\\cdce") == {:ok, "ab\\cd"}
+  end
+
+  test "any" do
+    assert parse(any, "abc") == {:ok, "a"}
+    assert parse(any(1), "abc") == {:ok, "a"}
+    assert parse(any(2), "abc") == {:ok, "ab"}
+    assert parse(any(1), "abc") == {:ok, "a"}
+  end
+
+  test "any works for composite graphemes" do
+    assert parse(any, "e\x{0301}aaa") == {:ok, "e\x{0301}"}
   end
 
   test "describe" do
