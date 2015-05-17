@@ -57,7 +57,7 @@ defmodule Paco.Explainer do
           line_pointer_spacer_from = String.duplicate(" ", String.length(line_pointer_from))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
-          #{line_pointer_from} #{line(text, fp)}
+          #{line_pointer_from} #{Paco.String.line_at(text, fp)}
           #{line_pointer_spacer_from} #{pointers(fc, tc, ac)}
           """
         else
@@ -67,9 +67,9 @@ defmodule Paco.Explainer do
           line_pointer_spacer_to = String.duplicate(" ", String.length(line_pointer_to))
           """
           Matched #{what} from #{fl}:#{fc} to #{tl}:#{tc}
-          #{line_pointer_from} #{line(text, fp)}
+          #{line_pointer_from} #{Paco.String.line_at(text, fp)}
           #{line_pointer_spacer_from} #{pointers(fc, fc, ac)}
-          #{line_pointer_to} #{line(text, tp)}
+          #{line_pointer_to} #{Paco.String.line_at(text, tp)}
           #{line_pointer_spacer_to} #{pointers(tc, tc, ac)}
           """
         end,
@@ -85,7 +85,7 @@ defmodule Paco.Explainer do
       indent(
         """
         Failed to match #{failed} at #{l}:#{c}
-        #{line_pointer} #{line(text, p)}
+        #{line_pointer} #{Paco.String.line_at(text, p)}
         #{line_pointer_spacer} #{pointers(c, c, nil)}
         """,
         level
@@ -143,36 +143,6 @@ defmodule Paco.Explainer do
     "^" <>
     String.duplicate(" ", to_column - from_column - 1) <>
     "^"
-  end
-
-  defp line(text, at) do
-    case {collect(text, at, &(&1 - 1)), at} do
-      {[], 0} ->
-        ""
-      {[], _} ->
-        collect(text, at - 1, &(&1 - 1))
-        |> Enum.reverse
-        |> Enum.join
-      {left, _} ->
-        Enum.concat(
-          left |> Enum.reverse,
-          collect(text, at + 1, &(&1 + 1)))
-        |> Enum.join
-    end
-  end
-
-  defp collect(text, at, next) do
-    Stream.unfold(at, fn
-                        at when at < 0 ->
-                          nil
-                        at ->
-                          case String.at(text, at) do
-                            nil -> nil
-                            "\n" -> nil
-                            in_line -> {in_line, next.(at)}
-                          end
-                      end)
-    |> Enum.to_list
   end
 
   defp indent_with_spaces(text, level) do
