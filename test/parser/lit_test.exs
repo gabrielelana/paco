@@ -6,15 +6,9 @@ defmodule Paco.Parser.LiteralTest do
 
   alias Paco.Test.Helper
 
-  test "parse lit" do
+  test "success" do
     assert parse(lit("aaa"), "aaa") == {:ok, "aaa"}
-  end
-
-  test "parse multibyte lit" do
     assert parse(lit("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
-  end
-
-  test "parse empty lit" do
     assert parse(lit(""), "") == {:ok, ""}
   end
 
@@ -23,16 +17,16 @@ defmodule Paco.Parser.LiteralTest do
     assert describe(lit("\n")) == ~S|lit#2("\n")|
   end
 
-  test "skipped parsers should be removed from result" do
-    assert parse(skip(lit("a")), "a") == {:ok, []}
-  end
-
-  test "fail to parse a lit" do
+  test "failure" do
     assert parse(lit("aaa"), "bbb") == {:error,
       """
       Failed to match lit#1("aaa") at 1:1
       """
     }
+  end
+
+  test "skipped parsers should be removed from result" do
+    assert parse(skip(lit("a")), "a") == {:ok, []}
   end
 
   test "skip doesn't influece failures" do
@@ -43,8 +37,8 @@ defmodule Paco.Parser.LiteralTest do
     }
   end
 
-  test "fail to parse empty lit" do
-    assert parse(lit("aaa"), "") == {:error,
+  test "failure for end of input" do
+    assert parse(lit("aaa"), "aa") == {:error,
       """
       Failed to match lit#1("aaa") at 1:1
       """
