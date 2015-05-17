@@ -66,6 +66,17 @@ defmodule Paco.StringTest do
   end
 
   test "consume_until a boundary with more than one character" do
-    assert consume_until("aaabbb", "bbb", {0, 1, 1}) == {"aaa", "bbb", {2, 1, 3}, {3, 1, 4}}
+    assert consume_until("aaabbb", "bbb", {0, 1, 1}) ==
+           {"aaa", "bbb", {2, 1, 3}, {3, 1, 4}}
+  end
+
+  test "consume_until a boundary with escape" do
+    assert consume_until("a\\[b[c]", {"[", "\\"}, {0, 1, 1}) ==
+           {"a\\[b", "[c]", {3, 1, 4}, {4, 1, 5}}
+  end
+
+  test "consume_until a boundary with escape with more than one character" do
+    assert consume_until("a<ESCAPE>[b[c]", {"[", "<ESCAPE>"}, {0, 1, 1}) ==
+           {"a<ESCAPE>[b", "[c]", {10, 1, 11}, {11, 1, 12}}
   end
 end

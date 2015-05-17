@@ -77,21 +77,6 @@ defmodule Paco.String do
         :end_of_input
     end
   end
-  defp consume_until(text, consumed, boundary, to, at) when is_binary(boundary) do
-    case consume(boundary, text, to, at) do
-      {_, _, _} ->
-        {consumed, text, to, at}
-      :error ->
-        case next_grapheme(text) do
-          {h, tail} ->
-            consume_until(tail, consumed <> h, boundary, at, position_after(at, h))
-          nil ->
-            :end_of_input
-        end
-      :end_of_input ->
-        :end_of_input
-    end
-  end
   defp consume_until(text, consumed, f, to, at) when is_function(f) do
     case next_grapheme(text) do
       {h, tail} ->
@@ -102,6 +87,37 @@ defmodule Paco.String do
         end
       nil ->
         {consumed, text, to, at}
+    end
+  end
+  defp consume_until(text, consumed, {boundary, escape}, to, at) do
+    next = &consume_until_boundary_with_escape(&1, &2, boundary, escape, &3, &4, &5)
+    consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next)
+  end
+  defp consume_until(text, consumed, boundary, to, at) do
+    next = &consume_until_boundary(&1, &2, boundary, &3, &4, &5)
+    consume_until_boundary(text, consumed, boundary, to, at, next)
+  end
+
+  defp consume_until_boundary(text, consumed, boundary, to, at, next) do
+    case consume(boundary, text, to, at) do
+      {_, _, _} ->
+        {consumed, text, to, at}
+      :error ->
+        {h, tail} = next_grapheme(text)
+        next.(tail, consumed <> h, at, position_after(at, h), next)
+      :end_of_input ->
+        :end_of_input
+    end
+  end
+
+  defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
+    case consume(escape <> boundary, text, to, at) do
+      {to, at, tail} ->
+        consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
+      :error ->
+        consume_until_boundary(text, consumed, boundary, to, at, next)
+      :end_of_input ->
+        :end_of_input
     end
   end
 
