@@ -1,20 +1,59 @@
 defmodule Paco.String do
   import String
 
-  @nl ["\x{000A}",         # LF:    Line Feed, U+000A
-       "\x{000B}",         # VT:    Vertical Tab, U+000B
-       "\x{000C}",         # FF:    Form Feed, U+000C
-       "\x{000D}",         # CR:    Carriage Return, U+000D
-       "\x{000D}\x{000A}", # CR+LF: CR (U+000D) followed by LF (U+000A)
-       "\x{0085}",         # NEL:   Next Line, U+0085
-       "\x{2028}",         # LS:    Line Separator, U+2028
-       "\x{2029}"          # PS:    Paragraph Separator, U+2029
-      ]
+  @nl ["\x{000A}",         # LINE FEED
+       "\x{000B}",         # LINE TABULATION
+       "\x{000C}",         # FORM FEED
+       "\x{000D}",         # CARRIAGE RETURN
+       "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
+       "\x{0085}",         # NEXT LINE
+       "\x{2028}",         # LINE SEPARATOR
+       "\x{2029}"]         # PARAGRAPH SEPARATOR
 
   Enum.each @nl, fn nl ->
     def newline?(<<unquote(nl)>>), do: true
   end
   def newline?(_), do: false
+
+
+  @ws ["\x{0009}",         # CHARACTER TABULATION
+       "\x{000A}",         # LINE FEED
+       "\x{000B}",         # LINE TABULATION
+       "\x{000C}",         # FORM FEED
+       "\x{000D}",         # CARRIAGE RETURN
+       "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
+       "\x{0020}",         # SPACE
+       "\x{0085}",         # NEXT LINE
+       "\x{00A0}",         # NO-BREAK SPACE
+       "\x{1680}",         # OGHAM SPACE MARK
+       "\x{2000}",         # EN QUAD
+       "\x{2001}",         # EM QUAD
+       "\x{2002}",         # EN SPACE
+       "\x{2003}",         # EM SPACE
+       "\x{2004}",         # THREE-PER-EM SPACE
+       "\x{2005}",         # FOUR-PER-EM SPACE
+       "\x{2006}",         # SIX-PER-EM SPACE
+       "\x{2007}",         # FIGURE SPACE
+       "\x{2008}",         # PUNCTUATION SPACE
+       "\x{2009}",         # THIN SPACE
+       "\x{200A}",         # HAIR SPACE
+       "\x{2028}",         # LINE SEPARATOR
+       "\x{2029}",         # PARAGRAPH SEPARATOR
+       "\x{202F}",         # NARROW NO-BREAK SPACE
+       "\x{205F}",         # MEDIUM MATHEMATICAL SPACE
+       "\x{3000}",         # IDEOGRAPHIC SPACE
+       "\x{180E}",         # MONGOLIAN VOWEL SEPARATOR
+       "\x{200B}",         # ZERO WIDTH SPACE
+       "\x{200C}",         # ZERO WIDTH NON-JOINER
+       "\x{200D}",         # ZERO WIDTH JOINER
+       "\x{2060}",         # WORD JOINER
+       "\x{FEFF}"]         # ZERO WIDTH NON-BREAKING SPACE
+
+  Enum.each @ws, fn ws ->
+    def whitespace?(<<unquote(ws)>>), do: true
+  end
+  def whitespace?(_), do: false
+
 
   def consume("", tail, to, at), do: {to, at, tail}
   def consume(_, "", _, _), do: :end_of_input
