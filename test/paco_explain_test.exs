@@ -5,7 +5,7 @@ defmodule Paco.ExplainTest do
   import Paco.Parser
   import Paco.Explainer
 
-  test "report single parser matched on a single line" do
+  test "report parser matched on a single line" do
     events = [
       {:loaded, "aaabbb"},
       {:started, "p1"},
@@ -19,7 +19,7 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report single parser matched on multiple lines" do
+  test "report parser matched on multiple lines" do
     events = [
       {:loaded, "aaa\nbbb"},
       {:started, "p1"},
@@ -35,7 +35,7 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report single parser failed" do
+  test "report parser failed" do
     events = [
       {:loaded, "aaabbb"},
       {:started, "p1"},
@@ -49,35 +49,35 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report matched one character outside of the visible line" do
+  test "report parser matched one character outside of the visible line" do
     events = [
-      {:loaded, "\n"},
-      {:started, "nl"},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 2, 2}}
+      {:loaded, "a\n"},
+      {:started, "eol"},
+      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}}
     ]
     assert report(events) ==
       """
-      Matched nl from 1:1 to 1:1
-      1:
-         ^
+      Matched eol from 1:2 to 1:2
+      1: a
+          ^
       """
   end
 
-  test "report matched without consuming any input (empty match)" do
+  test "report parser matched without consuming any input (empty match)" do
     events = [
-      {:loaded, ""},
-      {:started, "lit()"},
+      {:loaded, "a"},
+      {:started, "empty"},
       {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}}
     ]
     assert report(events) ==
       """
-      Matched lit() from 1:1 to 1:1
-      1:
+      Matched empty from 1:1 to 1:1
+      1: a
          ~
       """
   end
 
-  test "report multiple parsers match on multiple lines" do
+  test "report parser with few children" do
     events = [
       {:loaded, "aaa\nbbb"},
       {:started, "aaabbb"},
@@ -108,7 +108,7 @@ defmodule Paco.ExplainTest do
       """
   end
 
-  test "report deeply nested" do
+  test "report parsers deeply nested" do
     events = [
       {:loaded, "abcd"},
       {:started, "abcd"},
