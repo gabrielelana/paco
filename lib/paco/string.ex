@@ -55,11 +55,13 @@ defmodule Paco.String do
   def whitespace?(_), do: false
 
 
-  def consume("", tail, to, at), do: {to, at, tail}
-  def consume(_, "", _, _), do: :end_of_input
-  def consume(expected, given, _to, at) do
-    {h1, t1} = next_grapheme(expected)
-    {h2, t2} = next_grapheme(given)
+  def consume(text, expected, at), do: consume(text, expected, at, at)
+
+  defp consume(text, "", to, at), do: {text, to, at}
+  defp consume("", _, _, _), do: :end_of_input
+  defp consume(text, expected, _to, at) do
+    {h1, t1} = next_grapheme(text)
+    {h2, t2} = next_grapheme(expected)
     case {h1, h2} do
       {h, h} -> consume(t1, t2, at, position_after(at, h))
       _ -> :error
@@ -99,7 +101,7 @@ defmodule Paco.String do
   end
 
   defp consume_until_boundary(text, consumed, boundary, to, at, next) do
-    case consume(boundary, text, to, at) do
+    case consume(text, boundary, to, at) do
       {_, _, _} ->
         {consumed, text, to, at}
       :error ->
@@ -111,8 +113,8 @@ defmodule Paco.String do
   end
 
   defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
-    case consume(escape <> boundary, text, to, at) do
-      {to, at, tail} ->
+    case consume(text, escape <> boundary, to, at) do
+      {tail, to, at} ->
         consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
       :error ->
         consume_until_boundary(text, consumed, boundary, to, at, next)

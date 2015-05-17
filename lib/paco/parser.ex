@@ -186,8 +186,8 @@ defmodule Paco.Parser do
   parser_ lit(s) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
-      case Paco.String.consume(s, text, from, from) do
-        {to, at, tail} ->
+      case Paco.String.consume(text, s, from) do
+        {tail, to, at} ->
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
