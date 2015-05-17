@@ -36,21 +36,21 @@ defmodule Paco.Explainer do
     {:ok, {:ok, report(state.events |> Enum.reverse)}, state}
   end
 
-  def report(events, report \\ "", text \\ "", started \\ []) do
-    process(events, report, text, started, false)
+  def report(events) do
+    process(events, _report = %{}, _text = "", _started = [])
   end
 
-  defp process([], report, _text, [], _is_combinator), do: report
-  defp process([{:loaded, loaded}|events], report, so_far, started, _is_combinator) do
-    process(events, report, so_far <> loaded, started, false)
+  defp process([], report, _text, []), do: Dict.get(report, 0, "")
+  defp process([{:loaded, loaded}|events], report, so_far, started) do
+    process(events, report, so_far <> loaded, started)
   end
-  defp process([{:started, what}|events], report, text, started, _is_combinator) do
-    process(events, report, text, [what|started], false)
+  defp process([{:started, what}|events], report, text, started) do
+    process(events, report, text, [what|started])
   end
-  defp process([{:matched, from, to, at}|events], report, text, [what|started], is_combinator) do
+  defp process([{:matched, from, to, at}|events], report, text, [what|started]) do
     {{fp, fl, fc}, {tp, tl, tc}, {_, _, ac}} = {from, to, at}
     level = Enum.count(started)
-    matched_report =
+    report =
       indent(
         if fl == tl do
           line_pointer_from = "#{fl}:"
@@ -73,16 +73,15 @@ defmodule Paco.Explainer do
           #{line_pointer_spacer_to} #{pointers(tc, tc, ac)}
           """
         end,
-        level
-      )
-    report = if is_combinator, do: matched_report <> report, else: report <> matched_report
-    process(events, report, text, started, true)
+        level)
+      |> add_to_report_at(report, level)
+    process(events, report, text, started)
   end
-  defp process([{:failed, {p, l, c}}|events], report, text, [failed|started], is_combinator) do
+  defp process([{:failed, {p, l, c}}|events], report, text, [failed|started]) do
     level = Enum.count(started)
     line_pointer = "#{l}:"
     line_pointer_spacer = String.duplicate(" ", String.length(line_pointer))
-    failed_report =
+    report =
       indent(
         """
         Failed to match #{failed} at #{l}:#{c}
@@ -91,8 +90,31 @@ defmodule Paco.Explainer do
         """,
         level
       )
-    report = if is_combinator, do: failed_report <> report, else: report <> failed_report
-    process(events, report, text, started, true)
+      |> add_to_report_at(report, level)
+    process(events, report, text, started)
+  end
+
+  defp add_to_report_at(report_section, report, level) do
+    {report_section, report} = merge_with_children_report_at(report_section, report, level)
+    merge_with_brothers_report_at(report_section, report, level)
+  end
+
+  defp merge_with_children_report_at(report_section, report, level) do
+    case Dict.get(report, level + 1, :no_children) do
+      :no_children ->
+        {report_section, report}
+      children_report ->
+        {report_section <> children_report, Dict.delete(report, level + 1)}
+    end
+  end
+
+  defp merge_with_brothers_report_at(report_section, report, level) do
+    case Dict.get(report, level, :no_brothers) do
+      :no_brothers ->
+        Dict.put(report, level, report_section)
+      brothers_report ->
+        Dict.put(report, level, brothers_report <> report_section)
+    end
   end
 
   defp indent(text, level) do

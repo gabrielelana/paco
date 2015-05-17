@@ -137,6 +137,50 @@ defmodule Paco.ExplainTest do
       """
   end
 
+  test "report parser with few children that have few children" do
+    events = [
+      {:loaded, "abc"},
+      {:started, "level-0"},
+      {:started, "a-level-1"},
+      {:started, "a-level-2"},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
+      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
+      {:started, "b-level-1"},
+      {:started, "b-level-2"},
+      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
+      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
+      {:started, "c-level-1"},
+      {:started, "c-level-2"},
+      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
+      {:matched, {2, 1, 3}, {2, 1, 3}, {3, 1, 4}},
+      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
+    ]
+    assert report(events) ==
+      """
+      Matched level-0 from 1:1 to 1:3
+      1: abc
+         ^ ^
+      └─ Matched a-level-1 from 1:1 to 1:1
+         1: abc
+            ^
+         └─ Matched a-level-2 from 1:1 to 1:1
+            1: abc
+               ^
+      └─ Matched b-level-1 from 1:2 to 1:2
+         1: abc
+             ^
+         └─ Matched b-level-2 from 1:2 to 1:2
+            1: abc
+                ^
+      └─ Matched c-level-1 from 1:3 to 1:3
+         1: abc
+              ^
+         └─ Matched c-level-2 from 1:3 to 1:3
+            1: abc
+                 ^
+      """
+  end
+
   test "explain success" do
     assert explain(sequence_of([lit("aaa"), lit("bbb")]), "aaabbb") == {:ok,
       """
