@@ -68,6 +68,38 @@ defmodule Paco.String do
     end
   end
 
+  def consume_while(text, what, at), do: consume_while(text, "", what, at, at)
+
+  defp consume_while(text, consumed, what, at, at) when is_binary(what) do
+    what = Stream.unfold(what, &next_grapheme/1) |> Enum.to_list
+    consume_while(text, consumed, what, at, at)
+  end
+  defp consume_while(text, consumed, expected, to, at) when is_list(expected) do
+    case next_grapheme(text) do
+      {h, tail} ->
+        if Enum.any?(expected, &(&1 == h)) do
+          consume_while(tail, consumed <> h, expected, at, position_after(at, h))
+        else
+          {consumed, text, to, at}
+        end
+      nil ->
+        {consumed, text, to, at}
+    end
+  end
+  defp consume_while(text, consumed, f, to, at) when is_function(f) do
+    case next_grapheme(text) do
+      {h, tail} ->
+        if (f.(h)) do
+          consume_while(tail, consumed <> h, f, at, position_after(at, h))
+        else
+          {consumed, text, to, at}
+        end
+      nil ->
+        {consumed, text, to, at}
+    end
+  end
+
+
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
 
   defp consume_until(text, consumed, 0, to, at), do: {consumed, text, to, at}
