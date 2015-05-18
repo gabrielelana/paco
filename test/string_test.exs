@@ -31,14 +31,17 @@ defmodule Paco.StringTest do
   test "consume_while at the end of input" do
     # We are consuming 'a's till the end of available input, that's not an error, it's
     # the client that needs to decide, if in stream mode, if wait for more input, and
-    # see if there're more 'a's, or not
+    # see if there're more 'a's, or not. The client would recognize this case through
+    # the empty string returned as what is left to consume
     assert consume_while("aaa", "a", {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
   end
 
   test "consume_while a given function return true" do
     assert consume_while("    ab", &whitespace?/1, {0, 1, 1}) == {"    ", "ab", {3, 1, 4}, {4, 1, 5}}
+    # Same thing as above
     assert consume_while("    ", &whitespace?/1, {0, 1, 1}) == {"    ", "", {3, 1, 4}, {4, 1, 5}}
     assert consume_while("a", &whitespace?/1, {0, 1, 1}) == {"", "a", {0, 1, 1}, {0, 1, 1}}
+    # Same thing as above
     assert consume_while("", &whitespace?/1, {0, 1, 1}) == {"", "", {0, 1, 1}, {0, 1, 1}}
   end
 
@@ -51,9 +54,10 @@ defmodule Paco.StringTest do
   end
 
   test "consume_until given function returns true" do
-    assert consume_until("    ab", &whitespace?/1, {0, 1, 1}) == {"    ", "ab", {3, 1, 4}, {4, 1, 5}}
-    assert consume_until("    ", &whitespace?/1, {0, 1, 1}) == {"    ", "", {3, 1, 4}, {4, 1, 5}}
-    assert consume_until("a", &whitespace?/1, {0, 1, 1}) == {"", "a", {0, 1, 1}, {0, 1, 1}}
+    assert consume_until("abc   ", &whitespace?/1, {0, 1, 1}) == {"abc", "   ", {2, 1, 3}, {3, 1, 4}}
+    # Same thing as above
+    assert consume_until("abc", &whitespace?/1, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
+    # Same thing as above
     assert consume_until("", &whitespace?/1, {0, 1, 1}) == {"", "", {0, 1, 1}, {0, 1, 1}}
   end
 

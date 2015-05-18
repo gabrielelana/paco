@@ -9,7 +9,7 @@ defmodule Paco.Parser.UntilTest do
   test "success" do
     assert parse(until(1), "abc") == {:ok, "a"}
     assert parse(until(3), "abc") == {:ok, "abc"}
-    assert parse(until(&uppercase?/1), "ABc") == {:ok, "AB"}
+    assert parse(until(&uppercase?/1), "abC") == {:ok, "ab"}
     assert parse(until("c"), "abc") == {:ok, "ab"}
     assert parse(until({"c", "\\"}), "ab\\cdce") == {:ok, "ab\\cd"}
   end

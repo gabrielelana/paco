@@ -115,9 +115,9 @@ defmodule Paco.String do
     case next_grapheme(text) do
       {h, tail} ->
         if (f.(h)) do
-          consume_until(tail, consumed <> h, f, at, position_after(at, h))
-        else
           {consumed, text, to, at}
+        else
+          consume_until(tail, consumed <> h, f, at, position_after(at, h))
         end
       nil ->
         {consumed, text, to, at}
