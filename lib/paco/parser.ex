@@ -56,13 +56,17 @@ defmodule Paco.Parser do
   end
 
 
-  parser_ maybe(%Paco.Parser{} = parser) do
+  parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
+    has_default = Keyword.has_key?(opts, :default)
     fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at} = success ->
           notify(collector, {:matched, from, to, at})
           success
+        %Paco.Failure{} when has_default ->
+          notify(collector, {:matched, at, at, at})
+          %Paco.Success{from: at, to: at, at: at, tail: text, result: Keyword.get(opts, :default)}
         %Paco.Failure{} ->
           notify(collector, {:matched, at, at, at})
           %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
