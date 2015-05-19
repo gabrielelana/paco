@@ -4,16 +4,18 @@ defmodule Paco.State do
                          at: position,
                          accumulator: term | nil,
                          collector: pid | nil,
-                         stream: pid | nil}
+                         stream: pid | nil,
+                         wait_for_more: boolean}
 
-  defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil
+  defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil, wait_for_more: true
 
   def from(text, opts \\ []) when is_binary(text) do
     %__MODULE__{at: {0, 1, 1},
                 text: text,
                 accumulator: nil,
                 collector: Keyword.get(opts, :collector, nil) |> notify_loaded(text),
-                stream: Keyword.get(opts, :stream, nil)}
+                stream: Keyword.get(opts, :stream, nil),
+                wait_for_more: Keyword.get(opts, :wait_for_more, true)}
   end
 
   defp notify_loaded(collector, _) when not is_pid(collector), do: nil

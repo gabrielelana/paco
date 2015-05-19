@@ -6,11 +6,11 @@ defmodule Paco.Stream do
 
   def parse(upstream, %Paco.Parser{} = parser, opts \\ []) do
     opts = case Keyword.get(opts, :on_failure, :halt) do
-             :halt -> Keyword.merge([format: :flat, on_failure: :halt], opts)
-             :yield -> Keyword.merge([format: :tagged], opts)
-             :raise -> Keyword.merge([format: :flat], opts)
+             :halt -> Keyword.merge([format: :flat, on_failure: :halt, wait_for_more: true], opts)
+             :yield -> Keyword.merge([format: :tagged, wait_for_more: true], opts)
+             :raise -> Keyword.merge([format: :flat, wait_for_more: true], opts)
            end
-    &do_parse(upstream, {start_link(parser), parser, opts}, &1, &2)
+    &do_parse(upstream, {start_link(parser, opts), parser, opts}, &1, &2)
   end
 
   defp do_parse(upstream, configuration, {:suspend, downstream_accumulator}, downstream_reducer) do
@@ -25,9 +25,9 @@ defmodule Paco.Stream do
     run(stream, running_parser, downstream_command, downstream_reducer)
   end
 
-  defp start_link(parser) do
+  defp start_link(parser, opts) do
     # IO.puts("START PARSER PROCESS")
-    running_parser = spawn_link(parse_and_send_back_to(self, parser))
+    running_parser = spawn_link(parse_and_send_back_to(self, parser, opts))
     consume_request_for_more_data_from(running_parser)
     running_parser
   end
@@ -42,7 +42,7 @@ defmodule Paco.Stream do
       {^running_parser, %Paco.Success{} = success} ->
         # IO.puts("SUCCESS! #{inspect(success)}")
         formatted = Paco.Success.format(success, Keyword.get(opts, :format))
-        {[formatted], {start_link(parser), parser, opts}}
+        {[formatted], {start_link(parser, opts), parser, opts}}
       {^running_parser, %Paco.Failure{} = failure} ->
         # IO.puts("FAILURE! #{inspect(failure)}")
         case Keyword.get(opts, :on_failure) do
@@ -50,7 +50,7 @@ defmodule Paco.Stream do
             {:halt, Paco.Failure.format(failure, Keyword.get(opts, :format))}
           :yield ->
             formatted = Paco.Failure.format(failure, Keyword.get(opts, :format))
-            {[formatted], {start_link(parser), parser, opts}}
+            {[formatted], {start_link(parser, opts), parser, opts}}
           :raise ->
             raise failure
         end
@@ -85,9 +85,10 @@ defmodule Paco.Stream do
     end
   end
 
-  defp parse_and_send_back_to(stream, parser) do
+  defp parse_and_send_back_to(stream, parser, opts) do
     fn ->
-      opts = [stream: stream, format: :raw, on_failure: :yield]
+      opts = [stream: stream, format: :raw, on_failure: :yield,
+              wait_for_more: Keyword.get(opts, :wait_for_more)]
       send(stream, {self, Paco.parse(parser, "", opts)})
     end
   end
