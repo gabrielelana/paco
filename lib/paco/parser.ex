@@ -176,31 +176,13 @@ defmodule Paco.Parser do
             notify(collector, {:failed, from})
             %Paco.Failure{at: from, what: description}
           else
-            send(stream, {self, :more})
-            receive do
-              {:load, more_text} ->
-                this.parse.(%Paco.State{state|text: text <> more_text}, this)
-              :halt ->
-                notify(collector, {:started, description})
-                notify(collector, {:failed, from})
-                %Paco.Failure{at: from, what: description}
-            end
+            wait_for_more_and_continue(state, this, description)
           end
         nil ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: description}
       end
-    end
-  end
-
-  defp anchor(r) do
-    source = Regex.source(r)
-    if String.starts_with?(source, "\\A") do
-      r
-    else
-      {:ok, r} = Regex.compile("\\A#{source}")
-      r
     end
   end
 
@@ -213,35 +195,12 @@ defmodule Paco.Parser do
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
-          send(stream, {self, :more})
-          receive do
-            {:load, more_text} ->
-              notify(collector, {:loaded, more_text})
-              this.parse.(%Paco.State{state|text: text <> more_text}, this)
-            :halt ->
-              notify(collector, {:started, description})
-              notify(collector, {:failed, from})
-              %Paco.Failure{at: from, what: description}
-          end
+          wait_for_more_and_continue(state, this, description)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: description}
       end
-    end
-  end
-
-  defp wait_for_more_and_continue(state, this, description) do
-    %Paco.State{at: from, text: text, collector: collector, stream: stream} = state
-    send(stream, {self, :more})
-    receive do
-      {:load, more_text} ->
-        notify(collector, {:loaded, more_text})
-        this.parse.(%Paco.State{state|text: text <> more_text}, this)
-      :halt ->
-        notify(collector, {:started, description})
-        notify(collector, {:failed, from})
-        %Paco.Failure{at: from, what: description}
     end
   end
 
@@ -284,21 +243,36 @@ defmodule Paco.Parser do
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
-          send(stream, {self, :more})
-          receive do
-            {:load, more_text} ->
-              notify(collector, {:loaded, more_text})
-              this.parse.(%Paco.State{state|text: text <> more_text}, this)
-            :halt ->
-              notify(collector, {:started, description})
-              notify(collector, {:failed, from})
-              %Paco.Failure{at: from, what: description}
-          end
+          wait_for_more_and_continue(state, this, description)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: description}
       end
+    end
+  end
+
+  defp wait_for_more_and_continue(state, this, description) do
+    %Paco.State{at: from, text: text, collector: collector, stream: stream} = state
+    send(stream, {self, :more})
+    receive do
+      {:load, more_text} ->
+        notify(collector, {:loaded, more_text})
+        this.parse.(%Paco.State{state|text: text <> more_text}, this)
+      :halt ->
+        notify(collector, {:started, description})
+        notify(collector, {:failed, from})
+        %Paco.Failure{at: from, what: description}
+    end
+  end
+
+  defp anchor(r) do
+    source = Regex.source(r)
+    if String.starts_with?(source, "\\A") do
+      r
+    else
+      {:ok, r} = Regex.compile("\\A#{source}")
+      r
     end
   end
 end
