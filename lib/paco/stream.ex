@@ -39,6 +39,10 @@ defmodule Paco.Stream do
       {^running_parser, :more} ->
         # IO.puts("PARSER NEEDS MORE INPUT")
         {[], {running_parser, parser, opts}}
+      {^running_parser, %Paco.Success{from: x, to: x, at: x}} ->
+        # IO.puts("FAILURE! DIDN'T CONSUME ANY INPUT")
+        failure = %Paco.Failure{at: x, what: Paco.describe(parser), because: "^didn't consume any input"}
+        {:halt, Paco.Failure.format(failure, Keyword.get(opts, :format))}
       {^running_parser, %Paco.Success{} = success} ->
         # IO.puts("SUCCESS! #{inspect(success)}")
         formatted = Paco.Success.format(success, Keyword.get(opts, :format))
