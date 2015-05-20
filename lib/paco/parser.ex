@@ -231,25 +231,42 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ until(p) do
+  defp wait_for_more_and_continue(state, this, description) do
+    %Paco.State{at: from, text: text, collector: collector, stream: stream} = state
+    send(stream, {self, :more})
+    receive do
+      {:load, more_text} ->
+        notify(collector, {:loaded, more_text})
+        this.parse.(%Paco.State{state|text: text <> more_text}, this)
+      :halt ->
+        notify(collector, {:started, description})
+        notify(collector, {:failed, from})
+        %Paco.Failure{at: from, what: description}
+    end
+  end
+
+  parser_ until(p, opts \\ []) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
+      wait_for_more = Keyword.get(opts, :wait_for_more, state.wait_for_more)
       case Paco.String.consume_until(text, p, from) do
+        {_, "", _, _} when is_pid(stream) and wait_for_more and not is_number(p) ->
+          # The input is over, we are in stream mode, maybe we matched
+          # something and we could return it, but we are told to wait for more
+          # input aka waiting for a boundary or the end of the stream
+          wait_for_more_and_continue(state, this, description)
+        {"", "", {0, 1, 1}, {0, 1, 1}} when is_pid(stream) ->
+          # In stream mode a parser is always started with an empty input, here
+          # until is matching that initial empty input, since this does not
+          # have any meaning, regardless of the configuration, we will wait for
+          # more input
+          wait_for_more_and_continue(state, this, description)
         {consumed, tail, to, at} ->
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
-          send(stream, {self, :more})
-          receive do
-            {:load, more_text} ->
-              notify(collector, {:loaded, more_text})
-              this.parse.(%Paco.State{state|text: text <> more_text}, this)
-            :halt ->
-              notify(collector, {:started, description})
-              notify(collector, {:failed, from})
-              %Paco.Failure{at: from, what: description}
-          end
+          wait_for_more_and_continue(state, this, description)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
