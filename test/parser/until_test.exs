@@ -7,18 +7,9 @@ defmodule Paco.Parser.UntilTest do
   alias Paco.Test.Helper
 
   test "success" do
-    assert parse(until(1), "abc") == {:ok, "a"}
-    assert parse(until(3), "abc") == {:ok, "abc"}
-    assert parse(until(&uppercase?/1), "abC") == {:ok, "ab"}
     assert parse(until("c"), "abc") == {:ok, "ab"}
     assert parse(until({"c", "\\"}), "ab\\cdce") == {:ok, "ab\\cd"}
-  end
-
-  test "any" do
-    assert parse(any, "abc") == {:ok, "a"}
-    assert parse(any(1), "abc") == {:ok, "a"}
-    assert parse(any(2), "abc") == {:ok, "ab"}
-    assert parse(any(1), "abc") == {:ok, "a"}
+    assert parse(until(&uppercase?/1), "abC") == {:ok, "ab"}
   end
 
   test "any works for composite graphemes" do
@@ -26,20 +17,12 @@ defmodule Paco.Parser.UntilTest do
   end
 
   test "describe" do
-    assert describe(until(1)) == "until#1(1, [])"
+    assert describe(until("c")) == ~s|until#1("c", [])|
     # assert describe(until(&uppercase?/1)) == "until#1(1)"
   end
 
   test "empty result is not a failure" do
     assert parse(until("c"), "ccc") == {:ok, ""}
-  end
-
-  test "failure" do
-    assert parse(until(4), "bbb") == {:error,
-      """
-      Failed to match until#1(4, []) at 1:1
-      """
-    }
   end
 
   test "notify events on success" do
@@ -49,22 +32,7 @@ defmodule Paco.Parser.UntilTest do
     ])
   end
 
-  test "notify events on failure" do
-    Helper.assert_events_notified(until(4), "aaa", [
-      {:started, "until#1(4, [])"},
-      {:failed, {0, 1, 1}}
-    ])
-  end
-
   test "wait for more text in stream mode" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(until(4))
-             |> Enum.to_list
-
-    assert result == ["aaab"]
-  end
-
-  test "wait for more text in stream mode when input ended on success" do
     result = Helper.stream_of("aaab")
              |> Paco.Stream.parse(until("b"))
              |> Enum.to_list
@@ -94,7 +62,7 @@ defmodule Paco.Parser.UntilTest do
     # upstream -> "b" -> until("b") -> halt
     assert result == ["a", "a", "a"]
 
-    # You can pass the same option to the specific parser
+    # You can pass the same option to the parser
     result = Helper.stream_of("aaab")
              |> Paco.Stream.parse(until("b", wait_for_more: false))
              |> Enum.to_list

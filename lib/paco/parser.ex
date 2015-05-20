@@ -9,20 +9,20 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
-  parser_ any(n \\ 1) do
-    parser = until(n)
-    fn %Paco.State{at: at, collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
-      case parser.parse.(state, parser) do
-        %Paco.Success{from: from, to: to, at: at} = success ->
-          notify(collector, {:matched, from, to, at})
-          success
-        %Paco.Failure{} ->
-          notify(collector, {:failed, at})
-          %Paco.Failure{at: at, what: Paco.describe(this)}
-      end
-    end
-  end
+  # parser_ any(n \\ 1) do
+  #   parser = until(n)
+  #   fn %Paco.State{at: at, collector: collector} = state, this ->
+  #     notify(collector, {:started, Paco.describe(this)})
+  #     case parser.parse.(state, parser) do
+  #       %Paco.Success{from: from, to: to, at: at} = success ->
+  #         notify(collector, {:matched, from, to, at})
+  #         success
+  #       %Paco.Failure{} ->
+  #         notify(collector, {:failed, at})
+  #         %Paco.Failure{at: at, what: Paco.describe(this)}
+  #     end
+  #   end
+  # end
 
   parser_ lex(s) do
     parser = lit(s) |> surrounded_by(re(~r/\s*/))
@@ -54,7 +54,6 @@ defmodule Paco.Parser do
       end
     end
   end
-
 
   parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
@@ -200,6 +199,24 @@ defmodule Paco.Parser do
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
           %Paco.Failure{at: from, what: description}
+      end
+    end
+  end
+
+  parser_ any(n \\ 1) do
+    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
+      description = Paco.describe(this)
+      case Paco.String.consume_any(text, n, from) do
+        {consumed, tail, to, at} ->
+          notify(collector, {:started, description})
+          notify(collector, {:matched, from, to, at})
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        :end_of_input when is_pid(stream) ->
+          wait_for_more_and_continue(state, this, description)
+        :end_of_input ->
+          notify(collector, {:started, description})
+          notify(collector, {:failed, from})
+          %Paco.Failure{at: from, what: description, because: "reached the end of input"}
       end
     end
   end

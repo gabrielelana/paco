@@ -23,6 +23,14 @@ defmodule Paco.StringTest do
     assert consume("a\r\na", "a\r\na", {0, 1, 1}) == {"", {2, 2, 1}, {3, 2, 2}}
   end
 
+  test "consume_any" do
+    assert consume_any("abc", 1, {0, 1, 1}) == {"a", "bc", {0, 1, 1}, {1, 1, 2}}
+    assert consume_any("abc", 2, {0, 1, 1}) == {"ab", "c", {1, 1, 2}, {2, 1, 3}}
+    assert consume_any("abc", 3, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume_any("a\nb", 3, {0, 1, 1}) == {"a\nb", "", {2, 2, 1}, {3, 2, 2}}
+    assert consume_any("abc", 4, {0, 1, 1}) == :end_of_input
+  end
+
   test "consume_while one of the allowed graphemes are matched" do
     assert consume_while("acbcd", "abc", {0, 1, 1}) == {"acbc", "d", {3, 1, 4}, {4, 1, 5}}
     assert consume_while("xxxxx", "abc", {0, 1, 1}) == {"", "xxxxx", {0, 1, 1}, {0, 1, 1}}
@@ -43,14 +51,6 @@ defmodule Paco.StringTest do
     assert consume_while("a", &whitespace?/1, {0, 1, 1}) == {"", "a", {0, 1, 1}, {0, 1, 1}}
     # Same thing as above
     assert consume_while("", &whitespace?/1, {0, 1, 1}) == {"", "", {0, 1, 1}, {0, 1, 1}}
-  end
-
-  test "consume_until a number of graphemes are counted" do
-    assert consume_until("abc", 1, {0, 1, 1}) == {"a", "bc", {0, 1, 1}, {1, 1, 2}}
-    assert consume_until("abc", 2, {0, 1, 1}) == {"ab", "c", {1, 1, 2}, {2, 1, 3}}
-    assert consume_until("abc", 3, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("a\nb", 3, {0, 1, 1}) == {"a\nb", "", {2, 2, 1}, {3, 2, 2}}
-    assert consume_until("abc", 4, {0, 1, 1}) == :end_of_input
   end
 
   test "consume_until given function returns true" do

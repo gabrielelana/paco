@@ -69,6 +69,19 @@ defmodule Paco.String do
   end
 
 
+  def consume_any(text, what, at), do: consume_any(text, "", what, at, at)
+
+  defp consume_any(text, consumed, 0, to, at), do: {consumed, text, to, at}
+  defp consume_any(text, consumed, n, _to, at) when is_number(n) and n > 0 do
+    case next_grapheme(text) do
+      {h, tail} ->
+        consume_any(tail, consumed <> h, n - 1, at, position_after(at, h))
+      nil ->
+        :end_of_input
+    end
+  end
+
+
   def consume_while(text, what, at), do: consume_while(text, "", what, at, at)
 
   defp consume_while(text, consumed, what, at, at) when is_binary(what) do
@@ -92,15 +105,6 @@ defmodule Paco.String do
 
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
 
-  defp consume_until(text, consumed, 0, to, at), do: {consumed, text, to, at}
-  defp consume_until(text, consumed, n, _to, at) when is_number(n) and n > 0 do
-    case next_grapheme(text) do
-      {h, tail} ->
-        consume_until(tail, consumed <> h, n - 1, at, position_after(at, h))
-      nil ->
-        :end_of_input
-    end
-  end
   defp consume_until(text, consumed, f, to, at) when is_function(f) do
     case next_grapheme(text) do
       {h, tail} ->
