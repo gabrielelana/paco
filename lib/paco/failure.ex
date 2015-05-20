@@ -13,10 +13,14 @@ defmodule Paco.Failure do
     Failed to match #{what} at #{line}:#{column}
     """
   end
-  def format(%Paco.Failure{at: {_, line, column}, what: what, because: failure}, :flat) do
-    failure = Regex.replace(~r/^F/, String.strip(format(failure, :flat)), "f")
+  def format(%Paco.Failure{at: {_, line, column}, what: what, because: reason}, :flat) do
+    reason = case reason do
+      %Paco.Failure{} -> String.strip(Paco.Failure.format(reason, :flat))
+      reason when is_binary(reason) -> reason
+    end
+    reason = Regex.replace(~r/^\p{Lu}/, reason, &String.downcase/1)
     """
-    Failed to match #{what} at #{line}:#{column}, because it #{failure}
+    Failed to match #{what} at #{line}:#{column}, because it #{reason}
     """
   end
   def format(%Paco.Failure{} = failure, :tagged), do: {:error, Paco.Failure.format(failure, :flat)}
