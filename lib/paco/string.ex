@@ -130,7 +130,7 @@ defmodule Paco.String do
         {h, tail} = next_grapheme(text)
         next.(tail, consumed <> h, at, position_after(at, h), next)
       :end_of_input ->
-        :end_of_input
+        {consumed, text, to, at}
     end
   end
 
@@ -138,10 +138,8 @@ defmodule Paco.String do
     case consume(text, escape <> boundary, to, at) do
       {tail, to, at} ->
         consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
-      :error ->
+      _ ->
         consume_until_boundary(text, consumed, boundary, to, at, next)
-      :end_of_input ->
-        :end_of_input
     end
   end
 
