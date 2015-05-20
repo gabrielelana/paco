@@ -10,7 +10,7 @@ defmodule Paco.String do
        "\x{2028}",         # LINE SEPARATOR
        "\x{2029}"]         # PARAGRAPH SEPARATOR
 
-  Enum.each @nl, fn nl ->
+  for nl <- @nl do
     def newline?(<<unquote(nl)>>), do: true
   end
   def newline?(_), do: false
@@ -49,7 +49,7 @@ defmodule Paco.String do
        "\x{2060}",         # WORD JOINER
        "\x{FEFF}"]         # ZERO WIDTH NON-BREAKING SPACE
 
-  Enum.each @ws, fn ws ->
+  for ws <- @ws do
     def whitespace?(<<unquote(ws)>>), do: true
   end
   def whitespace?(_), do: false
