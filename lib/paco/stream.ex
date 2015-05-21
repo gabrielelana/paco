@@ -21,9 +21,10 @@ defmodule Paco.Stream do
     {:halted, downstream_accumulator}
   end
   defp do_parse(upstream, {running_parser, opts}, downstream_command, downstream_reducer) do
+    eos_probe = make_ref
     upstream = upstream
-               |> Stream.concat([:halted])
-               |> transform({running_parser, opts}, &transform_with_parser/2)
+               |> Stream.concat([eos_probe])
+               |> transform({running_parser, eos_probe, opts}, &transform_with_parser/2)
     run(upstream, running_parser, downstream_command, downstream_reducer)
   end
 
@@ -34,18 +35,18 @@ defmodule Paco.Stream do
     running_parser
   end
 
-  defp transform_with_parser(:halted, {running_parser, opts}) do
+  defp transform_with_parser(eos_probe, {running_parser, eos_probe, _} = accumulator) do
     # IO.puts("[STREAM] END OF INPUT")
     send(running_parser, :halted)
-    collect_from_parser([], {running_parser, opts})
+    collect_from_parser([], accumulator)
   end
-  defp transform_with_parser(upstream_element, {running_parser, opts}) do
+  defp transform_with_parser(upstream_element, {running_parser, _, _} = accumulator) do
     # IO.puts("[STREAM] LOAD #{upstream_element} TO PARSER")
     send(running_parser, {:load, upstream_element})
-    collect_from_parser([], {running_parser, opts})
+    collect_from_parser([], accumulator)
   end
 
-  defp collect_from_parser(successes, {running_parser, opts} = accumulator) do
+  defp collect_from_parser(successes, {running_parser, _, opts} = accumulator) do
     receive do
       {^running_parser, :more} ->
         # IO.puts("[STREAM] PARSER NEEDS MORE INPUT -> YIELD COLLECTED")
