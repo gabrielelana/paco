@@ -72,7 +72,7 @@ defmodule Paco.Stream do
 
   defp run(stream, running_parser, downstream_command, downstream_reducer) do
     try do
-      Enumerable.reduce(stream, downstream_command, downstream_reducer)
+      Enumerable.Function.reduce(stream, downstream_command, downstream_reducer)
     catch
       kind, reason ->
         stacktrace = System.stacktrace
