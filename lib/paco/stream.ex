@@ -21,7 +21,7 @@ defmodule Paco.Stream do
     {:halted, downstream_accumulator}
   end
   defp do_parse(upstream, {running_parser, _, _} = configuration, downstream_command, downstream_reducer) do
-    stream = Stream.transform(upstream, configuration, &transform/2)
+    stream = transform(upstream, configuration, &transform/2)
     run(stream, running_parser, downstream_command, downstream_reducer)
   end
 
@@ -102,4 +102,140 @@ defmodule Paco.Stream do
       {^running_parser, :more} -> :ok
     end
   end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @doc """
+  Transforms an existing stream.
+
+  It expects an accumulator and a function that receives each stream item
+  and an accumulator, and must return a tuple containing a new stream
+  (often a list) with the new accumulator or a tuple with `:halt` as first
+  element and the accumulator as second.
+
+  Note: this function is similar to `Enum.flat_map_reduce/3` except the
+  latter returns both the flat list and accumulator, while this one returns
+  only the stream.
+
+  ## Examples
+
+  `Stream.transform/3` is useful as it can be used as the basis to implement
+  many of the functions defined in this module. For example, we can implement
+  `Stream.take(enum, n)` as follows:
+
+      iex> enum = 1..100
+      iex> n = 3
+      iex> stream = Stream.transform(enum, 0, fn i, acc ->
+      ...>   if acc < n, do: {[i], acc + 1}, else: {:halt, acc}
+      ...> end)
+      iex> Enum.to_list(stream)
+      [1, 2, 3]
+
+  """
+
+  # @spec transform(Enumerable.t, acc, fun) :: Enumerable.t when
+  #       fun: (element, acc -> {Enumerable.t, acc} | {:halt, acc}),
+  #       acc: any
+
+  def transform(enum, acc, reducer) do
+    &do_transform(enum, acc, reducer, &1, &2)
+  end
+
+  defp do_transform(enumerables, user_acc, user, inner_acc, fun) do
+    inner = &do_transform_each(&1, &2, fun)
+    step  = &do_transform_step(&1, &2)
+    next  = &Enumerable.reduce(enumerables, &1, step)
+    do_transform(user_acc, user, fun, [], next, inner_acc, inner)
+  end
+
+  defp do_transform(user_acc, user, fun, next_acc, next, inner_acc, inner) do
+    case next.({:cont, next_acc}) do
+      {:suspended, [val|next_acc], next} ->
+        try do
+          user.(val, user_acc)
+        catch
+          kind, reason ->
+            stacktrace = System.stacktrace
+            next.({:halt, next_acc})
+            :erlang.raise(kind, reason, stacktrace)
+        else
+          {[], user_acc} ->
+            do_transform(user_acc, user, fun, next_acc, next, inner_acc, inner)
+          {list, user_acc} when is_list(list) ->
+            do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner,
+                              &Enumerable.List.reduce(list, &1, fun))
+          {:halt, _user_acc} ->
+            next.({:halt, next_acc})
+            {:halted, elem(inner_acc, 1)}
+          {other, user_acc} ->
+            do_enum_transform(user_acc, user, fun, next_acc, next, inner_acc, inner,
+                              &Enumerable.reduce(other, &1, inner))
+        end
+      {reason, _} ->
+        {reason, elem(inner_acc, 1)}
+    end
+  end
+
+  defp do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner, reduce) do
+    try do
+      reduce.(inner_acc)
+    catch
+      kind, reason ->
+        stacktrace = System.stacktrace
+        next.({:halt, next_acc})
+        :erlang.raise(kind, reason, stacktrace)
+    else
+      {:done, acc} ->
+        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
+      {:halted, acc} ->
+        next.({:halt, next_acc})
+        {:halted, acc}
+      {:suspended, acc, c} ->
+        {:suspended, acc, &do_list_transform(user_acc, user, fun, next_acc, next, &1, inner, c)}
+    end
+  end
+
+  defp do_enum_transform(user_acc, user, fun, next_acc, next, {op, inner_acc}, inner, reduce) do
+    try do
+      reduce.({op, [:outer|inner_acc]})
+    catch
+      kind, reason ->
+        stacktrace = System.stacktrace
+        next.({:halt, next_acc})
+        :erlang.raise(kind, reason, stacktrace)
+    else
+      {:halted, [:outer|acc]} ->
+        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
+      {:halted, [:inner|acc]} ->
+        next.({:halt, next_acc})
+        {:halted, acc}
+      {:done, [_|acc]} ->
+        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
+      {:suspended, [_|acc], c} ->
+        {:suspended, acc, &do_enum_transform(user_acc, user, fun, next_acc, next, &1, inner, c)}
+    end
+  end
+
+  defp do_transform_each(x, [:outer|acc], f) do
+    case f.(x, acc) do
+      {:halt, res} -> {:halt, [:inner|res]}
+      {op, res}    -> {op, [:outer|res]}
+    end
+  end
+
+  defp do_transform_step(x, acc) do
+    {:suspend, [x|acc]}
+  end
+
 end
