@@ -39,7 +39,7 @@ defmodule Paco.StreamTest do
     send(parser_process, {:load, "a"})
     assert_receive {^parser_process, :more}
 
-    send(parser_process, :halt)
+    send(parser_process, :halted)
     assert_receive {^parser_process, {:error,
       """
       Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, because it failed to match lit#2("b") at 1:2
@@ -145,21 +145,6 @@ defmodule Paco.StreamTest do
     assert results == [{:ok, ["ab", "c"]}, {:ok, ["ab", "c"]}]
   end
 
-  test "parse a success after a failure with yield on failure and with tagged format option (default)" do
-    parser = sequence_of([lit("ab"), lit("c")])
-
-    [failure, success] = stream_of("abdabc")
-                         |> Paco.Stream.parse(parser, on_failure: :yield)
-                         |> Enum.to_list
-
-    assert failure == {:error,
-      """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, because it failed to match lit#2("c") at 1:3
-      """
-    }
-    assert success == {:ok, ["ab", "c"]}
-  end
-
   test "parse stream when downstream halts the pipe as first command" do
     stream = stream_of("abc")
              |> Stream.each(&count(:upstream_called, &1))
@@ -231,5 +216,72 @@ defmodule Paco.StreamTest do
     assert results == ["abc"]
     assert counted(:upstream_called) == 5    # should have been 4???
     assert counted(:downstream_called) == 1
+  end
+
+  test "for successes, no matter how input is partitioned, the result must be always the same" do
+    partitions = [
+      ["a", "a", "a", "a"],
+      ["aa", "a", "a"],
+      ["a", "aa", "a"],
+      ["a", "a", "aa"],
+      ["aa", "aa"],
+      ["aaa", "a"],
+      ["a", "aaa"],
+      ["aaaa"]]
+
+    for partition <- partitions do
+      result = partition
+               |> Paco.Stream.parse(lit("aa"))
+               |> Enum.to_list
+
+      assert result == ["aa", "aa"]
+      assert Process.info(self, :messages) == {:messages, []}
+    end
+  end
+
+  test "for failures, no matter how input is partitioned, the result must be always the same" do
+    partitions = [
+      ["a", "a", "b", "b"],
+      ["aa", "b", "b"],
+      ["a", "ab", "b"],
+      ["a", "a", "bb"],
+      ["aa", "bb"],
+      ["aab", "b"],
+      ["a", "abb"],
+      ["aabb"]]
+
+    parser = lit("aa")
+
+    for partition <- partitions do
+      result = partition
+               |> Paco.Stream.parse(parser)
+               |> Enum.to_list
+
+      assert result == ["aa"]
+      assert Process.info(self, :messages) == {:messages, []}
+    end
+
+    for partition <- partitions do
+      result = partition
+               |> Paco.Stream.parse(parser, on_failure: :yield)
+               |> Enum.to_list
+
+      assert result == [{:ok, "aa"}, {:error,
+        """
+        Failed to match lit#1("aa") at 1:3
+        """
+      }]
+      assert Process.info(self, :messages) == {:messages, []}
+    end
+  end
+
+  test "partial match at the end of the stream" do
+
+    result = ["aaa"]
+             |> Paco.Stream.parse(lit("aa"))
+             |> Enum.to_list
+
+    assert result == ["aa"]
+    assert Process.info(self, :messages) == {:messages, []}
   end
 end

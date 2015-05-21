@@ -37,37 +37,15 @@ defmodule Paco.Parser.UntilTest do
              |> Paco.Stream.parse(until("b"))
              |> Enum.to_list
 
-    # Helper.stream_of will emit one character at the time, the until
-    # combinator would be happy to match the first "a" and return it as result,
-    # but by default the until combinator is told to wait for more input. If
-    # you want it to return with a result as soon as possibile, use the option
-    # [wait_for_more: false] (see the next test)
-
-    # upstream -> "a" -> until("b") -> more
-    # upstream -> "aa" -> until("b") -> more
-    # upstream -> "aaa" -> until("b") -> more
-    # upstream -> "aabb" -> until("b") -> "aaa"
-    # upstream -> "b" -> until("b") -> halt
     assert result == ["aaa"]
   end
 
-  test "return as soon as possibile in stream mode" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(until("b"), wait_for_more: false)
+  test "wait for more text in stream mode until the end of input" do
+    result = Helper.stream_of("aaa")
+             |> Paco.Stream.parse(until("b"))
              |> Enum.to_list
 
-    # upstream -> "a" -> until("b") -> "a"
-    # upstream -> "a" -> until("b") -> "a"
-    # upstream -> "a" -> until("b") -> "a"
-    # upstream -> "b" -> until("b") -> halt
-    assert result == ["a", "a", "a"]
-
-    # You can pass the same option to the parser
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(until("b", wait_for_more: false))
-             |> Enum.to_list
-
-    assert result == ["a", "a", "a"]
+    assert result == ["aaa"]
   end
 
   defp uppercase?(s) do

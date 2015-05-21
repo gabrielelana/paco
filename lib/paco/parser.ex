@@ -262,10 +262,10 @@ defmodule Paco.Parser do
       {:load, more_text} ->
         notify(collector, {:loaded, more_text})
         this.parse.(%Paco.State{state|text: text <> more_text}, this)
-      :halt ->
-        notify(collector, {:started, description})
-        notify(collector, {:failed, from})
-        %Paco.Failure{at: from, what: description}
+      :halted ->
+        # The stream is over, switching to a non stream mode is equal to
+        # tell the parser to behave knowing that more input will never come
+        this.parse.(%Paco.State{state|stream: nil}, this)
     end
   end
 

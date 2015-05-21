@@ -5,8 +5,8 @@ defmodule Paco.Stream do
   end
 
   def parse(upstream, %Paco.Parser{} = parser, opts \\ []) do
-    opts = case Keyword.get(opts, :on_failure, :halt) do
-             :halt -> Keyword.merge([format: :flat, on_failure: :halt, wait_for_more: true], opts)
+    opts = case Keyword.get(opts, :on_failure, :hide) do
+             :hide -> Keyword.merge([format: :flat, on_failure: :hide, wait_for_more: true], opts)
              :yield -> Keyword.merge([format: :tagged, wait_for_more: true], opts)
              :raise -> Keyword.merge([format: :flat, wait_for_more: true], opts)
            end
@@ -20,42 +20,51 @@ defmodule Paco.Stream do
     stop(running_parser)
     {:halted, downstream_accumulator}
   end
-  defp do_parse(upstream, {running_parser, _, _} = configuration, downstream_command, downstream_reducer) do
-    stream = transform(upstream, configuration, &transform/2)
-    run(stream, running_parser, downstream_command, downstream_reducer)
+  defp do_parse(upstream, {running_parser, _, opts} = configuration, downstream_command, downstream_reducer) do
+    upstream = upstream
+               |> Stream.concat([:halted])
+               |> transform({running_parser, opts}, &transform_with_parser/2)
+    run(upstream, running_parser, downstream_command, downstream_reducer)
   end
 
   defp start_link(parser, opts) do
-    # IO.puts("START PARSER PROCESS")
+    # IO.puts("[STREAM] START PARSER PROCESS")
     running_parser = spawn_link(parse_and_send_back_to(self, parser, opts))
     consume_request_for_more_data_from(running_parser)
     running_parser
   end
 
-  defp transform(upstream_element, {running_parser, parser, opts}) do
-    # IO.puts("LOAD #{upstream_element} TO #{inspect(running_parser)}")
+  defp transform_with_parser(:halted, {running_parser, opts}) do
+    # IO.puts("[STREAM] END OF INPUT")
+    send(running_parser, :halted)
+    collect_from_parser([], {running_parser, opts})
+  end
+  defp transform_with_parser(upstream_element, {running_parser, opts}) do
+    # IO.puts("[STREAM] LOAD #{upstream_element} TO PARSER")
     send(running_parser, {:load, upstream_element})
+    collect_from_parser([], {running_parser, opts})
+  end
+
+  defp collect_from_parser(successes, {running_parser, opts} = accumulator) do
     receive do
       {^running_parser, :more} ->
-        # IO.puts("PARSER NEEDS MORE INPUT")
-        {[], {running_parser, parser, opts}}
-      {^running_parser, %Paco.Success{from: x, to: x, at: x}} ->
-        # IO.puts("FAILURE! DIDN'T CONSUME ANY INPUT")
-        failure = %Paco.Failure{at: x, what: Paco.describe(parser), because: "^didn't consume any input"}
-        {:halt, Paco.Failure.format(failure, Keyword.get(opts, :format))}
+        # IO.puts("[STREAM] PARSER NEEDS MORE INPUT -> YIELD COLLECTED")
+        {successes |> Enum.reverse, accumulator}
       {^running_parser, %Paco.Success{} = success} ->
-        # IO.puts("SUCCESS! #{inspect(success)}")
+        # IO.puts("[STREAM] COLLECT SUCCESS: #{inspect(success)}")
         formatted = Paco.Success.format(success, Keyword.get(opts, :format))
-        {[formatted], {start_link(parser, opts), parser, opts}}
+        collect_from_parser([formatted|successes], accumulator)
       {^running_parser, %Paco.Failure{} = failure} ->
-        # IO.puts("FAILURE! #{inspect(failure)}")
-        case Keyword.get(opts, :on_failure) do
-          :halt ->
-            {:halt, Paco.Failure.format(failure, Keyword.get(opts, :format))}
-          :yield ->
+        # IO.puts("[STREAM] FAILURE! #{inspect(failure)}")
+        case {Keyword.get(opts, :on_failure), successes} do
+          {:hide, []} ->
+            {:halt, accumulator}
+          {:hide, _} ->
+            {:halt, successes, accumulator}
+          {:yield, _} ->
             formatted = Paco.Failure.format(failure, Keyword.get(opts, :format))
-            {[formatted], {start_link(parser, opts), parser, opts}}
-          :raise ->
+            {:halt, [formatted|successes] |> Enum.reverse, accumulator}
+          {:raise, _} ->
             raise failure
         end
     end
@@ -71,18 +80,22 @@ defmodule Paco.Stream do
         :erlang.raise(kind, reason, stacktrace)
     else
       {:suspended, acc, downstream_continuation} ->
+        # IO.puts("[STREAM] UPSTRAM IS SUSPENDED")
         {:suspended, acc, &run(stream, running_parser, &1, downstream_continuation)}
       {_, _} = halted_or_done ->
-        # IO.puts("UPSTRAM IS #{inspect(halted_or_done)}")
-        stop(running_parser)
+        # IO.puts("[STREAM] UPSTRAM IS #{inspect(halted_or_done)}")
+        # We already know that the stream is over because we have a probe
+        # at the end of the stream so that the transform_with_parser could
+        # have the chance to behave accordingly. So here we don't have to
+        # shutdown things
         halted_or_done
     end
   end
 
   defp stop(running_parser) do
-    # IO.puts("STOP PARSER PROCESS")
+    # IO.puts("[STREAM] STOP PARSER PROCESS")
     if Process.alive?(running_parser) do
-      send(running_parser, :halt)
+      send(running_parser, :halted)
       receive do
         {^running_parser, result} -> result
       end
@@ -91,9 +104,36 @@ defmodule Paco.Stream do
 
   defp parse_and_send_back_to(stream, parser, opts) do
     fn ->
+      at = Keyword.get(opts, :at, {0, 1, 1})
       opts = [stream: stream, format: :raw, on_failure: :yield,
               wait_for_more: Keyword.get(opts, :wait_for_more)]
-      send(stream, {self, Paco.parse(parser, "", opts)})
+
+      # IO.puts("[PARSER] START")
+      Stream.unfold({at, "", :cont},
+                    fn {_, _, :halt} ->
+                         # IO.puts("[PARSER] HALT!")
+                         nil
+                       {at, text, :cont} ->
+                         # IO.puts("[PARSER] GOING TO PARSE #{inspect(text)}")
+                         opts = Keyword.put(opts, :at, at)
+                         case Paco.parse(parser, text, opts) do
+                           %Paco.Success{from: at, to: at, at: at} ->
+                             # IO.puts("[PARSER] FAILURE! DIDN'T CONSUME ANY INPUT")
+                             failure = %Paco.Failure{at: at,
+                                                     tail: text,
+                                                     what: Paco.describe(parser),
+                                                     because: "didn't consume any input"}
+                             {failure, {at, "", :halt}}
+                           %Paco.Success{at: at, tail: tail} = success ->
+                             # IO.puts("[PARSER] SUCCESS! #{inspect(success)}")
+                             {success, {at, tail, :cont}}
+                           %Paco.Failure{at: at} = failure ->
+                             # IO.puts("[PARSER] FAILURE #{inspect(failure)}")
+                             {failure, {at, "", :halt}}
+                         end
+                    end)
+      |> Stream.map(&(send(stream, {self, &1})))
+      |> Stream.run
     end
   end
 
@@ -114,41 +154,7 @@ defmodule Paco.Stream do
 
 
 
-
-
-  @doc """
-  Transforms an existing stream.
-
-  It expects an accumulator and a function that receives each stream item
-  and an accumulator, and must return a tuple containing a new stream
-  (often a list) with the new accumulator or a tuple with `:halt` as first
-  element and the accumulator as second.
-
-  Note: this function is similar to `Enum.flat_map_reduce/3` except the
-  latter returns both the flat list and accumulator, while this one returns
-  only the stream.
-
-  ## Examples
-
-  `Stream.transform/3` is useful as it can be used as the basis to implement
-  many of the functions defined in this module. For example, we can implement
-  `Stream.take(enum, n)` as follows:
-
-      iex> enum = 1..100
-      iex> n = 3
-      iex> stream = Stream.transform(enum, 0, fn i, acc ->
-      ...>   if acc < n, do: {[i], acc + 1}, else: {:halt, acc}
-      ...> end)
-      iex> Enum.to_list(stream)
-      [1, 2, 3]
-
-  """
-
-  # @spec transform(Enumerable.t, acc, fun) :: Enumerable.t when
-  #       fun: (element, acc -> {Enumerable.t, acc} | {:halt, acc}),
-  #       acc: any
-
-  def transform(enum, acc, reducer) do
+  defp transform(enum, acc, reducer) do
     &do_transform(enum, acc, reducer, &1, &2)
   end
 
@@ -174,20 +180,20 @@ defmodule Paco.Stream do
             do_transform(user_acc, user, fun, next_acc, next, inner_acc, inner)
           {list, user_acc} when is_list(list) ->
             do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner,
-                              &Enumerable.List.reduce(list, &1, fun))
+                              &Enumerable.List.reduce(list, &1, fun), :cont)
+          {:halt, list, _user_acc} when is_list(list) ->
+            do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner,
+                              &Enumerable.List.reduce(list, &1, fun), :halt)
           {:halt, _user_acc} ->
             next.({:halt, next_acc})
             {:halted, elem(inner_acc, 1)}
-          {other, user_acc} ->
-            do_enum_transform(user_acc, user, fun, next_acc, next, inner_acc, inner,
-                              &Enumerable.reduce(other, &1, inner))
         end
       {reason, _} ->
         {reason, elem(inner_acc, 1)}
     end
   end
 
-  defp do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner, reduce) do
+  defp do_list_transform(user_acc, user, fun, next_acc, next, inner_acc, inner, reduce, command) do
     try do
       reduce.(inner_acc)
     catch
@@ -197,33 +203,20 @@ defmodule Paco.Stream do
         :erlang.raise(kind, reason, stacktrace)
     else
       {:done, acc} ->
-        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
+        case command do
+          :halt ->
+            next.({:halt, next_acc})
+            {:halted, acc}
+          :cont ->
+            do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
+        end
       {:halted, acc} ->
         next.({:halt, next_acc})
         {:halted, acc}
-      {:suspended, acc, c} ->
-        {:suspended, acc, &do_list_transform(user_acc, user, fun, next_acc, next, &1, inner, c)}
-    end
-  end
-
-  defp do_enum_transform(user_acc, user, fun, next_acc, next, {op, inner_acc}, inner, reduce) do
-    try do
-      reduce.({op, [:outer|inner_acc]})
-    catch
-      kind, reason ->
-        stacktrace = System.stacktrace
-        next.({:halt, next_acc})
-        :erlang.raise(kind, reason, stacktrace)
-    else
-      {:halted, [:outer|acc]} ->
-        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
-      {:halted, [:inner|acc]} ->
-        next.({:halt, next_acc})
-        {:halted, acc}
-      {:done, [_|acc]} ->
-        do_transform(user_acc, user, fun, next_acc, next, {:cont, acc}, inner)
-      {:suspended, [_|acc], c} ->
-        {:suspended, acc, &do_enum_transform(user_acc, user, fun, next_acc, next, &1, inner, c)}
+      {:suspended, acc, continuation} ->
+        continuation = &do_list_transform(user_acc, user, fun, next_acc,
+                                          next, &1, inner, continuation, command)
+        {:suspended, acc, continuation}
     end
   end
 
