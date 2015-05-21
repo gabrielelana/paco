@@ -10,17 +10,17 @@ defmodule Paco.Stream do
              :yield -> Keyword.merge([format: :tagged, wait_for_more: true], opts)
              :raise -> Keyword.merge([format: :flat, wait_for_more: true], opts)
            end
-    &do_parse(upstream, {start_link(parser, opts), parser, opts}, &1, &2)
+    &do_parse(upstream, {start_link(parser, opts), opts}, &1, &2)
   end
 
   defp do_parse(upstream, configuration, {:suspend, downstream_accumulator}, downstream_reducer) do
     {:suspended, downstream_accumulator, &do_parse(upstream, configuration, &1, downstream_reducer)}
   end
-  defp do_parse(_, {running_parser, _, _}, {:halt, downstream_accumulator}, _) do
+  defp do_parse(_, {running_parser, _}, {:halt, downstream_accumulator}, _) do
     stop(running_parser)
     {:halted, downstream_accumulator}
   end
-  defp do_parse(upstream, {running_parser, _, opts} = configuration, downstream_command, downstream_reducer) do
+  defp do_parse(upstream, {running_parser, opts}, downstream_command, downstream_reducer) do
     upstream = upstream
                |> Stream.concat([:halted])
                |> transform({running_parser, opts}, &transform_with_parser/2)
