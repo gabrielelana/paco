@@ -92,16 +92,6 @@ defmodule Paco.Stream do
     end
   end
 
-  defp stop(running_parser) do
-    # IO.puts("[STREAM] STOP PARSER PROCESS")
-    if Process.alive?(running_parser) do
-      send(running_parser, :halted)
-      receive do
-        {^running_parser, result} -> result
-      end
-    end
-  end
-
   defp parse_and_send_back_to(stream, parser, opts) do
     fn ->
       at = Keyword.get(opts, :at, {0, 1, 1})
@@ -140,6 +130,16 @@ defmodule Paco.Stream do
   defp consume_request_for_more_data_from(running_parser) do
     receive do
       {^running_parser, :more} -> :ok
+    end
+  end
+
+  defp stop(running_parser) do
+    # IO.puts("[STREAM] STOP PARSER PROCESS")
+    if Process.alive?(running_parser) do
+      send(running_parser, :halted)
+      receive do
+        {^running_parser, result} -> result
+      end
     end
   end
 
