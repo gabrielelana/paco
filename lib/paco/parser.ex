@@ -160,7 +160,7 @@ defmodule Paco.Parser do
             notify(collector, {:failed, from})
             %Paco.Failure{at: from, tail: text, what: description}
           else
-            wait_for_more_and_continue(state, this, description)
+            wait_for_more_and_continue(state, this)
           end
         nil ->
           notify(collector, {:started, description})
@@ -179,7 +179,7 @@ defmodule Paco.Parser do
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
-          wait_for_more_and_continue(state, this, description)
+          wait_for_more_and_continue(state, this)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
@@ -197,7 +197,7 @@ defmodule Paco.Parser do
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
-          wait_for_more_and_continue(state, this, description)
+          wait_for_more_and_continue(state, this)
         :end_of_input ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
@@ -212,7 +212,7 @@ defmodule Paco.Parser do
       description = Paco.describe(this)
       case Paco.String.consume_until(text, p, from) do
         {_, "", _, _} when is_pid(stream) ->
-          wait_for_more_and_continue(state, this, description)
+          wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
@@ -234,7 +234,7 @@ defmodule Paco.Parser do
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
-          wait_for_more_and_continue(state, this, description)
+          wait_for_more_and_continue(state, this)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
@@ -243,8 +243,8 @@ defmodule Paco.Parser do
     end
   end
 
-  defp wait_for_more_and_continue(state, this, description) do
-    %Paco.State{at: from, text: text, collector: collector, stream: stream} = state
+  defp wait_for_more_and_continue(state, this) do
+    %Paco.State{text: text, collector: collector, stream: stream} = state
     send(stream, {self, :more})
     receive do
       {:load, more_text} ->
