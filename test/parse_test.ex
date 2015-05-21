@@ -28,6 +28,14 @@ defmodule PacoTest do
     assert [{:ok, "a"}, {:ok, "b"}, {:error, _}] = Paco.parse_all(parser, "abfa")
   end
 
+  test "parse_all will consider failure an empty match" do
+    assert Paco.parse_all(lit(""), "abc") == [{:error,
+      """
+      Failed to match lit#1("") at 1:1, because it didn't consume any input
+      """
+    }]
+  end
+
   test "parse_all with flat format" do
     parser = one_of([lit("a"), lit("b"), lit("c")])
 

@@ -23,6 +23,12 @@ defmodule Paco do
                                  {at, text} ->
                                    opts = Keyword.put(opts, :at, at)
                                    case parse(parser, text, opts) do
+                                     %Paco.Success{from: at, to: at, at: at} ->
+                                       failure = %Paco.Failure{at: at,
+                                                               tail: text,
+                                                               what: describe(parser),
+                                                               because: "didn't consume any input"}
+                                       {failure, {at, ""}}
                                      %Paco.Success{at: at, tail: tail} = success ->
                                        {success, {at, tail}}
                                      %Paco.Failure{at: at} = failure ->
