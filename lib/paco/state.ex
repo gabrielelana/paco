@@ -10,7 +10,7 @@ defmodule Paco.State do
   defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil, wait_for_more: true
 
   def from(text, opts \\ []) when is_binary(text) do
-    %__MODULE__{at: {0, 1, 1},
+    %__MODULE__{at: Keyword.get(opts, :at, {0, 1, 1}),
                 text: text,
                 accumulator: nil,
                 collector: Keyword.get(opts, :collector, nil) |> notify_loaded(text),
