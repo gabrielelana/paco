@@ -86,12 +86,19 @@ defmodule Paco.Parser.LiteralTest do
     assert success.tail == "aa"
   end
 
-  test "increment indexes for an empty match" do
+  test "indexes for an empty match" do
     parser = lit("")
     success = parser.parse.(Paco.State.from("aaa"), parser)
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
     assert success.tail == "aaa"
+  end
+
+  test "indexes for a failure" do
+    parser = lit("a")
+    failure = parser.parse.(Paco.State.from("bbb"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "bbb"
   end
 end

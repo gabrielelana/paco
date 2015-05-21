@@ -11,15 +11,15 @@ defmodule Paco.Parser do
 
   parser_ lex(s) do
     parser = lit(s) |> surrounded_by(re(~r/\s*/))
-    fn %Paco.State{at: at, collector: collector} = state, this ->
+    fn %Paco.State{collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at} = success ->
           notify(collector, {:matched, from, to, at})
           success
-        %Paco.Failure{} ->
+        %Paco.Failure{at: at, tail: tail} ->
           notify(collector, {:failed, at})
-          %Paco.Failure{at: at, what: Paco.describe(this)}
+          %Paco.Failure{at: at, tail: tail, what: Paco.describe(this)}
       end
     end
   end
@@ -27,45 +27,45 @@ defmodule Paco.Parser do
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
   parser_ surrounded_by(parser, left, right) do
     parser = sequence_of([skip(left), parser, skip(right)])
-    fn %Paco.State{at: at, collector: collector} = state, this ->
+    fn %Paco.State{collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at, result: [result]} = success ->
           notify(collector, {:matched, from, to, at})
           %Paco.Success{success|result: result}
-        %Paco.Failure{because: because} ->
+        %Paco.Failure{at: at, tail: tail, because: because} ->
           notify(collector, {:failed, at})
-          %Paco.Failure{at: at, what: Paco.describe(this), because: because}
+          %Paco.Failure{at: at, tail: tail, what: Paco.describe(this), because: because}
       end
     end
   end
 
   parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
-    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
+    fn %Paco.State{collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at} = success ->
           notify(collector, {:matched, from, to, at})
           success
-        %Paco.Failure{} when has_default ->
+        %Paco.Failure{at: at, tail: tail} when has_default ->
           notify(collector, {:matched, at, at, at})
-          %Paco.Success{from: at, to: at, at: at, tail: text, result: Keyword.get(opts, :default)}
-        %Paco.Failure{} ->
+          %Paco.Success{from: at, to: at, at: at, tail: tail, result: Keyword.get(opts, :default)}
+        %Paco.Failure{at: at, tail: tail} ->
           notify(collector, {:matched, at, at, at})
-          %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
+          %Paco.Success{from: at, to: at, at: at, tail: tail, skip: true}
       end
     end
   end
 
   parser_ skip(%Paco.Parser{} = parser) do
-    fn %Paco.State{at: at, collector: collector} = state, this ->
+    fn %Paco.State{collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at} = success ->
           notify(collector, {:matched, from, to, at})
           %Paco.Success{success | skip: true}
-        %Paco.Failure{} = failure ->
+        %Paco.Failure{at: at} = failure ->
           notify(collector, {:failed, at})
           failure
       end
@@ -76,7 +76,7 @@ defmodule Paco.Parser do
     raise ArgumentError, message: "Must give at least one parser to sequence_of combinator"
   end
   parser_ sequence_of(parsers) do
-    fn %Paco.State{at: from, collector: collector} = state, this ->
+    fn %Paco.State{at: from, text: text, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, {state, from, []},
                            fn
@@ -99,7 +99,7 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: Paco.describe(this), because: failure}
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this), because: failure}
       end
     end
   end
@@ -109,7 +109,7 @@ defmodule Paco.Parser do
     raise ArgumentError, message: "Must give at least one parser to one_of combinator"
   end
   parser_ one_of(parsers) do
-    fn %Paco.State{at: from, collector: collector} = state, this ->
+    fn %Paco.State{at: from, text: text, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})
       result = Enum.reduce(parsers, [],
                            fn
@@ -130,7 +130,7 @@ defmodule Paco.Parser do
           success
         _ ->
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: Paco.describe(this)}
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
       end
     end
   end
@@ -158,14 +158,14 @@ defmodule Paco.Parser do
           if String.length(text) >= wait_for do
             notify(collector, {:started, description})
             notify(collector, {:failed, from})
-            %Paco.Failure{at: from, what: description}
+            %Paco.Failure{at: from, tail: text, what: description}
           else
             wait_for_more_and_continue(state, this, description)
           end
         nil ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: description}
+          %Paco.Failure{at: from, tail: text, what: description}
       end
     end
   end
@@ -183,7 +183,7 @@ defmodule Paco.Parser do
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: description}
+          %Paco.Failure{at: from, tail: text, what: description}
       end
     end
   end
@@ -201,7 +201,8 @@ defmodule Paco.Parser do
         :end_of_input ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: description, because: "reached the end of input"}
+          %Paco.Failure{at: from, tail: text, what: description,
+                        because: "reached the end of input"}
       end
     end
   end
@@ -231,7 +232,7 @@ defmodule Paco.Parser do
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: description}
+          %Paco.Failure{at: from, tail: text, what: description}
       end
     end
   end

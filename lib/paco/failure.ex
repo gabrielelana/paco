@@ -1,9 +1,10 @@
 defmodule Paco.Failure do
   @type t :: %__MODULE__{at: Paco.State.position,
+                         tail: String.t,
                          what: String.t,
                          because: t | nil}
 
-  defexception at: {0, 0, 0}, what: "", because: nil
+  defexception at: {0, 0, 0}, tail: "", what: "", because: nil
 
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 

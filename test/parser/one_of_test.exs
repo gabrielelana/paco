@@ -66,4 +66,11 @@ defmodule Paco.Parser.OneOfTest do
       {:failed, {0, 1, 1}},
     ])
   end
+
+  test "do not consume input with a failure" do
+    parser = one_of([lit("a"), lit("b")])
+    failure = parser.parse.(Paco.State.from("c"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "c"
+  end
 end

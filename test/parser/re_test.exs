@@ -139,4 +139,11 @@ defmodule Paco.Parser.RegexTest do
     assert success.at == {0, 1, 1}
     assert success.tail == "bbb"
   end
+
+  test "do not consume input with a failure" do
+    parser = re(~r/a+/)
+    failure = parser.parse.(Paco.State.from("bb"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "bb"
+  end
 end

@@ -68,4 +68,11 @@ defmodule Paco.Parser.SequenceOfTest do
       {:failed, {0, 1, 1}},
     ])
   end
+
+  test "do not consume input with a partial failure" do
+    parser = sequence_of([lit("a"), lit("b")])
+    failure = parser.parse.(Paco.State.from("aa"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "aa"
+  end
 end
