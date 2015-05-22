@@ -29,27 +29,33 @@ defmodule Paco.Parser.UntilTest do
   end
 
   test "stream mode until a boundary" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(until("b"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aab") do
+      result = stream
+               |> Paco.Stream.parse(until("b"))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["aa"]
+    end
   end
 
   test "stream mode until a boundary with escape" do
-    result = Helper.stream_of("aa\\baab")
-             |> Paco.Stream.parse(until({"b", "\\"}))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("a\\bab") do
+      result = stream
+               |> Paco.Stream.parse(until({"b", "\\"}))
+               |> Enum.to_list
 
-    assert result == ["aa\\baa"]
+      assert result == ["a\\ba"]
+    end
   end
 
   test "stream mode until end of input" do
-    result = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(until("b"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aa") do
+      result = stream
+               |> Paco.Stream.parse(until("b"))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["aa"]
+    end
   end
 
   test "stream mode for an empty input" do

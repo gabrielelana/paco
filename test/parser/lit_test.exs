@@ -103,35 +103,43 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "stream mode success" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(lit("aaa"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("abc") do
+      result = stream
+               |> Paco.Stream.parse(lit("ab"))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["ab"]
+    end
   end
 
   test "stream mode success at the end of input" do
-    result = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(lit("aaa"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("ab") do
+      result = stream
+               |> Paco.Stream.parse(lit("ab"))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["ab"]
+    end
   end
 
   test "stream mode failure" do
-    result = Helper.stream_of("bbb")
-             |> Paco.Stream.parse(lit("aaa"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("bb") do
+      result = stream
+               |> Paco.Stream.parse(lit("ab"))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 
   test "stream mode failure because of the end of input" do
-    result = Helper.stream_of("aa")
-             |> Paco.Stream.parse(lit("aaa"))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aa") do
+      result = stream
+               |> Paco.Stream.parse(lit("aaa"))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 
   test "stream mode for an empty input" do

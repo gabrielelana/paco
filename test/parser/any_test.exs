@@ -46,27 +46,33 @@ defmodule Paco.Parser.AnyTest do
   end
 
   test "stream mode success" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(any(3))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("abc") do
+      result = stream
+               |> Paco.Stream.parse(any(2))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["ab"]
+    end
   end
 
   test "stream mode success at the end of input" do
-    result = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(any(3))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("ab") do
+      result = stream
+               |> Paco.Stream.parse(any(2))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["ab"]
+    end
   end
 
   test "stream mode failure because of the end of input" do
-    result = Helper.stream_of("aa")
-             |> Paco.Stream.parse(any(3))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("ab") do
+      result = stream
+               |> Paco.Stream.parse(any(3))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 
   test "stream mode for an empty input" do

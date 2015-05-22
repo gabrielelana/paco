@@ -112,7 +112,7 @@ defmodule Paco.Parser.RegexTest do
     assert success.tail == "bbb"
   end
 
-  test "do not consume input with a failure" do
+  test "increment indexes for a failure" do
     parser = re(~r/a+/)
     failure = parser.parse.(Paco.State.from("bb"), parser)
     assert failure.at == {0, 1, 1}
@@ -120,54 +120,67 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "stream mode success" do
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aaab") do
+      result = stream
+               |> Paco.Stream.parse(re(~r/a+/))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["aaa"]
+    end
   end
 
   test "stream mode success at the end of input" do
-    result = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aaa") do
+      result = stream
+               |> Paco.Stream.parse(re(~r/a+/))
+               |> Enum.to_list
 
-    assert result == ["aaa"]
+      assert result == ["aaa"]
+    end
   end
 
   test "stream mode failure" do
-    result = Helper.stream_of("bbb")
-             |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("bbb") do
+      result = stream
+               |> Paco.Stream.parse(re(~r/a+/))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 
   test "stream mode failure because of the end of input" do
-    result = Helper.stream_of("aa")
-             |> Paco.Stream.parse(re(~r/a{3}/))
-             |> Enum.to_list
+    for stream <- Helper.streams_of("aa") do
+      result = stream
+               |> Paco.Stream.parse(re(~r/a{3}/))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 
   test "stream mode failure because it doesn't consume any input" do
-    result = Helper.stream_of("bbb")
-             |> Paco.Stream.parse(re(~r/a*/), on_failure: :yield)
-             |> Enum.to_list
+    parser = re(~r/a*/)
+    for stream <- Helper.streams_of("bbb") do
+      result = stream
+               |> Paco.Stream.parse(parser, on_failure: :yield)
+               |> Enum.to_list
 
-    assert result == [{:error,
-      """
-      Failed to match re#1(~r/a*/) at 1:1, because it didn't consume any input
-      """
-    }]
+      assert result == [{:error,
+        """
+        Failed to match re#1(~r/a*/) at 1:1, because it didn't consume any input
+        """
+      }]
+    end
   end
 
   test "stream mode for an empty input" do
-    result = [""]
-             |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
+    for stream <- Helper.streams_of(["", ""]) do
+      result = stream
+               |> Paco.Stream.parse(re(~r/a+/))
+               |> Enum.to_list
 
-    assert result == []
+      assert result == []
+    end
   end
 end
