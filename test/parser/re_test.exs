@@ -41,29 +41,28 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "describe" do
-    assert describe(re(~r/a+/)) == "re#1(~r/a+/, [])"
-    assert describe(re(~r/a+/i)) == "re#2(~r/a+/i, [])"
-    assert describe(re(~r/a+/i, wait_for: 1_000)) == "re#3(~r/a+/i, [wait_for: 1000])"
+    assert describe(re(~r/a+/)) == "re#1(~r/a+/)"
+    assert describe(re(~r/a+/i)) == "re#2(~r/a+/i)"
   end
 
   test "failure" do
     assert parse(re(~r/a+/), "b") == {:error,
       """
-      Failed to match re#1(~r/a+/, []) at 1:1
+      Failed to match re#1(~r/a+/) at 1:1
       """
     }
   end
 
   test "notify events on success" do
     Helper.assert_events_notified(re(~r/a+/), "aaa", [
-      {:started, "re#1(~r/a+/, [])"},
+      {:started, "re#1(~r/a+/)"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
 
   test "notify events on failure" do
     Helper.assert_events_notified(re(~r/b+/), "aaa", [
-      {:started, "re#1(~r/b+/, [])"},
+      {:started, "re#1(~r/b+/)"},
       {:failed, {0, 1, 1}},
     ])
   end
@@ -159,7 +158,7 @@ defmodule Paco.Parser.RegexTest do
 
     assert result == [{:error,
       """
-      Failed to match re#1(~r/a*/, []) at 1:1, because it didn't consume any input
+      Failed to match re#1(~r/a*/) at 1:1, because it didn't consume any input
       """
     }]
   end
@@ -167,17 +166,6 @@ defmodule Paco.Parser.RegexTest do
   test "stream mode for an empty input" do
     result = [""]
              |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
-
-    assert result == []
-  end
-
-  test "don't wait for more text in stream mode when initial text is enough" do
-    # we are telling the parser to wait for 3 characters before giving up
-    # return a failure, since 3 characters are not enough to make the parser
-    # succeed then the parser fails
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
              |> Enum.to_list
 
     assert result == []
