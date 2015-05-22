@@ -229,12 +229,12 @@ defmodule Paco.Parser do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
       case Paco.String.consume_while(text, p, from) do
+        {_, "", _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-        :end_of_input when is_pid(stream) ->
-          wait_for_more_and_continue(state, this)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})

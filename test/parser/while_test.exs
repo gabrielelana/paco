@@ -22,6 +22,38 @@ defmodule Paco.Parser.WhileTest do
     ])
   end
 
+  test "stream mode while matching" do
+    result = Helper.stream_of("aaab")
+             |> Paco.Stream.parse(while("a"))
+             |> Enum.to_list
+
+    assert result == ["aaa"]
+  end
+
+  test "stream mode while not matching" do
+    result = Helper.stream_of("aaab")
+             |> Paco.Stream.parse(while("b"))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
+  test "stream mode while matching till the end of input" do
+    result = Helper.stream_of("aaa")
+             |> Paco.Stream.parse(while("a"))
+             |> Enum.to_list
+
+    assert result == ["aaa"]
+  end
+
+  test "stream mode for an empty input" do
+    result = [""]
+             |> Paco.Stream.parse(while("a"))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
   defp uppercase?(s) do
     s == String.upcase(s)
   end

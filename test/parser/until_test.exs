@@ -28,7 +28,7 @@ defmodule Paco.Parser.UntilTest do
     ])
   end
 
-  test "wait for more text in stream mode" do
+  test "stream mode until a boundary" do
     result = Helper.stream_of("aaab")
              |> Paco.Stream.parse(until("b"))
              |> Enum.to_list
@@ -36,12 +36,28 @@ defmodule Paco.Parser.UntilTest do
     assert result == ["aaa"]
   end
 
-  test "wait for more text in stream mode until the end of input" do
+  test "stream mode until a boundary with escape" do
+    result = Helper.stream_of("aa\\baab")
+             |> Paco.Stream.parse(until({"b", "\\"}))
+             |> Enum.to_list
+
+    assert result == ["aa\\baa"]
+  end
+
+  test "stream mode until end of input" do
     result = Helper.stream_of("aaa")
              |> Paco.Stream.parse(until("b"))
              |> Enum.to_list
 
     assert result == ["aaa"]
+  end
+
+  test "stream mode for an empty input" do
+    result = [""]
+             |> Paco.Stream.parse(until("b"))
+             |> Enum.to_list
+
+    assert result == []
   end
 
   defp uppercase?(s) do
