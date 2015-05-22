@@ -260,28 +260,47 @@ defmodule Paco.StreamTest do
       assert result == ["aa"]
       assert Process.info(self, :messages) == {:messages, []}
     end
-
-    for partition <- partitions do
-      result = partition
-               |> Paco.Stream.parse(parser, on_failure: :yield)
-               |> Enum.to_list
-
-      assert result == [{:ok, "aa"}, {:error,
-        """
-        Failed to match lit#1("aa") at 1:3
-        """
-      }]
-      assert Process.info(self, :messages) == {:messages, []}
-    end
   end
 
   test "partial match at the end of the stream" do
+    parser = lit("aa")
 
     result = ["aaa"]
-             |> Paco.Stream.parse(lit("aa"))
+             |> Paco.Stream.parse(parser)
              |> Enum.to_list
 
     assert result == ["aa"]
     assert Process.info(self, :messages) == {:messages, []}
+  end
+
+  test "a parser in stream mode that don't consume any input will fail" do
+    parser = lit("")
+
+    result = ["aaa"]
+             |> Paco.Stream.parse(parser)
+             |> Enum.to_list
+    assert result == []
+
+    result = [""]
+             |> Paco.Stream.parse(parser)
+             |> Enum.to_list
+    assert result == []
+
+    result = ["aaa"]
+             |> Paco.Stream.parse(parser, on_failure: :yield)
+             |> Enum.to_list
+    assert result == [{:error,
+      """
+      Failed to match lit#1("") at 1:1, because it didn't consume any input
+      """
+    }]
+  end
+
+  test "empty chunks in stream don't change the result" do
+    result = ["", "a", "", "a", ""]
+             |> Paco.Stream.parse(lit("aa"))
+             |> Enum.to_list
+
+    assert result == ["aa"]
   end
 end

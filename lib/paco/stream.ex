@@ -131,6 +131,7 @@ defmodule Paco.Stream do
   defp consume_request_for_more_data_from(running_parser) do
     receive do
       {^running_parser, :more} -> :ok
+      {^running_parser, result} -> send(self, {running_parser, result})
     end
   end
 
