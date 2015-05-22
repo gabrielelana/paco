@@ -6,18 +6,46 @@ defmodule Paco.Parser.WhileTest do
 
   alias Paco.Test.Helper
 
-  test "success" do
+  test "parse graphemes in alphabet" do
     assert parse(while("abc"), "bbacbcd") == {:ok, "bbacbc"}
+  end
+
+  test "parse graphemes for which a given function returns true" do
     assert parse(while(&uppercase?/1), "ABc") == {:ok, "AB"}
+  end
+
+  test "parse graphemes in alpahbet for an exact number of times" do
+    assert parse(while("abc", 2), "bbacbcd") == {:ok, "bb"}
+  end
+
+  test "parse graphemes in alpahbet for a number of time less than (or equal to) m" do
+    assert parse(while("abc", {:lte, 2}), "bbacbc") == {:ok, "bb"}
+    assert parse(while("abc", {:lt, 2}), "bbacbc") == {:ok, "b"}
   end
 
   test "empty result is not a failure" do
     assert parse(while("abc"), "xxx") == {:ok, ""}
   end
 
+  test "fails at the end of input when lower limit is not reached" do
+    assert parse(while("abc", {:gte, 3}), "ab") == {:error,
+      """
+      Failed to match while#1("abc", {3, :infinity}) at 1:1
+      """
+    }
+  end
+
+  test "fails when collected grahemes are less than required" do
+    assert parse(while("abc", {:gt, 2}), "abx") == {:error,
+      """
+      Failed to match while#1("abc", {3, :infinity}) at 1:1
+      """
+    }
+  end
+
   test "notify events on success" do
     Helper.assert_events_notified(while("a"), "aaa ", [
-      {:started, ~s|while#1("a")|},
+      {:started, ~s|while#1("a", {0, :infinity})|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
@@ -58,6 +86,16 @@ defmodule Paco.Parser.WhileTest do
              |> Enum.to_list
 
     assert result == []
+  end
+
+  test "stream mode waits until it reach the upper limit" do
+    for stream <- Helper.streams_of("aaa") do
+      result = stream
+               |> Paco.Stream.parse(while("a", {0, 3}))
+               |> Enum.to_list
+
+      assert result == ["aaa"]
+    end
   end
 
   defp uppercase?(s) do

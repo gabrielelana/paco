@@ -9,6 +9,9 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
+  # parser_ whitespace, as: while(&String.whitespace?/1, 1)
+  # parser_ whitespaces, as: while(&String.whitespace?/1, {:gte, 1})
+
   parser_ lex(s), as: lit(s) |> surrounded_by(re(~r/\s*/))
 
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
@@ -213,16 +216,24 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ while(p) do
+  parser_ while(p), do: while(p, {0, :infinity})
+  parser_ while(p, n) when is_integer(n), do: while(p, {n, n})
+  parser_ while(p, {:gte, n}) when is_integer(n), do: while(p, {n, :infinity})
+  parser_ while(p, {:gt, n}) when is_integer(n), do: while(p, {n + 1, :infinity})
+  parser_ while(p, {:lte, m}) when is_integer(m), do: while(p, {0, m})
+  parser_ while(p, {:lt, m}) when is_integer(m), do: while(p, {0, m - 1})
+  parser_ while(p, {n, m}) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
-      case Paco.String.consume_while(text, p, from) do
+      case Paco.String.consume_while(text, p, {n, m}, from) do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
           notify(collector, {:started, description})
           notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        :end_of_input when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
