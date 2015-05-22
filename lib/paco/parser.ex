@@ -64,7 +64,7 @@ defmodule Paco.Parser do
       case parser.parse.(state, parser) do
         %Paco.Success{from: from, to: to, at: at} = success ->
           notify(collector, {:matched, from, to, at})
-          %Paco.Success{success | skip: true}
+          %Paco.Success{success|skip: true}
         %Paco.Failure{at: at} = failure ->
           notify(collector, {:failed, at})
           failure
@@ -83,9 +83,9 @@ defmodule Paco.Parser do
                              (%Paco.Parser{} = parser, {state, _, results}) ->
                                case parser.parse.(state, parser) do
                                  %Paco.Success{to: to, at: at, tail: tail, skip: true} ->
-                                   {%Paco.State{state | at: at, text: tail}, to, results}
+                                   {%Paco.State{state|at: at, text: tail}, to, results}
                                  %Paco.Success{to: to, at: at, tail: tail, result: result} ->
-                                   {%Paco.State{state | at: at, text: tail}, to, [result|results]}
+                                   {%Paco.State{state|at: at, text: tail}, to, [result|results]}
                                  %Paco.Failure{} = failure ->
                                    failure
                                end
@@ -120,7 +120,7 @@ defmodule Paco.Parser do
                                  %Paco.Success{} = success ->
                                    success
                                  %Paco.Failure{} = failure ->
-                                   [failure | failures]
+                                   [failure|failures]
                                end
                            end)
 

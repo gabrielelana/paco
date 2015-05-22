@@ -40,7 +40,7 @@ defmodule Paco.Macro do
                          %Paco.Success{} = success ->
                            success
                          %Paco.Failure{} = failure ->
-                           %Paco.Failure{failure | what: unquote(name)}
+                           %Paco.Failure{failure|what: unquote(name)}
                        end
                      _ ->
                        raise RuntimeError, message: "Expected a %Paco.Parser"

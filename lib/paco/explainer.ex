@@ -9,24 +9,24 @@ defmodule Paco.Explainer do
 
   def handle_event({:loaded, _text} = event, state) do
     # IO.inspect(event)
-    {:ok, %Paco.Explainer{state| events: [event|state.events]}}
+    {:ok, %Paco.Explainer{state|events: [event|state.events]}}
   end
 
   def handle_event({:started, _what} = event, state) do
     # IO.puts("event #{inspect(event)} at level #{state.level}")
-    {:ok, %Paco.Explainer{state| events: [event|state.events], level: state.level + 1}}
+    {:ok, %Paco.Explainer{state|events: [event|state.events], level: state.level + 1}}
   end
 
   def handle_event({:matched, _from, _to, _at} = event, state) do
     # IO.puts("event #{inspect(event)} at level #{state.level}")
     # :timer.sleep(1000)
-    {:ok, %Paco.Explainer{state| events: [event|state.events], level: state.level - 1}}
+    {:ok, %Paco.Explainer{state|events: [event|state.events], level: state.level - 1}}
   end
 
   def handle_event({:failed, _at} = event, state) do
     # IO.puts("event #{inspect(event)} at level #{state.level}")
     # :timer.sleep(1000)
-    {:ok, %Paco.Explainer{state| events: [event|state.events], level: state.level - 1}}
+    {:ok, %Paco.Explainer{state|events: [event|state.events], level: state.level - 1}}
   end
 
   def handle_call(:report, %Paco.Explainer{level: level} = state) when level > 0 do
