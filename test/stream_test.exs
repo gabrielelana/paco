@@ -303,4 +303,21 @@ defmodule Paco.StreamTest do
 
     assert result == ["aa"]
   end
+
+  test "stream always ends with a failure" do
+    result = ["aa"]
+             |> Paco.Stream.parse(lit("aa"), on_failure: :yield)
+             |> Enum.to_list
+
+    # The parser process after a success restarts the parser on what
+    # it's left of input, it doesn't know if the stream it's done or halted.
+    # Since the parser is already started and a parser could return only one
+    # of %Paco.Success or %Paco.Failure a %Paco.Failure is returned without
+    # introducing a special value or other hacks
+    assert result == [{:ok, "aa"}, {:error,
+      """
+      Failed to match lit#1("aa") at 1:3
+      """
+    }]
+  end
 end
