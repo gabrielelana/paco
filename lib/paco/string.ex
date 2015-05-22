@@ -90,21 +90,31 @@ defmodule Paco.String do
   end
 
 
-  def consume_while(text, what, at), do: consume_while(text, "", what, at, at)
+  def consume_while(text, what, {n, m}, at), do: consume_while(text, "", what, {n, m, 0}, at, at)
+  def consume_while(text, what, n, at), do: consume_while(text, "", what, {n, n, 0}, at, at)
 
-  defp consume_while(text, consumed, what, at, at) when is_binary(what) do
+  def consume_while(text, what, at), do: consume_while(text, "", what, {0, :infinity, 0}, at, at)
+
+  defp consume_while(text, consumed, what, limits, at, at) when is_binary(what) do
     expected = Stream.unfold(what, &next_grapheme/1) |> Enum.to_list
     f = fn(h) -> Enum.any?(expected, &(&1 == h)) end
-    consume_while(text, consumed, f, at, at)
+    consume_while(text, consumed, f, limits, at, at)
   end
-  defp consume_while(text, consumed, f, to, at) when is_function(f) do
+  defp consume_while(text, consumed, f, {n, m, c}, to, at) when is_function(f) do
     case next_grapheme(text) do
       {h, tail} ->
-        if (f.(h)) do
-          consume_while(tail, consumed <> h, f, at, position_after(at, h))
-        else
-          {consumed, text, to, at}
+        case f.(h) do
+          true when c+1 == m ->
+            {consumed <> h, tail, at, position_after(at, h)}
+          true ->
+            consume_while(tail, consumed <> h, f, {n, m, c+1}, at, position_after(at, h))
+          false when c < n ->
+            :error
+          false ->
+            {consumed, text, to, at}
         end
+      nil when c < n ->
+        :end_of_input
       nil ->
         {consumed, text, to, at}
     end

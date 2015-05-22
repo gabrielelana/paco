@@ -36,6 +36,11 @@ defmodule Paco.StringTest do
     assert consume_while("xxxxx", "abc", {0, 1, 1}) == {"", "xxxxx", {0, 1, 1}, {0, 1, 1}}
   end
 
+  test "consume_while one of the allowed graphemes are matched for a number of times" do
+    assert consume_while("acbcd", "abc", 2, {0, 1, 1}) == {"ac", "bcd", {1, 1, 2}, {2, 1, 3}}
+    assert consume_while("xxxxx", "abc", 2, {0, 1, 1}) == :error
+  end
+
   test "consume_while at the end of input" do
     assert consume_while("aaa", "a", {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
   end
@@ -45,6 +50,23 @@ defmodule Paco.StringTest do
     assert consume_while("    ", &whitespace?/1, {0, 1, 1}) == {"    ", "", {3, 1, 4}, {4, 1, 5}}
     assert consume_while("a", &whitespace?/1, {0, 1, 1}) == {"", "a", {0, 1, 1}, {0, 1, 1}}
     assert consume_while("", &whitespace?/1, {0, 1, 1}) == {"", "", {0, 1, 1}, {0, 1, 1}}
+  end
+
+  test "consume_while a given function return true for an exact number of times" do
+    assert consume_while("aaa", &letter?/1, 1, {0, 1, 1}) == {"a", "aa", {0, 1, 1}, {1, 1, 2}}
+    assert consume_while("aaa", &letter?/1, 2, {0, 1, 1}) == {"aa", "a", {1, 1, 2}, {2, 1, 3}}
+    assert consume_while("aaa", &letter?/1, 3, {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume_while("aaa", &letter?/1, 4, {0, 1, 1}) == :end_of_input
+    assert consume_while("aa%", &letter?/1, 3, {0, 1, 1}) == :error
+  end
+
+  test "consume_while a given function return true for minumum and a maximum number of times" do
+    assert consume_while("a%%", &letter?/1, {1, :infinity}, {0, 1, 1}) == {"a", "%%", {0, 1, 1}, {1, 1, 2}}
+    assert consume_while("a%%", &letter?/1, {2, :infinity}, {0, 1, 1}) == :error
+    assert consume_while("", &letter?/1, {1, :infinity}, {0, 1, 1}) == :end_of_input
+    assert consume_while("abc", &letter?/1, {1, 2}, {0, 1, 1}) == {"ab", "c", {1, 1, 2}, {2, 1, 3}}
+    assert consume_while("abc", &letter?/1, {1, 4}, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume_while("abc", &letter?/1, {5, 6}, {0, 1, 1}) == :end_of_input
   end
 
   test "consume_until given function returns true" do
