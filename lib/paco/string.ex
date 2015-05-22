@@ -55,6 +55,14 @@ defmodule Paco.String do
   def whitespace?(_), do: false
 
 
+  @letters ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","X","Y","Z",
+            "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","w","x","y","z"]
+  for letter <- @letters do
+    def letter?(<<unquote(letter)>>), do: true
+  end
+  def letter?(_), do: false
+
+
   def consume(text, expected, at), do: consume(text, expected, at, at)
 
   defp consume(text, "", to, at), do: {text, to, at}
