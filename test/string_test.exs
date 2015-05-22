@@ -9,6 +9,7 @@ defmodule Paco.StringTest do
     assert consume("aaa", "aaa", {0, 1, 1}) == {"", {2, 1, 3}, {3, 1, 4}}
     assert consume("aaab", "aaa", {0, 1, 1}) == {"b", {2, 1, 3}, {3, 1, 4}}
     assert consume("", "a", {0, 1, 1}) == :end_of_input
+    assert consume("b", "a", {0, 1, 1}) == :error
   end
 
   test "consume with newlines" do
