@@ -13,6 +13,10 @@ defmodule Paco.Parser.AnyTest do
     assert parse(any(1), "abc") == {:ok, "a"}
   end
 
+  test "works for composite graphemes" do
+    assert parse(any, "e\x{0301}aaa") == {:ok, "e\x{0301}"}
+  end
+
   test "describe" do
     assert describe(any) == "any#1(1)"
     assert describe(any(1)) == "any#2(1)"

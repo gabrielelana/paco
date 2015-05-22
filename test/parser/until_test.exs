@@ -12,10 +12,6 @@ defmodule Paco.Parser.UntilTest do
     assert parse(until(&uppercase?/1), "abC") == {:ok, "ab"}
   end
 
-  test "any works for composite graphemes" do
-    assert parse(any, "e\x{0301}aaa") == {:ok, "e\x{0301}"}
-  end
-
   test "describe" do
     assert describe(until("c")) == ~s|until#1("c", [])|
     # assert describe(until(&uppercase?/1)) == "until#1(1)"
