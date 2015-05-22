@@ -54,33 +54,6 @@ defmodule Paco.Parser.RegexTest do
     }
   end
 
-  test "wait for more text in stream mode" do
-    [result] = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(re(~r/a+b/))
-             |> Enum.to_list
-
-    assert result == "aaab"
-  end
-
-  test "don't wait for more text if we have enough" do
-    results = Helper.stream_of("aaa")
-             |> Paco.Stream.parse(re(~r/a+/))
-             |> Enum.to_list
-
-    assert results == ["a", "a", "a"]
-  end
-
-  test "don't wait for more text in stream mode when initial text is enough" do
-    # we are telling the parser to wait for 3 characters before giving up
-    # return a failure, since 3 characters are not enough to make the parser
-    # succeed then the parser fails
-    result = Helper.stream_of("aaab")
-             |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
-             |> Enum.to_list
-
-    assert result == []
-  end
-
   test "notify events on success" do
     Helper.assert_events_notified(re(~r/a+/), "aaa", [
       {:started, "re#1(~r/a+/, [])"},
@@ -145,5 +118,68 @@ defmodule Paco.Parser.RegexTest do
     failure = parser.parse.(Paco.State.from("bb"), parser)
     assert failure.at == {0, 1, 1}
     assert failure.tail == "bb"
+  end
+
+  test "stream mode success" do
+    result = Helper.stream_of("aaab")
+             |> Paco.Stream.parse(re(~r/a+/))
+             |> Enum.to_list
+
+    assert result == ["aaa"]
+  end
+
+  test "stream mode success at the end of input" do
+    result = Helper.stream_of("aaa")
+             |> Paco.Stream.parse(re(~r/a+/))
+             |> Enum.to_list
+
+    assert result == ["aaa"]
+  end
+
+  test "stream mode failure" do
+    result = Helper.stream_of("bbb")
+             |> Paco.Stream.parse(re(~r/a+/))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
+  test "stream mode failure because of the end of input" do
+    result = Helper.stream_of("aa")
+             |> Paco.Stream.parse(re(~r/a{3}/))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
+  test "stream mode failure because it doesn't consume any input" do
+    result = Helper.stream_of("bbb")
+             |> Paco.Stream.parse(re(~r/a*/), on_failure: :yield)
+             |> Enum.to_list
+
+    assert result == [{:error,
+      """
+      Failed to match re#1(~r/a*/, []) at 1:1, because it didn't consume any input
+      """
+    }]
+  end
+
+  test "stream mode for an empty input" do
+    result = [""]
+             |> Paco.Stream.parse(re(~r/a+/))
+             |> Enum.to_list
+
+    assert result == []
+  end
+
+  test "don't wait for more text in stream mode when initial text is enough" do
+    # we are telling the parser to wait for 3 characters before giving up
+    # return a failure, since 3 characters are not enough to make the parser
+    # succeed then the parser fails
+    result = Helper.stream_of("aaab")
+             |> Paco.Stream.parse(re(~r/a+b/, wait_for: 3))
+             |> Enum.to_list
+
+    assert result == []
   end
 end

@@ -140,19 +140,27 @@ defmodule Paco.Parser do
       description = Paco.describe(this)
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
-          {s, tail, to, at} = Paco.String.seek(text, from, len)
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
-        [{_, len}|captures] ->
-          {s, tail, to, at} = Paco.String.seek(text, from, len)
-          captures = case Regex.names(r) do
-            [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
-            _ -> [Regex.named_captures(r, text)]
+          case Paco.String.seek(text, from, len) do
+            {_, "", _, _} when is_pid(stream) ->
+              wait_for_more_and_continue(state, this)
+            {s, tail, to, at} ->
+              notify(collector, {:started, description})
+              notify(collector, {:matched, from, to, at})
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
           end
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
+        [{_, len}|captures] ->
+          case Paco.String.seek(text, from, len) do
+            {_, "", _, _} when is_pid(stream) ->
+              wait_for_more_and_continue(state, this)
+            {s, tail, to, at} ->
+              captures = case Regex.names(r) do
+                [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+                _ -> [Regex.named_captures(r, text)]
+              end
+              notify(collector, {:started, description})
+              notify(collector, {:matched, from, to, at})
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
+          end
         nil when is_pid(stream) ->
           wait_for = Keyword.get(opts, :wait_for, 1_000)
           if String.length(text) >= wait_for do
