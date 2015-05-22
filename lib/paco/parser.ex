@@ -9,8 +9,8 @@ defmodule Paco.Parser do
   defp notify(nil, _what), do: :ok
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
-  # parser_ whitespace, as: while(&String.whitespace?/1, 1)
-  # parser_ whitespaces, as: while(&String.whitespace?/1, {:gte, 1})
+  parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
+  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {:gte, 1})
 
   parser_ lex(s), as: lit(s) |> surrounded_by(re(~r/\s*/))
 
