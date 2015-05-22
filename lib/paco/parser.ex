@@ -12,7 +12,7 @@ defmodule Paco.Parser do
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
   parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {:gte, 1})
 
-  parser_ lex(s), as: lit(s) |> surrounded_by(re(~r/\s*/))
+  parser_ lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
 
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
   parser_ surrounded_by(parser, left, right) do
@@ -237,7 +237,7 @@ defmodule Paco.Parser do
         _ ->
           notify(collector, {:started, description})
           notify(collector, {:failed, from})
-          %Paco.Failure{at: from, what: description}
+          %Paco.Failure{at: from, tail: text, what: description}
       end
     end
   end
