@@ -79,5 +79,4 @@ defmodule PacoTest do
                    Paco.parse_all!(parser, "afc")
                  end
   end
-
 end

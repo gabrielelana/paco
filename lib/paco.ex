@@ -15,28 +15,10 @@ defmodule Paco do
   end
 
   def parse_all(%Paco.Parser{} = parser, text, opts \\ []) do
-    at = Keyword.get(opts, :at, {0, 1, 1})
-    on_failure = Keyword.get(opts, :on_failure, :yield)
-    wanted_format = Keyword.get(opts, :format, :tagged)
-    opts = Keyword.put(opts, :format, :raw)
-    Stream.unfold({at, text}, fn {_, ""} -> nil
-                                 {at, text} ->
-                                   opts = Keyword.put(opts, :at, at)
-                                   case parse(parser, text, opts) do
-                                     %Paco.Success{from: at, to: at, at: at} ->
-                                       failure = %Paco.Failure{at: at,
-                                                               tail: text,
-                                                               what: describe(parser),
-                                                               because: "didn't consume any input"}
-                                       {failure, {at, ""}}
-                                     %Paco.Success{at: at, tail: tail} = success ->
-                                       {success, {at, tail}}
-                                     %Paco.Failure{at: at} = failure ->
-                                       {failure, {at, ""}}
-                                   end
-                              end)
-    |> Enum.map(&handle_failure(&1, on_failure))
-    |> Enum.map(&format(&1, wanted_format))
+    [text]
+    |> Paco.Stream.parse(parser, Keyword.merge(opts, [format: :raw, on_failure: :yield]))
+    |> Enum.map(&handle_failure(&1, Keyword.get(opts, :on_failure, :yield)))
+    |> Enum.map(&format(&1, Keyword.get(opts, :format, :tagged)))
   end
 
   def describe(%Paco.Parser{} = p), do: inspect(p)
