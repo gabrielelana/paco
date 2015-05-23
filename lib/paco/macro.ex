@@ -32,16 +32,15 @@ defmodule Paco.Macro do
     quote do
       parser_ unquote(definition) do
         parser = unquote(parser)
-        fn %Paco.State{collector: collector} = state, this ->
-          notify(collector, {:started, Paco.describe(this)})
+        fn %Paco.State{} = state, this ->
+          notify_started(this, state)
           case parser.parse.(state, parser) do
-            %Paco.Success{from: from, to: to, at: at} = success ->
-              notify(collector, {:matched, from, to, at})
+            %Paco.Success{} = success ->
               success
-            %Paco.Failure{at: at, tail: tail, because: because} ->
-              notify(collector, {:failed, at})
-              %Paco.Failure{at: at, tail: tail, what: Paco.describe(this), because: because}
+            %Paco.Failure{} = failure ->
+              %Paco.Failure{failure|what: Paco.describe(this), because: failure.because}
           end
+          |> notify_ended(state)
         end
       end
     end

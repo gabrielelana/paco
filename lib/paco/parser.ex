@@ -6,8 +6,26 @@ defmodule Paco.Parser do
   def from(%Paco.Parser{} = p), do: p
   def from(%Regex{} = r), do: re(r)
 
-  defp notify(nil, _what), do: :ok
-  defp notify(collector, what), do: GenEvent.notify(collector, what)
+  defp notify_loaded(_text, %Paco.State{collector: nil}), do: nil
+  defp notify_loaded(text, %Paco.State{collector: collector}) do
+    GenEvent.notify(collector, {:loaded, text})
+  end
+
+  defp notify_started(_parser, %Paco.State{collector: nil}), do: nil
+  defp notify_started(parser, %Paco.State{collector: collector}) do
+    GenEvent.notify(collector, {:started, Paco.describe(parser)})
+  end
+
+  defp notify_ended(result, %Paco.State{collector: nil}), do: result
+  defp notify_ended(%Paco.Success{} = success, %Paco.State{collector: collector}) do
+    GenEvent.notify(collector, {:matched, success.from, success.to, success.at})
+    success
+  end
+  defp notify_ended(%Paco.Failure{} = failure, %Paco.State{collector: collector}) do
+    GenEvent.notify(collector, {:failed, failure.at})
+    failure
+  end
+
 
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
   parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {1, :or_more})
@@ -23,16 +41,15 @@ defmodule Paco.Parser do
   #   as: sequence_of([skip(left), parser, skip(right)]) |> bind(&List.first/1)
   parser_ surrounded_by(parser, left, right) do
     parser = sequence_of([skip(left), parser, skip(right)])
-    fn %Paco.State{collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
+    fn state, this ->
+      notify_started(this, state)
       case parser.parse.(state, parser) do
-        %Paco.Success{from: from, to: to, at: at, result: [result]} = success ->
-          notify(collector, {:matched, from, to, at})
+        %Paco.Success{result: [result]} = success ->
           %Paco.Success{success|result: result}
-        %Paco.Failure{at: at, tail: tail, because: because} ->
-          notify(collector, {:failed, at})
-          %Paco.Failure{at: at, tail: tail, what: Paco.describe(this), because: because}
+        %Paco.Failure{} = failure ->
+          %Paco.Failure{failure|what: Paco.describe(this)}
       end
+      |> notify_ended(state)
     end
   end
 
@@ -50,9 +67,9 @@ defmodule Paco.Parser do
   parser_ repeat(parser, {:at_least, n}), do: repeat(parser, {n, :infinity})
   parser_ repeat(parser, {:at_most, n}), do: repeat(parser, {0, n})
   parser_ repeat(parser, {at_least, at_most}) do
-    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
-      result = Stream.unfold({state, 0},
+    fn %Paco.State{at: at, text: text} = state, this ->
+      notify_started(this, state)
+      successes = Stream.unfold({state, 0},
                              fn {_, n} when n == at_most -> nil
                                 {state, n} ->
                                   case parser.parse.(state, parser) do
@@ -68,59 +85,57 @@ defmodule Paco.Parser do
                |> Enum.to_list
 
       failure = %Paco.Failure{at: at, tail: text, what: Paco.describe(this)}
-      case Enum.count(result) do
+      case Enum.count(successes) do
         n when n != at_least and at_least == at_most ->
-          notify(collector, {:failed, at})
-          %Paco.Failure{failure|because: "matched #{n} times instead of #{at_least}"}
+          because = "matched #{n} times instead of #{at_least}"
+          %Paco.Failure{failure|because: because}
         n when n < at_least ->
-          notify(collector, {:failed, at})
-          %Paco.Failure{failure|because: "matched #{n} times instead of at least #{at_least} times"}
+          because = "matched #{n} times instead of at least #{at_least} times"
+          %Paco.Failure{failure|because: because}
         n when n == 0 and at_least == 0 ->
-          notify(collector, {:matched, at, at, at})
           %Paco.Success{from: at, to: at, at: at, tail: text, result: []}
         _ ->
-          last_success = List.last(result)
-          notify(collector, {:matched, at, last_success.to, last_success.at})
-          %Paco.Success{last_success|from: at, result: result |> Enum.map(&(&1.result))}
+          last_success = List.last(successes)
+          results = successes |> Enum.map(&(&1.result))
+          %Paco.Success{last_success|from: at, result: results}
       end
+      |> notify_ended(state)
     end
   end
 
   parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
-    fn %Paco.State{collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
+    fn state, this ->
+      notify_started(this, state)
       case parser.parse.(state, parser) do
-        %Paco.Success{from: from, to: to, at: at} = success ->
-          notify(collector, {:matched, from, to, at})
+        %Paco.Success{} = success ->
           success
         %Paco.Failure{at: at, tail: tail} when has_default ->
-          notify(collector, {:matched, at, at, at})
-          %Paco.Success{from: at, to: at, at: at, tail: tail, result: Keyword.get(opts, :default)}
+          result = Keyword.get(opts, :default)
+          %Paco.Success{from: at, to: at, at: at, tail: tail, result: result}
         %Paco.Failure{at: at, tail: tail} ->
-          notify(collector, {:matched, at, at, at})
           %Paco.Success{from: at, to: at, at: at, tail: tail, skip: true}
       end
+      |> notify_ended(state)
     end
   end
 
   parser_ skip(%Paco.Parser{} = parser) do
-    fn %Paco.State{collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
+    fn state, this ->
+      notify_started(this, state)
       case parser.parse.(state, parser) do
-        %Paco.Success{from: from, to: to, at: at} = success ->
-          notify(collector, {:matched, from, to, at})
+        %Paco.Success{} = success ->
           %Paco.Success{success|skip: true}
-        %Paco.Failure{at: at} = failure ->
-          notify(collector, {:failed, at})
+        %Paco.Failure{} = failure ->
           failure
       end
+      |> notify_ended(state)
     end
   end
 
   parser_ sequence_of(parsers) do
-    fn %Paco.State{at: from, text: text, collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
+    fn %Paco.State{at: from, text: text} = state, this ->
+      notify_started(this, state)
       result = Enum.reduce(parsers, {state, from, []},
                            fn
                              (%Paco.Parser{} = parser, {state, _, results}) ->
@@ -138,12 +153,11 @@ defmodule Paco.Parser do
 
       case result do
         {%Paco.State{at: at, text: text}, to, results} ->
-          notify(collector, {:matched, from, to, at})
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          notify(collector, {:failed, from})
           %Paco.Failure{at: from, tail: text, what: Paco.describe(this), because: failure}
       end
+      |> notify_ended(state)
     end
   end
 
@@ -152,8 +166,8 @@ defmodule Paco.Parser do
     raise ArgumentError, message: "Must give at least one parser to one_of combinator"
   end
   parser_ one_of(parsers) do
-    fn %Paco.State{at: from, text: text, collector: collector} = state, this ->
-      notify(collector, {:started, Paco.describe(this)})
+    fn %Paco.State{at: from, text: text} = state, this ->
+      notify_started(this, state)
       result = Enum.reduce(parsers, [],
                            fn
                              (_, %Paco.Success{} = success) ->
@@ -168,28 +182,27 @@ defmodule Paco.Parser do
                            end)
 
       case result do
-        %Paco.Success{from: from, to: to, at: at} = success ->
-          notify(collector, {:matched, from, to, at})
-          success
-        _ ->
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
-      end
+         %Paco.Success{} = success ->
+           success
+         _ ->
+           %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+       end
+       |> notify_ended(state)
     end
   end
 
   parser_ re(r) do
-    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
-      description = Paco.describe(this)
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
           case Paco.String.seek(text, from, len) do
             {_, "", _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
             {s, tail, to, at} ->
-              notify(collector, {:started, description})
-              notify(collector, {:matched, from, to, at})
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+              notify_started(this, state)
+              success = %Paco.Success{from: from, to: to, at: at,
+                                      tail: tail, result: s}
+              notify_ended(success, state)
           end
         [{_, len}|captures] ->
           case Paco.String.seek(text, from, len) do
@@ -197,74 +210,75 @@ defmodule Paco.Parser do
               wait_for_more_and_continue(state, this)
             {s, tail, to, at} ->
               captures = case Regex.names(r) do
-                [] -> captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
-                _ -> [Regex.named_captures(r, text)]
+                [] ->
+                  captures
+                  |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+                _ ->
+                  [Regex.named_captures(r, text)]
               end
-              notify(collector, {:started, description})
-              notify(collector, {:matched, from, to, at})
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
+              notify_started(this, state)
+              success = %Paco.Success{from: from, to: to, at: at,
+                                      tail: tail, result: [s|captures]}
+              notify_ended(success, state)
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          notify(collector, {:started, description})
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: description}
+          notify_started(this, state)
+          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          notify_ended(failure, state)
       end
     end
   end
 
   parser_ lit(s) do
-    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
-      description = Paco.describe(this)
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, to, at} ->
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+          notify_started(this, state)
+          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+          notify_ended(success, state)
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         _ ->
-          notify(collector, {:started, description})
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: description}
+          notify_started(this, state)
+          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          notify_ended(failure, state)
       end
     end
   end
 
   parser_ any(n \\ 1) do
-    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
-      description = Paco.describe(this)
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_any(text, n, from) do
         {consumed, tail, to, at} ->
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_started(this, state)
+          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_ended(success, state)
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         :end_of_input ->
-          notify(collector, {:started, description})
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: description,
-                        because: "reached the end of input"}
+          notify_started(this, state)
+          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this),
+                                  because: "reached the end of input"}
+          notify_ended(failure, state)
       end
     end
   end
 
   parser_ until(p, opts \\ []) do
-    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
-      description = Paco.describe(this)
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_until(text, p, from) do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_started(this, state)
+          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_ended(success, state)
         _ ->
-          notify(collector, {:started, description})
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: description}
+          notify_started(this, state)
+          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          notify_ended(failure, state)
       end
     end
   end
@@ -276,31 +290,30 @@ defmodule Paco.Parser do
   parser_ while(p, {:at_least, n}), do: while(p, {n, :infinity})
   parser_ while(p, {:at_most, n}), do: while(p, {0, n})
   parser_ while(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
-      description = Paco.describe(this)
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
-          notify(collector, {:started, description})
-          notify(collector, {:matched, from, to, at})
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_started(this, state)
+          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          notify_ended(success, state)
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         _ ->
-          notify(collector, {:started, description})
-          notify(collector, {:failed, from})
-          %Paco.Failure{at: from, tail: text, what: description}
+          notify_started(this, state)
+          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          notify_ended(failure, state)
       end
     end
   end
 
   defp wait_for_more_and_continue(state, this) do
-    %Paco.State{text: text, collector: collector, stream: stream} = state
+    %Paco.State{text: text, stream: stream} = state
     send(stream, {self, :more})
     receive do
       {:load, more_text} ->
-        notify(collector, {:loaded, more_text})
+        notify_loaded(more_text, state)
         this.parse.(%Paco.State{state|text: text <> more_text}, this)
       :halted ->
         # The stream is over, switching to a non stream mode is equal to
