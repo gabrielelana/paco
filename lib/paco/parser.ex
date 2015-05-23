@@ -123,7 +123,13 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ skip(%Paco.Parser{} = parser) do
+  parser_ silent(parser) do
+    fn state, _ ->
+      parser.parse.(%Paco.State{state|silent: true}, parser)
+    end
+  end
+
+  parser_ skip(parser) do
     fn state, this ->
       notify_started(this, state)
       case parser.parse.(state, parser) do
