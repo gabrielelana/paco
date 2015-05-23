@@ -16,10 +16,11 @@ defmodule Paco.Parser do
   # parser_ lex(s), as: sequence_of([skip(while(&Paco.String.whitespace?/1, {0, :infinity})),
   #                                  lit(s),
   #                                  skip(while(&Paco.String.whitespace?/1, {0, :infinity}))])
+  #                     |> bind(&List.first/1)
 
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
   # parser_ surrounded_by(parser, left, right),
-  #   as: sequence_of([skip(left), parser, skip(right)]) |> bind(fn [r] -> r end)
+  #   as: sequence_of([skip(left), parser, skip(right)]) |> bind(&List.first/1)
   parser_ surrounded_by(parser, left, right) do
     parser = sequence_of([skip(left), parser, skip(right)])
     fn %Paco.State{collector: collector} = state, this ->
