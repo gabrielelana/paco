@@ -4,9 +4,10 @@ defmodule Paco.State do
                          at: position,
                          accumulator: term | nil,
                          collector: pid | nil,
-                         stream: pid | nil}
+                         stream: pid | nil,
+                         silent: boolean}
 
-  defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil
+  defstruct at: {0, 1, 1}, text: "", accumulator: nil, collector: nil, stream: nil, silent: false
 
   def from(text, opts \\ []) when is_binary(text) do
     %__MODULE__{at: Keyword.get(opts, :at, {0, 1, 1}),
