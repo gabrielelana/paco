@@ -182,7 +182,11 @@ defmodule Paco.String do
 
   def line_at(text, at) do
     case String.at(text, at) do
-      nil -> ""
+      nil ->
+        case String.length(text) do
+          0 -> ""
+          n -> line_at(text, n - 1)
+        end
       grapheme ->
         if (newline?(grapheme)) do
           collect_line_at(text, at - 1, &(&1 - 1))
