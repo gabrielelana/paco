@@ -63,8 +63,8 @@ defmodule Paco.Parser do
 
   parser_ many(p), forward_to: repeat(p)
   parser_ exactly(p, n), forward_to: repeat(p, n)
-  parser_ at_least(p, at_least), forward_to: repeat(p, {at_least, :infinity})
-  parser_ at_most(p, at_most), forward_to: repeat(p, {0, at_most})
+  parser_ at_least(p, n), forward_to: repeat(p, {n, :infinity})
+  parser_ at_most(p, n), forward_to: repeat(p, {0, n})
   parser_ one_of_more(p), forward_to: repeat(p, {1, :infinity})
   parser_ zero_or_more(p), forward_to: repeat(p, {0, :infinity})
 
