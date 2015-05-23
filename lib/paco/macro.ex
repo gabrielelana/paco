@@ -20,7 +20,7 @@ defmodule Paco.Macro do
     end
   end
 
-  defmacro parser_(definition, forward: {_, _, _} = parser) do
+  defmacro parser_(definition, forward_to: {_, _, _} = parser) do
     # IO.puts("FORWARD IMPLEMENTATION FOR #{definition |> elem(0)}")
     quote do
       def unquote(definition), do: unquote(parser)
