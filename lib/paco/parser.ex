@@ -35,11 +35,12 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ many(p), as: repeat(p)
-  parser_ at_least(p, at_least), as: repeat(p, {at_least, :infinity})
-  parser_ at_most(p, at_most), as: repeat(p, {0, at_most})
-  parser_ one_of_more(p), as: repeat(p, {1, :infinity})
-  parser_ zero_or_more(p), as: repeat(p, {0, :infinity})
+  parser_ many(p), forward: repeat(p)
+  parser_ exactly(p, n), forward: repeat(p, n)
+  parser_ at_least(p, at_least), forward: repeat(p, {at_least, :infinity})
+  parser_ at_most(p, at_most), forward: repeat(p, {0, at_most})
+  parser_ one_of_more(p), forward: repeat(p, {1, :infinity})
+  parser_ zero_or_more(p), forward: repeat(p, {0, :infinity})
 
   parser_ repeat(parser), do: repeat(parser, {0, :infinity})
   parser_ repeat(parser, n) when is_integer(n), do: repeat(parser, {n, n})

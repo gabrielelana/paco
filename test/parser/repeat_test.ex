@@ -42,6 +42,15 @@ defmodule Paco.Parser.RepeatTest do
     }
   end
 
+  test "sugar combinators like at_least are transparent" do
+    assert parse(at_least(lit("a"), 2), "ab") == {:error,
+      """
+      Failed to match repeat#2(lit#1, {2, :infinity}) at 1:1, \
+      because it matched 1 times instead of at least 2 times
+      """
+    }
+  end
+
   test "notify events on success" do
     Helper.assert_events_notified(repeat(lit("a")), "aaa", [
       {:started, ~s|repeat#2(lit#1, {0, :infinity})|},
