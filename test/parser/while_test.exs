@@ -19,8 +19,8 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "parse graphemes in alpahbet for a number of time less than (or equal to) m" do
-    assert parse(while("abc", {:lte, 2}), "bbacbc") == {:ok, "bb"}
-    assert parse(while("abc", {:lt, 2}), "bbacbc") == {:ok, "b"}
+    assert parse(while("abc", {2, :or_less}), "bbacbc") == {:ok, "bb"}
+    assert parse(while("abc", {:less_than, 2}), "bbacbc") == {:ok, "b"}
   end
 
   test "empty result is not a failure" do
@@ -28,7 +28,7 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "fails at the end of input when lower limit is not reached" do
-    assert parse(while("abc", {:gte, 3}), "ab") == {:error,
+    assert parse(while("abc", {3, :or_more}), "ab") == {:error,
       """
       Failed to match while#1("abc", {3, :infinity}) at 1:1
       """
@@ -36,7 +36,7 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "fails when collected grahemes are less than required" do
-    assert parse(while("abc", {:gt, 2}), "abx") == {:error,
+    assert parse(while("abc", {:more_than, 2}), "abx") == {:error,
       """
       Failed to match while#1("abc", {3, :infinity}) at 1:1
       """

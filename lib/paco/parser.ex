@@ -10,7 +10,7 @@ defmodule Paco.Parser do
   defp notify(collector, what), do: GenEvent.notify(collector, what)
 
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
-  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {:gte, 1})
+  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {1, :or_more})
 
   parser_ lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
   # parser_ lex(s), as: sequence_of([skip(while(&Paco.String.whitespace?/1, {0, :infinity})),
@@ -220,10 +220,10 @@ defmodule Paco.Parser do
 
   parser_ while(p), do: while(p, {0, :infinity})
   parser_ while(p, n) when is_integer(n), do: while(p, {n, n})
-  parser_ while(p, {:gte, n}) when is_integer(n), do: while(p, {n, :infinity})
-  parser_ while(p, {:gt, n}) when is_integer(n), do: while(p, {n + 1, :infinity})
-  parser_ while(p, {:lte, m}) when is_integer(m), do: while(p, {0, m})
-  parser_ while(p, {:lt, m}) when is_integer(m), do: while(p, {0, m - 1})
+  parser_ while(p, {n, :or_more}) when is_integer(n), do: while(p, {n, :infinity})
+  parser_ while(p, {:more_than, n}) when is_integer(n), do: while(p, {n + 1, :infinity})
+  parser_ while(p, {m, :or_less}) when is_integer(m), do: while(p, {0, m})
+  parser_ while(p, {:less_than, m}) when is_integer(m), do: while(p, {0, m - 1})
   parser_ while(p, {n, m}) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
