@@ -223,9 +223,9 @@ defmodule Paco.ExplainTest do
       """}
     assert explain(sequence_of([lit("a"), lit("")]), "aaa") == {:ok,
       """
-      Matched sequence_of#8([lit#6, lit#7]) from 1:1 to 1:2
+      Matched sequence_of#8([lit#6, lit#7]) from 1:1 to 1:1
       1: aaa
-         ^~
+         ^
       └─ Matched lit#6("a") from 1:1 to 1:1
          1: aaa
             ^

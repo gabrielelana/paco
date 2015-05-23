@@ -152,11 +152,15 @@ defmodule Paco.Parser do
       notify_started(this, state)
       result = Enum.reduce(parsers, {state, from, []},
                            fn
-                             (%Paco.Parser{} = parser, {state, _, results}) ->
+                             (%Paco.Parser{} = parser, {state, to, results}) ->
                                case parser.parse.(state, parser) do
-                                 %Paco.Success{to: to, at: at, tail: tail, skip: true} ->
+                                 %Paco.Success{from: at, to: at, at: at, skip: true} ->
+                                   {state, to, results}
+                                 %Paco.Success{from: at, to: at, at: at, result: result} ->
+                                   {state, to, [result|results]}
+                                 %Paco.Success{at: at, to: to, tail: tail, skip: true} ->
                                    {%Paco.State{state|at: at, text: tail}, to, results}
-                                 %Paco.Success{to: to, at: at, tail: tail, result: result} ->
+                                 %Paco.Success{at: at, to: to, tail: tail, result: result} ->
                                    {%Paco.State{state|at: at, text: tail}, to, [result|results]}
                                  %Paco.Failure{} = failure ->
                                    failure
