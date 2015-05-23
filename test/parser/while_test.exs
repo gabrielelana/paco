@@ -19,7 +19,7 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "parse graphemes in alpahbet for a number of time less than (or equal to) m" do
-    assert parse(while("abc", {2, :or_less}), "bbacbc") == {:ok, "bb"}
+    assert parse(while("abc", {:at_most, 2}), "bbacbc") == {:ok, "bb"}
     assert parse(while("abc", {:less_than, 2}), "bbacbc") == {:ok, "b"}
   end
 
@@ -28,7 +28,7 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "fails at the end of input when lower limit is not reached" do
-    assert parse(while("abc", {3, :or_more}), "ab") == {:error,
+    assert parse(while("abc", {:at_least, 3}), "ab") == {:error,
       """
       Failed to match while#1("abc", {3, :infinity}) at 1:1
       """
@@ -88,7 +88,7 @@ defmodule Paco.Parser.WhileTest do
     assert result == []
   end
 
-  test "stream mode waits until it reach the upper limit" do
+  test "stream mode waits until it has enough" do
     for stream <- Helper.streams_of("aaa") do
       result = stream
                |> Paco.Stream.parse(while("a", {0, 3}))

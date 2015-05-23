@@ -220,14 +220,14 @@ defmodule Paco.Parser do
 
   parser_ while(p), do: while(p, {0, :infinity})
   parser_ while(p, n) when is_integer(n), do: while(p, {n, n})
-  parser_ while(p, {n, :or_more}) when is_integer(n), do: while(p, {n, :infinity})
-  parser_ while(p, {:more_than, n}) when is_integer(n), do: while(p, {n + 1, :infinity})
-  parser_ while(p, {m, :or_less}) when is_integer(m), do: while(p, {0, m})
-  parser_ while(p, {:less_than, m}) when is_integer(m), do: while(p, {0, m - 1})
-  parser_ while(p, {n, m}) do
+  parser_ while(p, {:more_than, n}), do: while(p, {n+1, :infinity})
+  parser_ while(p, {:less_than, n}), do: while(p, {0, n-1})
+  parser_ while(p, {:at_least, n}), do: while(p, {n, :infinity})
+  parser_ while(p, {:at_most, n}), do: while(p, {0, n})
+  parser_ while(p, {at_least, at_most}) do
     fn %Paco.State{at: from, text: text, collector: collector, stream: stream} = state, this ->
       description = Paco.describe(this)
-      case Paco.String.consume_while(text, p, {n, m}, from) do
+      case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
