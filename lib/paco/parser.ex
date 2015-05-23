@@ -67,9 +67,6 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ sequence_of([]) do
-    raise ArgumentError, message: "Must give at least one parser to sequence_of combinator"
-  end
   parser_ sequence_of(parsers) do
     fn %Paco.State{at: from, text: text, collector: collector} = state, this ->
       notify(collector, {:started, Paco.describe(this)})

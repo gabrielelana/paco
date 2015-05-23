@@ -9,10 +9,7 @@ defmodule Paco.Parser.SequenceOfTest do
   test "parse sequence of parsers" do
     assert parse(sequence_of([lit("a"), lit("b")]), "ab") == {:ok, ["a", "b"]}
     assert parse(sequence_of([lit("a")]), "a") == {:ok, ["a"]}
-  end
-
-  test "with no parsers" do
-    assert_raise ArgumentError, fn -> sequence_of([]) end
+    assert parse(sequence_of([]), "a") == {:ok, []}
   end
 
   test "describe" do
@@ -74,5 +71,21 @@ defmodule Paco.Parser.SequenceOfTest do
     failure = parser.parse.(Paco.State.from("aa"), parser)
     assert failure.at == {0, 1, 1}
     assert failure.tail == "aa"
+  end
+
+  test "fails in stream mode when don't consume any input" do
+    result = [""]
+             |> Paco.Stream.parse(sequence_of([]))
+             |> Enum.to_list
+    assert result == []
+
+    result = [""]
+             |> Paco.Stream.parse(sequence_of([]), on_failure: :yield)
+             |> Enum.to_list
+    assert result == [{:error,
+      """
+      Failed to match sequence_of#2([]) at 1:1, because it didn't consume any input
+      """
+    }]
   end
 end
