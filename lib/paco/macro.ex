@@ -31,9 +31,9 @@ defmodule Paco.Macro do
             %Paco.Success{from: from, to: to, at: at} = success ->
               notify(collector, {:matched, from, to, at})
               success
-            %Paco.Failure{at: at, tail: tail} ->
+            %Paco.Failure{at: at, tail: tail, because: because} ->
               notify(collector, {:failed, at})
-              %Paco.Failure{at: at, tail: tail, what: Paco.describe(this)}
+              %Paco.Failure{at: at, tail: tail, what: Paco.describe(this), because: because}
           end
         end
       end
