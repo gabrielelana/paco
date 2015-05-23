@@ -1,33 +1,11 @@
 defmodule Paco.Parser do
   import Paco.Macro
+  import Paco.Collector
 
   defstruct id: nil, name: nil, combine: nil, parse: nil
 
   def from(%Paco.Parser{} = p), do: p
   def from(%Regex{} = r), do: re(r)
-
-  defp notify_loaded(_text, %Paco.State{collector: nil}), do: nil
-  defp notify_loaded(_text, %Paco.State{silent: true}), do: nil
-  defp notify_loaded(text, %Paco.State{collector: collector}) do
-    GenEvent.notify(collector, {:loaded, text})
-  end
-
-  defp notify_started(_parser, %Paco.State{collector: nil}), do: nil
-  defp notify_started(_parser, %Paco.State{silent: true}), do: nil
-  defp notify_started(parser, %Paco.State{collector: collector}) do
-    GenEvent.notify(collector, {:started, Paco.describe(parser)})
-  end
-
-  defp notify_ended(result, %Paco.State{collector: nil}), do: result
-  defp notify_ended(result, %Paco.State{silent: true}), do: result
-  defp notify_ended(%Paco.Success{} = success, %Paco.State{collector: collector}) do
-    GenEvent.notify(collector, {:matched, success.from, success.to, success.at})
-    success
-  end
-  defp notify_ended(%Paco.Failure{} = failure, %Paco.State{collector: collector}) do
-    GenEvent.notify(collector, {:failed, failure.at})
-    failure
-  end
 
 
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
