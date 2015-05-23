@@ -13,8 +13,13 @@ defmodule Paco.Parser do
   parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {:gte, 1})
 
   parser_ lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
+  # parser_ lex(s), as: sequence_of([skip(while(&Paco.String.whitespace?/1, {0, :infinity})),
+  #                                  lit(s),
+  #                                  skip(while(&Paco.String.whitespace?/1, {0, :infinity}))])
 
   parser_ surrounded_by(parser, around), do: surrounded_by(parser, around, around)
+  # parser_ surrounded_by(parser, left, right),
+  #   as: sequence_of([skip(left), parser, skip(right)]) |> bind(fn [r] -> r end)
   parser_ surrounded_by(parser, left, right) do
     parser = sequence_of([skip(left), parser, skip(right)])
     fn %Paco.State{collector: collector} = state, this ->
