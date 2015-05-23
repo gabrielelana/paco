@@ -19,7 +19,8 @@ defmodule Paco.Parser.SurroundedByTest do
   test "failure because of surrounded parser" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "[b]") == {:error,
       """
-      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, because it failed to match lit#1("a") at 1:2
+      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, \
+      because it failed to match lit#1("a") at 1:2
       """
     }
   end
@@ -27,7 +28,8 @@ defmodule Paco.Parser.SurroundedByTest do
   test "failure because of left parser" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "*a]") == {:error,
       """
-      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, because it failed to match lit#2("[") at 1:1
+      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, \
+      because it failed to match lit#2("[") at 1:1
       """
     }
   end
@@ -35,7 +37,8 @@ defmodule Paco.Parser.SurroundedByTest do
   test "failure because of right parser" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "[a*") == {:error,
       """
-      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, because it failed to match lit#3("]") at 1:3
+      Failed to match surrounded_by#4(lit#1, lit#2, lit#3) at 1:1, \
+      because it failed to match lit#3("]") at 1:3
       """
     }
   end

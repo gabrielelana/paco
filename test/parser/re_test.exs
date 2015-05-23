@@ -168,7 +168,8 @@ defmodule Paco.Parser.RegexTest do
 
       assert result == [{:error,
         """
-        Failed to match re#1(~r/a*/) at 1:1, because it didn't consume any input
+        Failed to match re#1(~r/a*/) at 1:1, \
+        because it didn't consume any input
         """
       }]
     end

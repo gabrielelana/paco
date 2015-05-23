@@ -24,7 +24,8 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse because of the first parser" do
     assert parse(sequence_of([lit("a"), lit("b")]), "bb") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, because it failed to match lit#1("a") at 1:1
+      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
+      because it failed to match lit#1("a") at 1:1
       """
     }
   end
@@ -32,7 +33,8 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse because of the last parser" do
     assert parse(sequence_of([lit("a"), lit("b")]), "aa") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, because it failed to match lit#2("b") at 1:2
+      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
+      because it failed to match lit#2("b") at 1:2
       """
     }
   end
@@ -40,7 +42,8 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse for end of input" do
     assert parse(sequence_of([lit("aaa"), lit("bbb")]), "a") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, because it failed to match lit#1("aaa") at 1:1
+      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
+      because it failed to match lit#1("aaa") at 1:1
       """
     }
   end
@@ -84,7 +87,8 @@ defmodule Paco.Parser.SequenceOfTest do
              |> Enum.to_list
     assert result == [{:error,
       """
-      Failed to match sequence_of#2([]) at 1:1, because it didn't consume any input
+      Failed to match sequence_of#2([]) at 1:1, \
+      because it didn't consume any input
       """
     }]
   end

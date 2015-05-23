@@ -24,7 +24,8 @@ defmodule Paco.Parser.LexemeTest do
   test "failure" do
     assert parse(lex("aaa"), "bbb") == {:error,
       """
-      Failed to match lex#1("aaa") at 1:1, because it failed to match lit#2("aaa") at 1:1
+      Failed to match lex#1("aaa") at 1:1, \
+      because it failed to match lit#2("aaa") at 1:1
       """
     }
   end
