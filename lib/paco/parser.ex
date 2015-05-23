@@ -30,8 +30,8 @@ defmodule Paco.Parser do
   end
 
 
-  parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
-  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {1, :or_more})
+  parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1) |> silent
+  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {1, :or_more}) |> silent
 
   parser_ lex(s), as: lit(s)
                       |> surrounded_by(maybe(whitespaces))
