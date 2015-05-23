@@ -35,6 +35,49 @@ defmodule Paco.Parser do
     end
   end
 
+  parser_ repeat(parser), do: repeat(parser, {0, :infinity})
+  parser_ repeat(parser, n) when is_integer(n), do: repeat(parser, {n, n})
+  parser_ repeat(parser, {:more_than, n}), do: repeat(parser, {n+1, :infinity})
+  parser_ repeat(parser, {:less_than, n}), do: repeat(parser, {0, n-1})
+  parser_ repeat(parser, {:at_least, n}), do: repeat(parser, {n, :infinity})
+  parser_ repeat(parser, {:at_most, n}), do: repeat(parser, {0, n})
+  parser_ repeat(parser, {at_least, at_most}) do
+    fn %Paco.State{at: at, text: text, collector: collector} = state, this ->
+      notify(collector, {:started, Paco.describe(this)})
+      result = Stream.unfold({state, 0},
+                             fn {_, n} when n == at_most -> nil
+                                {state, n} ->
+                                  case parser.parse.(state, parser) do
+                                    %Paco.Success{at: at, tail: tail, skip: true} ->
+                                      {:skip, {%Paco.State{state|at: at, text: tail}, n + 1}}
+                                    %Paco.Success{at: at, tail: tail} = success ->
+                                      {success, {%Paco.State{state|at: at, text: tail}, n + 1}}
+                                    %Paco.Failure{} ->
+                                      nil
+                                  end
+                             end)
+               |> Enum.filter(&match?(%Paco.Success{}, &1))
+               |> Enum.to_list
+
+      failure = %Paco.Failure{at: at, tail: text, what: Paco.describe(this)}
+      case Enum.count(result) do
+        n when n != at_least and at_least == at_most ->
+          notify(collector, {:failed, at})
+          %Paco.Failure{failure|because: "matched #{n} times instead of #{at_least}"}
+        n when n < at_least ->
+          notify(collector, {:failed, at})
+          %Paco.Failure{failure|because: "matched #{n} times instead of at least #{at_least} times"}
+        n when n == 0 and at_least == 0 ->
+          notify(collector, {:matched, at, at, at})
+          %Paco.Success{from: at, to: at, at: at, tail: text, result: []}
+        _ ->
+          last_success = List.last(result)
+          notify(collector, {:matched, at, last_success.to, last_success.at})
+          %Paco.Success{last_success|from: at, result: result |> Enum.map(&(&1.result))}
+      end
+    end
+  end
+
   parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
     fn %Paco.State{collector: collector} = state, this ->
