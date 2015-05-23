@@ -16,8 +16,12 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "abc") == {:ok, "a"}
   end
 
-  test "with no parsers" do
-    assert_raise ArgumentError, fn -> one_of([]) end
+  test "always fails with no parsers" do
+    assert parse(one_of([]), "a") == {:error,
+      """
+      Failed to match one_of#1([]) at 1:1
+      """
+    }
   end
 
   test "describe" do

@@ -176,9 +176,6 @@ defmodule Paco.Parser do
   end
 
   parser_ one_of([parser]), do: parser
-  parser_ one_of([]) do
-    raise ArgumentError, message: "Must give at least one parser to one_of combinator"
-  end
   parser_ one_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
