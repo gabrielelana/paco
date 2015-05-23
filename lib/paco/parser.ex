@@ -179,24 +179,19 @@ defmodule Paco.Parser do
   parser_ one_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
-      result = Enum.reduce(parsers, [],
-                           fn
-                             (_, %Paco.Success{} = success) ->
-                               success
-                             (%Paco.Parser{} = parser, failures) ->
-                               case parser.parse.(state, parser) do
-                                 %Paco.Success{} = success ->
-                                   success
-                                 %Paco.Failure{} = failure ->
-                                   [failure|failures]
-                               end
-                           end)
+      result = Enum.find_value(parsers,
+                               fn(parser) ->
+                                 case parser.parse.(state, parser) do
+                                   %Paco.Success{} = success -> success
+                                   _ -> false
+                                 end
+                               end)
 
       case result do
-         %Paco.Success{} = success ->
-           success
-         _ ->
-           %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+        %Paco.Success{} = success ->
+          success
+        _ ->
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
        end
        |> notify_ended(state)
     end
