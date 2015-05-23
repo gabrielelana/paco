@@ -43,4 +43,23 @@ defmodule Paco.Parser.LexemeTest do
       {:failed, {0, 1, 1}},
     ])
   end
+
+  test "silences its internals" do
+    parser = lex("a")
+
+    assert explain(parser, " a ") == {:ok,
+      """
+      Matched lex#1("a") from 1:1 to 1:3
+      1:  a
+         ^ ^
+      """
+    }
+    assert explain(parser, " b") == {:ok,
+      """
+      Failed to match lex#1("a") at 1:1
+      1:  b
+         ^
+      """
+    }
+  end
 end

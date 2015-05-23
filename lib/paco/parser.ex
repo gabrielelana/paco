@@ -33,7 +33,9 @@ defmodule Paco.Parser do
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
   parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {1, :or_more})
 
-  parser_ lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
+  parser_ lex(s), as: lit(s)
+                      |> surrounded_by(maybe(whitespaces))
+                      |> silent
   # parser_ lex(s), as: sequence_of([skip(while(&Paco.String.whitespace?/1, {0, :infinity})),
   #                                  lit(s),
   #                                  skip(while(&Paco.String.whitespace?/1, {0, :infinity}))])
