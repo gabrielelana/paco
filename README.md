@@ -1,5 +1,5 @@
 # Paco
-A parser combinator library for Elixir
+[![Build Status](https://travis-ci.org/gabrielelana/paco.svg?branch=master)](https://travis-ci.org/gabrielelana/paco)
 
 ## Example
 ```elixir
