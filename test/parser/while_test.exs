@@ -30,7 +30,8 @@ defmodule Paco.Parser.WhileTest do
   test "fails at the end of input when lower limit is not reached" do
     assert parse(while("abc", {:at_least, 3}), "ab") == {:error,
       """
-      Failed to match while("abc", {3, :infinity}) at 1:1
+      Failed to match while("abc", {3, :infinity}) at 1:1, \
+      because it reached the end of input
       """
     }
   end
