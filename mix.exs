@@ -4,7 +4,7 @@ defmodule Paco.Mixfile do
   def project do
     [app: :paco,
      version: "0.0.1",
-     elixir: "~> 1.0",
+     elixir: "> 1.0.2",
      deps: deps]
   end
 
