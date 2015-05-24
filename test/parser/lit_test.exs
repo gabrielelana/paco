@@ -40,7 +40,7 @@ defmodule Paco.Parser.LiteralTest do
   test "failure for end of input" do
     assert parse(lit("aaa"), "aa") == {:error,
       """
-      Failed to match lit("aaa") at 1:1
+      Failed to match lit("aaa") at 1:1, because it reached the end of input
       """
     }
   end

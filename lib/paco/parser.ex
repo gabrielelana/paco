@@ -227,9 +227,11 @@ defmodule Paco.Parser do
           notify_ended(success, state)
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        _ ->
+        error ->
           notify_started(this, state)
-          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          description = Paco.describe(this)
+          reason = if error == :end_of_input, do: "reached the end of input", else: nil
+          failure = %Paco.Failure{at: from, tail: text, what: description, because: reason}
           notify_ended(failure, state)
       end
     end
