@@ -67,7 +67,7 @@ defmodule Paco.StreamTest do
       # a string result of a successful parser
       assert result == [{:ok, "ab"}, {:error,
         """
-        Failed to match lit#1("ab") at 1:3
+        Failed to match lit("ab") at 1:3
         """
       }]
     end
@@ -79,7 +79,7 @@ defmodule Paco.StreamTest do
     for stream <- Helper.streams_of("e") do
       assert_raise Paco.Failure,
                    """
-                   Failed to match lit#1("a") at 1:1
+                   Failed to match lit("a") at 1:1
                    """,
                    fn ->
                      stream
@@ -95,7 +95,7 @@ defmodule Paco.StreamTest do
     for stream <- Helper.streams_of("e") do
       assert_raise Paco.Failure,
                    """
-                   Failed to match lit#1("a") at 1:1
+                   Failed to match lit("a") at 1:1
                    """,
                    fn ->
                      stream
@@ -123,7 +123,7 @@ defmodule Paco.StreamTest do
              |> Enum.to_list
     assert result == [{:error,
       """
-      Failed to match lit#1("") at 1:1, because it didn't consume any input
+      Failed to match lit("") at 1:1, because it didn't consume any input
       """
     }]
   end
@@ -140,7 +140,7 @@ defmodule Paco.StreamTest do
     # introducing a special value or other hacks
     assert result == [{:ok, "aa"}, {:error,
       """
-      Failed to match lit#1("aa") at 1:3
+      Failed to match lit("aa") at 1:3
       """
     }]
   end

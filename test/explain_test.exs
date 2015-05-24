@@ -184,13 +184,13 @@ defmodule Paco.ExplainTest do
   test "explain success" do
     assert explain(sequence_of([lit("aaa"), lit("bbb")]), "aaabbb") == {:ok,
       """
-      Matched sequence_of#3([lit#1, lit#2]) from 1:1 to 1:6
+      Matched sequence_of([lit("aaa"), lit("bbb")]) from 1:1 to 1:6
       1: aaabbb
          ^    ^
-      └─ Matched lit#1("aaa") from 1:1 to 1:3
+      └─ Matched lit("aaa") from 1:1 to 1:3
          1: aaabbb
             ^ ^
-      └─ Matched lit#2("bbb") from 1:4 to 1:6
+      └─ Matched lit("bbb") from 1:4 to 1:6
          1: aaabbb
                ^ ^
       """}
@@ -199,37 +199,37 @@ defmodule Paco.ExplainTest do
   test "explain success that didn't consume any text" do
     assert explain(lit(""), "aaa") == {:ok,
       """
-      Matched lit#1("") from 1:1 to 1:1
+      Matched lit("") from 1:1 to 1:1
       1: aaa
          ~
       """}
     assert explain(sequence_of([lit("")]), "aaa") == {:ok,
       """
-      Matched sequence_of#3([lit#2]) from 1:1 to 1:1
+      Matched sequence_of([lit("")]) from 1:1 to 1:1
       1: aaa
          ~
-      └─ Matched lit#2("") from 1:1 to 1:1
+      └─ Matched lit("") from 1:1 to 1:1
          1: aaa
             ~
       """}
     assert explain(sequence_of([lit("a")]), "aaa") == {:ok,
       """
-      Matched sequence_of#5([lit#4]) from 1:1 to 1:1
+      Matched sequence_of([lit("a")]) from 1:1 to 1:1
       1: aaa
          ^
-      └─ Matched lit#4("a") from 1:1 to 1:1
+      └─ Matched lit("a") from 1:1 to 1:1
          1: aaa
             ^
       """}
     assert explain(sequence_of([lit("a"), lit("")]), "aaa") == {:ok,
       """
-      Matched sequence_of#8([lit#6, lit#7]) from 1:1 to 1:1
+      Matched sequence_of([lit("a"), lit("")]) from 1:1 to 1:1
       1: aaa
          ^
-      └─ Matched lit#6("a") from 1:1 to 1:1
+      └─ Matched lit("a") from 1:1 to 1:1
          1: aaa
             ^
-      └─ Matched lit#7("") from 1:2 to 1:2
+      └─ Matched lit("") from 1:2 to 1:2
          1: aaa
              ~
       """}
@@ -238,18 +238,18 @@ defmodule Paco.ExplainTest do
   test "explain success on multiple lines" do
     assert explain(sequence_of([lit("aaa"), lit("\n"), lit("bbb")]), "aaa\nbbb") == {:ok,
       """
-      Matched sequence_of#4([lit#1, lit#2, lit#3]) from 1:1 to 2:3
+      Matched sequence_of([lit("aaa"), lit("\\n"), lit("bbb")]) from 1:1 to 2:3
       1: aaa
          ^
       2: bbb
            ^
-      └─ Matched lit#1("aaa") from 1:1 to 1:3
+      └─ Matched lit("aaa") from 1:1 to 1:3
          1: aaa
             ^ ^
-      └─ Matched lit#2("\\n") from 1:4 to 1:4
+      └─ Matched lit("\\n") from 1:4 to 1:4
          1: aaa
                ^
-      └─ Matched lit#3("bbb") from 2:1 to 2:3
+      └─ Matched lit("bbb") from 2:1 to 2:3
          2: bbb
             ^ ^
       """}
@@ -258,13 +258,13 @@ defmodule Paco.ExplainTest do
   test "explain failure" do
     assert explain(sequence_of([lit("aaa"), lit("bbb")]), "aaaccc") == {:ok,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1
+      Failed to match sequence_of([lit("aaa"), lit("bbb")]) at 1:1
       1: aaaccc
          ^
-      └─ Matched lit#1("aaa") from 1:1 to 1:3
+      └─ Matched lit("aaa") from 1:1 to 1:3
          1: aaaccc
             ^ ^
-      └─ Failed to match lit#2("bbb") at 1:4
+      └─ Failed to match lit("bbb") at 1:4
          1: aaaccc
                ^
       """}
@@ -273,7 +273,7 @@ defmodule Paco.ExplainTest do
   test "explain failure on empty lit" do
     assert explain(lit("aaa"), "") == {:ok,
       """
-      Failed to match lit#1("aaa") at 1:1
+      Failed to match lit("aaa") at 1:1
       1:
          ^
       """}

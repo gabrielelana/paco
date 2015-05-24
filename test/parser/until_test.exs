@@ -13,8 +13,8 @@ defmodule Paco.Parser.UntilTest do
   end
 
   test "describe" do
-    assert describe(until("c")) == ~s|until#1("c", [])|
-    # assert describe(until(&uppercase?/1)) == "until#1(1)"
+    assert describe(until("c")) == ~s|until("c")|
+    assert describe(until(&uppercase?/1)) == "until(fn/1)"
   end
 
   test "empty result is not a failure" do
@@ -23,7 +23,7 @@ defmodule Paco.Parser.UntilTest do
 
   test "notify events on success" do
     Helper.assert_events_notified(until(" "), "aaa ", [
-      {:started, ~s|until#1(" ", [])|},
+      {:started, ~s|until(" ")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end

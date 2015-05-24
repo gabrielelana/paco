@@ -17,12 +17,12 @@ defmodule PacoTest do
 
     assert Paco.parse_all(parser, "afa") == [{:ok, "a"}, {:error,
       """
-      Failed to match one_of#4([lit#1, lit#2, lit#3]) at 1:2
+      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
       """
     }]
     assert Paco.parse_all(parser, "abfa") == [{:ok, "a"}, {:ok, "b"}, {:error,
       """
-      Failed to match one_of#4([lit#1, lit#2, lit#3]) at 1:3
+      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:3
       """
     }]
     assert [{:ok, "a"}, {:ok, "b"}, {:error, _}] = Paco.parse_all(parser, "abfa")
@@ -31,7 +31,7 @@ defmodule PacoTest do
   test "parse_all will consider failure an empty match" do
     assert Paco.parse_all(lit(""), "abc") == [{:error,
       """
-      Failed to match lit#1("") at 1:1, because it didn't consume any input
+      Failed to match lit("") at 1:1, because it didn't consume any input
       """
     }]
   end
@@ -42,7 +42,7 @@ defmodule PacoTest do
     assert Paco.parse_all(parser, "abc", format: :flat) == ["a", "b", "c"]
     assert Paco.parse_all(parser, "afa", format: :flat) == ["a",
       """
-      Failed to match one_of#4([lit#1, lit#2, lit#3]) at 1:2
+      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
       """
     ]
   end
@@ -61,7 +61,7 @@ defmodule PacoTest do
 
     assert_raise Paco.Failure,
                  """
-                 Failed to match one_of#4([lit#1, lit#2, lit#3]) at 1:2
+                 Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
                  """,
                  fn ->
                    Paco.parse_all(parser, "afc", on_failure: :raise)
@@ -73,7 +73,7 @@ defmodule PacoTest do
 
     assert_raise Paco.Failure,
                  """
-                 Failed to match one_of#4([lit#1, lit#2, lit#3]) at 1:2
+                 Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
                  """,
                  fn ->
                    Paco.parse_all!(parser, "afc")

@@ -18,29 +18,29 @@ defmodule Paco.Parser.AnyTest do
   end
 
   test "describe" do
-    assert describe(any) == "any#1(1)"
-    assert describe(any(1)) == "any#2(1)"
-    assert describe(any(4)) == "any#3(4)"
+    assert describe(any) == "any(1)"
+    assert describe(any(1)) == "any(1)"
+    assert describe(any(4)) == "any(4)"
   end
 
   test "failure" do
     assert parse(any(3), "aa") == {:error,
       """
-      Failed to match any#1(3) at 1:1, because it reached the end of input
+      Failed to match any(3) at 1:1, because it reached the end of input
       """
     }
   end
 
   test "notify events on success" do
     Helper.assert_events_notified(any(3), "aaa ", [
-      {:started, "any#1(3)"},
+      {:started, "any(3)"},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
 
   test "notify events on failure" do
     Helper.assert_events_notified(any(4), "aaa", [
-      {:started, "any#1(4)"},
+      {:started, "any(4)"},
       {:failed, {0, 1, 1}}
     ])
   end

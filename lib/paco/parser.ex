@@ -322,19 +322,7 @@ defmodule Paco.Parser do
 end
 
 defimpl Inspect, for: Paco.Parser do
-  import Inspect.Algebra
-  alias Inspect.Opts
-
-  def inspect(%Paco.Parser{id: nil, name: name, combine: []}, _opts), do: "#{name}"
-  def inspect(%Paco.Parser{id: nil, name: name, combine: nil}, _opts), do: "#{name}"
-  def inspect(%Paco.Parser{id: nil, name: name}, %Opts{width: 0}), do: "#{name}"
-  def inspect(%Paco.Parser{id: nil, name: name, combine: args}, opts) do
-    concat ["#{name}", surround_many("(", args, ")", %Opts{opts|width: 0}, &to_doc/2)]
-  end
-  def inspect(%Paco.Parser{id: id, name: name, combine: []}, _opts), do: "#{name}##{id}"
-  def inspect(%Paco.Parser{id: id, name: name, combine: nil}, _opts), do: "#{name}##{id}"
-  def inspect(%Paco.Parser{id: id, name: name}, %Opts{width: 0}), do: "#{name}##{id}"
-  def inspect(%Paco.Parser{id: id, name: name, combine: args}, opts) do
-    concat ["#{name}##{id}", surround_many("(", args, ")", %Opts{opts|width: 0}, &to_doc/2)]
+  def inspect(p, opts) do
+    Paco.Inspect.parser(p, opts)
   end
 end

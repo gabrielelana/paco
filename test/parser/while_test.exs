@@ -30,7 +30,7 @@ defmodule Paco.Parser.WhileTest do
   test "fails at the end of input when lower limit is not reached" do
     assert parse(while("abc", {:at_least, 3}), "ab") == {:error,
       """
-      Failed to match while#1("abc", {3, :infinity}) at 1:1
+      Failed to match while("abc", {3, :infinity}) at 1:1
       """
     }
   end
@@ -38,14 +38,14 @@ defmodule Paco.Parser.WhileTest do
   test "fails when collected grahemes are less than required" do
     assert parse(while("abc", {:more_than, 2}), "abx") == {:error,
       """
-      Failed to match while#1("abc", {3, :infinity}) at 1:1
+      Failed to match while("abc", {3, :infinity}) at 1:1
       """
     }
   end
 
   test "notify events on success" do
     Helper.assert_events_notified(while("a"), "aaa ", [
-      {:started, ~s|while#1("a", {0, :infinity})|},
+      {:started, ~s|while("a", {0, :infinity})|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end

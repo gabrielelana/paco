@@ -21,7 +21,10 @@ defmodule Paco do
     |> Enum.map(&format(&1, Keyword.get(opts, :format, :tagged)))
   end
 
-  def describe(%Paco.Parser{} = p), do: inspect(p)
+  def describe(%Paco.Parser{} = p) do
+    # IO.puts("DESCRIBE")
+    inspect(p)
+  end
 
   def explain(%Paco.Parser{} = parser, text) do
     {:ok, pid} = GenEvent.start_link()

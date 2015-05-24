@@ -19,13 +19,14 @@ defmodule Paco.Parser.OneOfTest do
   test "always fails with no parsers" do
     assert parse(one_of([]), "a") == {:error,
       """
-      Failed to match one_of#1([]) at 1:1
+      Failed to match one_of() at 1:1
       """
     }
   end
 
   test "describe" do
-    assert describe(one_of([lit("a"), lit("b")])) == "one_of#3([lit#1, lit#2])"
+    assert describe(one_of([lit("a"), lit("b")])) ==
+      ~s|one_of([lit("a"), lit("b")])|
   end
 
   test "skipped parsers should be removed from result" do
@@ -36,7 +37,7 @@ defmodule Paco.Parser.OneOfTest do
   test "fail to parse" do
     assert parse(one_of([lit("a"), lit("b")]), "c") == {:error,
       """
-      Failed to match one_of#3([lit#1, lit#2]) at 1:1
+      Failed to match one_of([lit("a"), lit("b")]) at 1:1
       """
     }
   end
@@ -45,28 +46,28 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
     assert parse(one_of([lit("a")]), "c") == {:error,
       """
-      Failed to match lit#2("a") at 1:1
+      Failed to match lit("a") at 1:1
       """
     }
   end
 
   test "notify events on success because first succeeded" do
     Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "a", [
-      {:started, "one_of#3([lit#1, lit#2])"},
+      {:started, ~s|one_of([lit("a"), lit("b")])|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ])
   end
 
   test "notify events on success because last succeeded" do
     Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "b", [
-      {:started, "one_of#3([lit#1, lit#2])"},
+      {:started, ~s|one_of([lit("a"), lit("b")])|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ])
   end
 
   test "notify events on failure" do
     Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "c", [
-      {:started, "one_of#3([lit#1, lit#2])"},
+      {:started, ~s|one_of([lit("a"), lit("b")])|},
       {:failed, {0, 1, 1}},
     ])
   end

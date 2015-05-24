@@ -21,20 +21,20 @@ defmodule Paco.Parser.MaybeTest do
   end
 
   test "describe" do
-    assert describe(maybe(lit("a"))) == "maybe#2(lit#1, [])"
-    assert describe(maybe(lit("a"), default: "a")) == ~s|maybe#4(lit#3, [default: "a"])|
+    assert describe(maybe(lit("a"))) == ~s|maybe(lit("a"))|
+    assert describe(maybe(lit("a"), default: "a")) == ~s|maybe(lit("a"), [default: "a"])|
   end
 
   test "notify events on combined success" do
     Helper.assert_events_notified(maybe(lit("aaa")), "aaa", [
-      {:started, "maybe#2(lit#1, [])"},
+      {:started, ~s|maybe(lit("aaa"))|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
 
   test "notify events on combined failure" do
     Helper.assert_events_notified(maybe(lit("aaa")), "bbb", [
-      {:started, "maybe#2(lit#1, [])"},
+      {:started, ~s|maybe(lit("aaa"))|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
     ])
   end

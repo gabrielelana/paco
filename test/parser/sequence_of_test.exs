@@ -13,7 +13,8 @@ defmodule Paco.Parser.SequenceOfTest do
   end
 
   test "describe" do
-    assert describe(sequence_of([lit("a"), lit("b")])) == "sequence_of#3([lit#1, lit#2])"
+    assert describe(sequence_of([lit("a"), lit("b")])) ==
+      ~s|sequence_of([lit("a"), lit("b")])|
   end
 
   test "skipped parsers should be removed from result" do
@@ -24,8 +25,8 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse because of the first parser" do
     assert parse(sequence_of([lit("a"), lit("b")]), "bb") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
-      because it failed to match lit#1("a") at 1:1
+      Failed to match sequence_of([lit("a"), lit("b")]) at 1:1, \
+      because it failed to match lit("a") at 1:1
       """
     }
   end
@@ -33,8 +34,8 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse because of the last parser" do
     assert parse(sequence_of([lit("a"), lit("b")]), "aa") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
-      because it failed to match lit#2("b") at 1:2
+      Failed to match sequence_of([lit("a"), lit("b")]) at 1:1, \
+      because it failed to match lit("b") at 1:2
       """
     }
   end
@@ -42,29 +43,29 @@ defmodule Paco.Parser.SequenceOfTest do
   test "fail to parse for end of input" do
     assert parse(sequence_of([lit("aaa"), lit("bbb")]), "a") == {:error,
       """
-      Failed to match sequence_of#3([lit#1, lit#2]) at 1:1, \
-      because it failed to match lit#1("aaa") at 1:1
+      Failed to match sequence_of([lit("aaa"), lit("bbb")]) at 1:1, \
+      because it failed to match lit("aaa") at 1:1
       """
     }
   end
 
   test "notify events on success" do
     Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ab", [
-      {:started, "sequence_of#3([lit#1, lit#2])"},
+      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
       {:matched, {0, 1, 1}, {1, 1, 2}, {2, 1, 3}},
     ])
   end
 
   test "notify events on failure because of first failed" do
     Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "cc", [
-      {:started, "sequence_of#3([lit#1, lit#2])"},
+      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
       {:failed, {0, 1, 1}},
     ])
   end
 
   test "notify events on failure because of last failed" do
     Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ac", [
-      {:started, "sequence_of#3([lit#1, lit#2])"},
+      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
       {:failed, {0, 1, 1}},
     ])
   end
@@ -87,7 +88,7 @@ defmodule Paco.Parser.SequenceOfTest do
              |> Enum.to_list
     assert result == [{:error,
       """
-      Failed to match sequence_of#2([]) at 1:1, \
+      Failed to match sequence_of() at 1:1, \
       because it didn't consume any input
       """
     }]

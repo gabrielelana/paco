@@ -13,14 +13,14 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "describe" do
-    assert describe(lit("a")) == ~s|lit#1("a")|
-    assert describe(lit("\n")) == ~S|lit#2("\n")|
+    assert describe(lit("a")) == ~s|lit("a")|
+    assert describe(lit("\n")) == ~s|lit("\\n")|
   end
 
   test "failure" do
     assert parse(lit("aaa"), "bbb") == {:error,
       """
-      Failed to match lit#1("aaa") at 1:1
+      Failed to match lit("aaa") at 1:1
       """
     }
   end
@@ -32,7 +32,7 @@ defmodule Paco.Parser.LiteralTest do
   test "skip doesn't influece failures" do
     assert parse(skip(lit("aaa")), "bbb") == {:error,
       """
-      Failed to match lit#1("aaa") at 1:1
+      Failed to match lit("aaa") at 1:1
       """
     }
   end
@@ -40,21 +40,21 @@ defmodule Paco.Parser.LiteralTest do
   test "failure for end of input" do
     assert parse(lit("aaa"), "aa") == {:error,
       """
-      Failed to match lit#1("aaa") at 1:1
+      Failed to match lit("aaa") at 1:1
       """
     }
   end
 
   test "notify events on success" do
     Helper.assert_events_notified(lit("aaa"), "aaa", [
-      {:started, ~s|lit#1("aaa")|},
+      {:started, ~s|lit("aaa")|},
       {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
     ])
   end
 
   test "notify events on failure" do
     Helper.assert_events_notified(lit("bbb"), "aaa", [
-      {:started, ~s|lit#1("bbb")|},
+      {:started, ~s|lit("bbb")|},
       {:failed, {0, 1, 1}},
     ])
   end
