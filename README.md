@@ -15,7 +15,7 @@ Paco is a monadic parser combinator library written in Elixir. Goals:
 * Features over performance (developers time is more important)
 * Be as fast as possible
 
-##### This is work in progress, this is not 0.0.1 therefore it's not yet usable but it's coming along nicely
+> **WARNING:** This is a work in progress, is not ready for use, so don't use it yet.
 
 ## Example
 
