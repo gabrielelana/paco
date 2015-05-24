@@ -2,7 +2,7 @@ defmodule Paco.Failure do
   @type t :: %__MODULE__{at: Paco.State.position,
                          tail: String.t,
                          what: String.t,
-                         because: t | nil}
+                         because: String.t | t | nil}
 
   defexception at: {0, 0, 0}, tail: "", what: "", because: nil
 
