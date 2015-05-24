@@ -44,7 +44,8 @@ defmodule Paco.Parser.SequenceOfTest do
     assert parse(sequence_of([lit("aaa"), lit("bbb")]), "a") == {:error,
       """
       Failed to match sequence_of([lit("aaa"), lit("bbb")]) at 1:1, \
-      because it failed to match lit("aaa") at 1:1
+      because it failed to match lit("aaa") at 1:1, \
+      because it reached the end of input
       """
     }
   end

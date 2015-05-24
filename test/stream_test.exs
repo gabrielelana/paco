@@ -140,7 +140,7 @@ defmodule Paco.StreamTest do
     # introducing a special value or other hacks
     assert result == [{:ok, "aa"}, {:error,
       """
-      Failed to match lit("aa") at 1:3
+      Failed to match lit("aa") at 1:3, because it reached the end of input
       """
     }]
   end
