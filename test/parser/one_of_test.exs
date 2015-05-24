@@ -10,6 +10,7 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "a") == {:ok, "a"}
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "b") == {:ok, "b"}
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "c") == {:ok, "c"}
+    assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
   end
 
   test "doesn't need to consume all the text" do
@@ -25,8 +26,8 @@ defmodule Paco.Parser.OneOfTest do
   end
 
   test "describe" do
-    assert describe(one_of([lit("a"), lit("b")])) ==
-      ~s|one_of([lit("a"), lit("b")])|
+    assert describe(one_of([lit("a")])) == ~s|one_of([lit("a")])|
+    assert describe(one_of([lit("a"), lit("b")])) == ~s|one_of([lit("a"), lit("b")])|
   end
 
   test "skipped parsers should be removed from result" do
@@ -38,15 +39,6 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), lit("b")]), "c") == {:error,
       """
       Failed to match one_of([lit("a"), lit("b")]) at 1:1
-      """
-    }
-  end
-
-  test "one parser optimization, one_of is removed" do
-    assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
-    assert parse(one_of([lit("a")]), "c") == {:error,
-      """
-      Failed to match lit("a") at 1:1
       """
     }
   end
