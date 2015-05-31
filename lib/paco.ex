@@ -40,7 +40,7 @@ defmodule Paco do
   @doc false
   defmacro __using__(_) do
     quote do
-      import Paco.Macro
+      import Paco.Macro.ParserModuleDefinition
       import Paco.Parser
 
       Module.register_attribute(__MODULE__, :paco_root_parser, accumulate: false)

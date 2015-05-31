@@ -1,5 +1,5 @@
 defmodule Paco.Parser do
-  import Paco.Macro
+  import Paco.Macro.ParserDefinition
   import Paco.Collector
 
   defstruct id: nil, name: nil, combine: nil, parse: nil
@@ -32,7 +32,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ then_choose(p, f) when is_function(f) do
+  parser then_choose(p, f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -84,7 +84,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ bind_to(p, f) when is_function(f) do
+  parser bind_to(p, f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -140,37 +140,37 @@ defmodule Paco.Parser do
   end
 
 
-  parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
+  parser whitespace, as: while(&Paco.String.whitespace?/1, 1)
                           |> silent
 
-  parser_ whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
+  parser whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
                            |> silent
 
-  parser_ lex(s), as: lit(s)
+  parser lex(s), as: lit(s)
                       |> surrounded_by(maybe(whitespaces))
                       |> silent
 
-  parser_ surrounded_by(parser, around),
-    do: surrounded_by(parser, around, around)
+  parser surrounded_by(parser, around),
+    to: surrounded_by(parser, around, around)
 
-  parser_ surrounded_by(parser, left, right),
+  parser surrounded_by(parser, left, right),
     as: sequence_of([skip(left), parser, skip(right)])
         |> bind do: ([r] -> r; r -> r)
 
-  parser_ many(p), forward_to: repeat(p)
-  parser_ exactly(p, n), forward_to: repeat(p, n)
-  parser_ at_least(p, n), forward_to: repeat(p, {n, :infinity})
-  parser_ at_most(p, n), forward_to: repeat(p, {0, n})
-  parser_ one_of_more(p), forward_to: repeat(p, {1, :infinity})
-  parser_ zero_or_more(p), forward_to: repeat(p, {0, :infinity})
+  parser many(p), to: repeat(p)
+  parser exactly(p, n), to: repeat(p, n)
+  parser at_least(p, n), to: repeat(p, {n, :infinity})
+  parser at_most(p, n), to: repeat(p, {0, n})
+  parser one_of_more(p), to: repeat(p, {1, :infinity})
+  parser zero_or_more(p), to: repeat(p, {0, :infinity})
 
-  parser_ repeat(parser), do: repeat(parser, {0, :infinity})
-  parser_ repeat(parser, n) when is_integer(n), do: repeat(parser, {n, n})
-  parser_ repeat(parser, {:more_than, n}), do: repeat(parser, {n+1, :infinity})
-  parser_ repeat(parser, {:less_than, n}), do: repeat(parser, {0, n-1})
-  parser_ repeat(parser, {:at_least, n}), do: repeat(parser, {n, :infinity})
-  parser_ repeat(parser, {:at_most, n}), do: repeat(parser, {0, n})
-  parser_ repeat(parser, {at_least, at_most}) do
+  parser repeat(parser), to: repeat(parser, {0, :infinity})
+  parser repeat(parser, n) when is_integer(n), to: repeat(parser, {n, n})
+  parser repeat(parser, {:more_than, n}), to: repeat(parser, {n+1, :infinity})
+  parser repeat(parser, {:less_than, n}), to: repeat(parser, {0, n-1})
+  parser repeat(parser, {:at_least, n}), to: repeat(parser, {n, :infinity})
+  parser repeat(parser, {:at_most, n}), to: repeat(parser, {0, n})
+  parser repeat(parser, {at_least, at_most}) do
     fn %Paco.State{at: at, text: text} = state, this ->
       notify_started(this, state)
       successes = Stream.unfold({state, 0},
@@ -207,7 +207,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ maybe(%Paco.Parser{} = parser, opts \\ []) do
+  parser maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
     fn state, this ->
       notify_started(this, state)
@@ -224,13 +224,13 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ silent(parser) do
+  parser silent(parser) do
     fn state, _ ->
       parser.parse.(%Paco.State{state|silent: true}, parser)
     end
   end
 
-  parser_ skip(parser) do
+  parser skip(parser) do
     fn state, this ->
       notify_started(this, state)
       case parser.parse.(state, parser) do
@@ -243,7 +243,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ sequence_of(parsers) do
+  parser sequence_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
       result = Enum.reduce(parsers, {state, from, []},
@@ -275,7 +275,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ one_of(parsers) do
+  parser one_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
       result = Enum.find_value(parsers,
@@ -296,7 +296,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ re(r) do
+  parser re(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
@@ -336,7 +336,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ lit(s) do
+  parser lit(s) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, to, at} ->
@@ -355,7 +355,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ any(n \\ 1) do
+  parser any(n \\ 1) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_any(text, n, from) do
         {consumed, tail, to, at} ->
@@ -373,7 +373,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ until(p, opts \\ []) do
+  parser until(p, opts \\ []) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_until(text, p, from) do
         {_, "", _, _} when is_pid(stream) ->
@@ -390,13 +390,13 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ while(p), do: while(p, {0, :infinity})
-  parser_ while(p, n) when is_integer(n), do: while(p, {n, n})
-  parser_ while(p, {:more_than, n}), do: while(p, {n+1, :infinity})
-  parser_ while(p, {:less_than, n}), do: while(p, {0, n-1})
-  parser_ while(p, {:at_least, n}), do: while(p, {n, :infinity})
-  parser_ while(p, {:at_most, n}), do: while(p, {0, n})
-  parser_ while(p, {at_least, at_most}) do
+  parser while(p), to: while(p, {0, :infinity})
+  parser while(p, n) when is_integer(n), to: while(p, {n, n})
+  parser while(p, {:more_than, n}), to: while(p, {n+1, :infinity})
+  parser while(p, {:less_than, n}), to: while(p, {0, n-1})
+  parser while(p, {:at_least, n}), to: while(p, {n, :infinity})
+  parser while(p, {:at_most, n}), to: while(p, {0, n})
+  parser while(p, {at_least, at_most}) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {_, "", _, _} when is_pid(stream) ->
