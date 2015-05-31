@@ -6,6 +6,10 @@ defmodule Paco.Failure do
 
   defexception at: {0, 0, 0}, tail: "", what: "", because: nil
 
+  def at(%Paco.State{at: at, text: text}, what \\ "", because \\ nil) do
+    %Paco.Failure{at: at, tail: text, what: what, because: because}
+  end
+
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 
   def format(%Paco.Failure{} = failure, :raw), do: failure

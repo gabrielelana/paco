@@ -31,7 +31,7 @@ defmodule Paco.Parser do
   parser_ bind_to(p, f) do
     ensure_is_function(f, "bind_to combinator")
     {:arity, arity} = :erlang.fun_info(f, :arity)
-    fn %Paco.State{at: at, text: text} = state, this ->
+    fn state, this ->
       Paco.Collector.notify_started(this, state)
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
@@ -41,9 +41,8 @@ defmodule Paco.Parser do
               2 -> f.(result, Paco.State.update(state, success))
             end
           catch
-            kind, reason ->
-              %Paco.Failure{at: at, tail: text, what: Paco.describe(this),
-                            because: "raised #{inspect({kind, reason})}"}
+            _kind, reason ->
+              Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
           else
             result ->
               %Paco.Success{success|result: result}
