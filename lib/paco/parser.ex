@@ -8,13 +8,12 @@ defmodule Paco.Parser do
   def from(%Regex{} = r), do: re(r)
 
 
-
   defmacro bind(p, form, [do: clauses]) do
     unless all_arrow_clauses?(clauses) do
       raise ArgumentError, "expected -> clauses for do in bind combinator"
     end
     quote do
-      bind(unquote(p), unquote(bind_function(form, clauses)))
+      bind_to(unquote(p), unquote(do_clauses_to_function(form, clauses)))
     end
   end
 
@@ -23,37 +22,36 @@ defmodule Paco.Parser do
       raise ArgumentError, "expected -> clauses for do in bind combinator"
     end
     quote do
-      bind(unquote(p), unquote(bind_function(:result, clauses)))
+      bind_to(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
     end
   end
 
   defmacro bind(p, f) do
-    quote bind_quoted: [p: p, f: f] do
-      unless is_function(f) do
-        raise ArgumentError, "expected a function as second argument of bind combinator"
+    quote do
+      bind_to(unquote(p), unquote(f))
+    end
+  end
+
+  parser_ bind_to(p, f) do
+    unless is_function(f) do
+      raise ArgumentError, "expected a function as second argument of bind_to combinator"
+    end
+    {:arity, arity} = :erlang.fun_info(f, :arity)
+    fn state, this ->
+      Paco.Collector.notify_started(this, state)
+      case p.parse.(state, p) do
+        %Paco.Success{result: result} = success ->
+          result = case arity do
+                     1 ->
+                       f.(result)
+                     2 ->
+                       f.(result, Paco.State.update(state, success))
+                   end
+          %Paco.Success{success|result: result}
+        %Paco.Failure{} = failure ->
+          failure
       end
-      {:arity, bind_function_arity} = :erlang.fun_info(f, :arity)
-      %Paco.Parser{
-        id: Paco.Macro.id,
-        name: "bind",
-        combine: [p, f],
-        parse: fn state, this ->
-                 Paco.Collector.notify_started(this, state)
-                 case p.parse.(state, p) do
-                   %Paco.Success{result: result} = success ->
-                     result = case bind_function_arity do
-                                1 ->
-                                  f.(result)
-                                2 ->
-                                  f.(result, Paco.State.update(state, success))
-                              end
-                     %Paco.Success{success|result: result}
-                   %Paco.Failure{} = failure ->
-                     failure
-                 end
-                 |> Paco.Collector.notify_ended(state)
-               end
-      }
+      |> Paco.Collector.notify_ended(state)
     end
   end
 
@@ -62,7 +60,7 @@ defmodule Paco.Parser do
     Enum.all?(clauses, fn {:->, _, _} -> true; _ -> false end)
   end
 
-  defp bind_function(:result, clauses) do
+  defp do_clauses_to_function(:result, clauses) do
     quote do
       fn(r) ->
         case r do
@@ -71,7 +69,7 @@ defmodule Paco.Parser do
       end
     end
   end
-  defp bind_function(:result_and_state, clauses) do
+  defp do_clauses_to_function(:result_and_state, clauses) do
     quote do
       fn(r, s) ->
         case {r, s} do

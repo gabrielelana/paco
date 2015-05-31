@@ -11,7 +11,7 @@ defmodule Paco.Parser.BindTest do
 
     assert parse(parser, "a") == {:ok, "b"}
 
-    assert describe(parser) == ~s|bind(lit("a"), fn/1)|
+    assert describe(parser) == ~s|bind_to(lit("a"), fn/1)|
   end
 
   test "bind to a function with result and state" do
@@ -29,7 +29,7 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
 
-    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
+    assert describe(parser) == ~s|bind_to(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
   test "bind to a block with result and state" do
@@ -49,10 +49,10 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
 
-    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
+    assert describe(parser) == ~s|bind_to(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
-  test "failure" do
+  test "doesn't report its on failure" do
     parser = bind(lit("a"), fn(r) -> r end)
     assert parse(parser, "b") == {:error,
       """
@@ -61,9 +61,10 @@ defmodule Paco.Parser.BindTest do
     }
   end
 
-  test "ignore failure" do
+  test "doesn't call bind function on failure" do
     parser = bind(lit("a"), fn(r) -> Process.put(:called, true); r end)
     parse(parser, "b")
+
     assert Process.get(:called, false) == false
   end
 
@@ -71,7 +72,7 @@ defmodule Paco.Parser.BindTest do
     parser = bind(lit("a"), fn(r) -> r end)
 
     Helper.assert_events_notified(parser, "a", [
-      {:started, ~s|bind(lit("a"), fn/1)|},
+      {:started, ~s|bind_to(lit("a"), fn/1)|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ])
   end
@@ -80,9 +81,8 @@ defmodule Paco.Parser.BindTest do
     parser = bind(lit("a"), fn(r) -> r end)
 
     Helper.assert_events_notified(parser, "b", [
-      {:started, ~s|bind(lit("a"), fn/1)|},
+      {:started, ~s|bind_to(lit("a"), fn/1)|},
       {:failed, {0, 1, 1}},
     ])
   end
-
 end
