@@ -41,13 +41,13 @@ defmodule Paco.Parser do
                  Paco.Collector.notify_started(this, state)
                  case p.parse.(state, p) do
                    %Paco.Success{result: result} = success ->
-                     bound = case bind_function_arity do
-                               1 ->
-                                 f.(result)
-                               2 ->
-                                 f.(result, %Paco.State{state|at: success.at, text: success.tail})
-                     end
-                     %Paco.Success{success|result: bound}
+                     result = case bind_function_arity do
+                                1 ->
+                                  f.(result)
+                                2 ->
+                                  f.(result, Paco.State.update(state, success))
+                              end
+                     %Paco.Success{success|result: result}
                    %Paco.Failure{} = failure ->
                      failure
                  end
@@ -133,10 +133,10 @@ defmodule Paco.Parser do
                              fn {_, n} when n == at_most -> nil
                                 {state, n} ->
                                   case parser.parse.(state, parser) do
-                                    %Paco.Success{at: at, tail: tail, skip: true} ->
-                                      {:skip, {%Paco.State{state|at: at, text: tail}, n + 1}}
-                                    %Paco.Success{at: at, tail: tail} = success ->
-                                      {success, {%Paco.State{state|at: at, text: tail}, n + 1}}
+                                    %Paco.Success{skip: true} = success ->
+                                      {:skip, {Paco.State.update(state, success), n + 1}}
+                                    %Paco.Success{} = success ->
+                                      {success, {Paco.State.update(state, success), n + 1}}
                                     %Paco.Failure{} ->
                                       nil
                                   end
@@ -210,10 +210,10 @@ defmodule Paco.Parser do
                                    {state, to, results}
                                  %Paco.Success{from: at, to: at, at: at, result: result} ->
                                    {state, to, [result|results]}
-                                 %Paco.Success{at: at, to: to, tail: tail, skip: true} ->
-                                   {%Paco.State{state|at: at, text: tail}, to, results}
-                                 %Paco.Success{at: at, to: to, tail: tail, result: result} ->
-                                   {%Paco.State{state|at: at, text: tail}, to, [result|results]}
+                                 %Paco.Success{to: to, skip: true} = success ->
+                                   {Paco.State.update(state, success), to, results}
+                                 %Paco.Success{to: to, result: result} = success ->
+                                   {Paco.State.update(state, success), to, [result|results]}
                                  %Paco.Failure{} = failure ->
                                    failure
                                end

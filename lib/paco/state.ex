@@ -16,6 +16,10 @@ defmodule Paco.State do
                 stream: Keyword.get(opts, :stream, nil)}
   end
 
+  def update(state, %Paco.Success{at: at, tail: tail}) do
+    %Paco.State{state|at: at, text: tail}
+  end
+
   defp notify_loaded(collector, _) when not is_pid(collector), do: nil
   defp notify_loaded(collector, text) do
     GenEvent.notify(collector, {:loaded, text})
