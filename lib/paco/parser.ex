@@ -34,7 +34,6 @@ defmodule Paco.Parser do
   end
 
   parser_ bind_to(p, f) do
-    ensure_is_function(f, "bind_to combinator")
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -56,12 +55,6 @@ defmodule Paco.Parser do
           failure
       end
       |> Paco.Collector.notify_ended(state)
-    end
-  end
-
-  defp ensure_is_function(f, where) do
-    unless is_function(f) do
-      raise ArgumentError, "expected a function as argument of #{where}"
     end
   end
 
