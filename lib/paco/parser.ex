@@ -293,7 +293,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser re(r) do
+  parser rex(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
         [{_, len}] ->
