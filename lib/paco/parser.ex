@@ -32,7 +32,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ then_choose(p, f) do
+  parser_ then_choose(p, f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -84,7 +84,7 @@ defmodule Paco.Parser do
     end
   end
 
-  parser_ bind_to(p, f) do
+  parser_ bind_to(p, f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)

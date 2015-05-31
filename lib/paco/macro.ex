@@ -46,6 +46,18 @@ defmodule Paco.Macro do
     end
   end
 
+  defp parser__({:when, _, [{name, _, args}, guards]}, do: block) do
+    quote do
+      def unquote(name)(unquote_splicing(args)) when unquote(guards) do
+        %Paco.Parser{
+          id: id,
+          name: to_string(unquote(name)),
+          combine: unquote(normalize(args)),
+          parse: unquote(block)
+        }
+      end
+    end
+  end
   defp parser__({name, _, args} = definition, do: block) do
     quote do
       def unquote(definition) do
