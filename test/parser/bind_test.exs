@@ -11,7 +11,7 @@ defmodule Paco.Parser.BindTest do
 
     assert parse(parser, "a") == {:ok, "b"}
 
-    assert describe(parser) == ~s|bind_to(lit("a"), fn/1)|
+    assert describe(parser) == ~s|bind(lit("a"), fn/1)|
   end
 
   test "bind to a function with result and state" do
@@ -29,7 +29,7 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
 
-    assert describe(parser) == ~s|bind_to(one_of([lit("a"), lit("b")]), fn/1)|
+    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
   test "bind to a block with result and state" do
@@ -49,14 +49,14 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
 
-    assert describe(parser) == ~s|bind_to(one_of([lit("a"), lit("b")]), fn/1)|
+    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
   test "fails if bind function raise an exception" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
       """
-      Failed to match bind_to(lit("a"), fn/1) at 1:1, \
+      Failed to match bind(lit("a"), fn/1) at 1:1, \
       because it raised %RuntimeError{message: "boom!"}
       """
     }
@@ -82,7 +82,7 @@ defmodule Paco.Parser.BindTest do
     parser = bind(lit("a"), fn(r) -> r end)
 
     Helper.assert_events_notified(parser, "a", [
-      {:started, ~s|bind_to(lit("a"), fn/1)|},
+      {:started, ~s|bind(lit("a"), fn/1)|},
       {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
     ])
   end
@@ -91,7 +91,7 @@ defmodule Paco.Parser.BindTest do
     parser = bind(lit("a"), fn(r) -> r end)
 
     Helper.assert_events_notified(parser, "b", [
-      {:started, ~s|bind_to(lit("a"), fn/1)|},
+      {:started, ~s|bind(lit("a"), fn/1)|},
       {:failed, {0, 1, 1}},
     ])
   end

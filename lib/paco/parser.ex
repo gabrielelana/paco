@@ -7,11 +7,14 @@ defmodule Paco.Parser do
   def from(%Paco.Parser{} = p), do: p
   def from(%Regex{} = r), do: re(r)
 
+  def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
+
 
   defmacro bind(p, form, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(form, clauses)))
+      |> as("bind")
     end
   end
 
@@ -19,12 +22,14 @@ defmodule Paco.Parser do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
+      |> as("bind")
     end
   end
 
   defmacro bind(p, f) do
     quote do
       bind_to(unquote(p), unquote(f))
+      |> as("bind")
     end
   end
 
