@@ -8,6 +8,81 @@ defmodule Paco.Parser do
   def from(%Regex{} = r), do: re(r)
 
 
+
+  defmacro bind(p, form, [do: clauses]) do
+    unless all_arrow_clauses?(clauses) do
+      raise ArgumentError, "expected -> clauses for do in bind combinator"
+    end
+    quote do
+      bind(unquote(p), unquote(bind_function(form, clauses)))
+    end
+  end
+
+  # [do: [{:->, [line: 19], [["a"], 1]}, {:->, [line: 20], [["b"], 2]}]]
+  defmacro bind(p, [do: clauses]) do
+    unless all_arrow_clauses?(clauses) do
+      raise ArgumentError, "expected -> clauses for do in bind combinator"
+    end
+    quote do
+      bind(unquote(p), unquote(bind_function(:result, clauses)))
+    end
+  end
+
+  # FUNCTION {:fn, [], [{:->, [line: 8], [[{:_, [line: 8], nil}], "b"]}]}
+  defmacro bind(p, f) do
+    quote bind_quoted: [p: p, f: f] do
+      unless is_function(f) do
+        raise ArgumentError, "expected function as second argument of bind combinator"
+      end
+      %Paco.Parser{
+        id: Paco.Macro.id,
+        name: "bind",
+        combine: [p, f],
+        parse: fn state, this ->
+                 Paco.Collector.notify_started(this, state)
+                 case p.parse.(state, p) do
+                   %Paco.Success{result: result} = success ->
+                     bound = case :erlang.fun_info(f, :arity) do
+                               {:arity, 1} ->
+                                 f.(result)
+                               {:arity, 2} ->
+                                 f.(result, %Paco.State{state|at: success.at, text: success.tail})
+                     end
+                     %Paco.Success{success|result: bound}
+                   %Paco.Failure{} = failure ->
+                     failure
+                 end
+                 |> Paco.Collector.notify_ended(state)
+               end
+      }
+    end
+  end
+
+  defp all_arrow_clauses?(clauses) when not is_list(clauses), do: false
+  defp all_arrow_clauses?(clauses) do
+    Enum.all?(clauses, fn {:->, _, _} -> true; _ -> false end)
+  end
+
+  defp bind_function(:result, clauses) do
+    quote do
+      fn(r) ->
+        case r do
+          unquote(clauses)
+        end
+      end
+    end
+  end
+  defp bind_function(:result_and_state, clauses) do
+    quote do
+      fn(r, s) ->
+        case {r, s} do
+          unquote(clauses)
+        end
+      end
+    end
+  end
+
+
   parser_ whitespace, as: while(&Paco.String.whitespace?/1, 1)
                           |> silent
 
