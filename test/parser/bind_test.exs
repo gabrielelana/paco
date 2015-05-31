@@ -62,7 +62,7 @@ defmodule Paco.Parser.BindTest do
     }
   end
 
-  test "doesn't report its on failure" do
+  test "it doesn't show up in failure message" do
     parser = bind(lit("a"), fn(r) -> r end)
     assert parse(parser, "b") == {:error,
       """

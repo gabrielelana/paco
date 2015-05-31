@@ -9,6 +9,57 @@ defmodule Paco.Parser do
 
   def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
 
+  defmacro then(p, form, [do: clauses]) do
+    ensure_are_all_arrow_clauses(clauses, "bind combinator")
+    quote do
+      then_choose(unquote(p), unquote(do_clauses_to_function(form, clauses)))
+      |> as("then")
+    end
+  end
+
+  defmacro then(p, [do: clauses]) do
+    ensure_are_all_arrow_clauses(clauses, "bind combinator")
+    quote do
+      then_choose(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
+      |> as("then")
+    end
+  end
+
+  defmacro then(p, f) do
+    quote do
+      then_choose(unquote(p), unquote(f))
+      |> as("then")
+    end
+  end
+
+  parser_ then_choose(p, f) do
+    {:arity, arity} = :erlang.fun_info(f, :arity)
+    fn state, this ->
+      Paco.Collector.notify_started(this, state)
+      case p.parse.(state, p) do
+        %Paco.Success{result: result} = success ->
+          try do
+            case arity do
+              1 -> f.(result)
+              2 -> f.(result, Paco.State.update(state, success))
+            end
+          catch
+            _kind, reason ->
+              Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
+          else
+            next_parser ->
+              next_parser.parse.(Paco.State.update(state, success), next_parser)
+          end
+        %Paco.Failure{} = failure ->
+          failure
+      end
+      |> Paco.Collector.notify_ended(state)
+    end
+  end
+
+
+
+
 
   defmacro bind(p, form, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
