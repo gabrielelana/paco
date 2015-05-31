@@ -4,9 +4,6 @@ defmodule Paco.Parser do
 
   defstruct id: nil, name: nil, combine: nil, parse: nil
 
-  def from(%Paco.Parser{} = p), do: p
-  def from(%Regex{} = r), do: re(r)
-
   def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
 
   defmacro then(p, form, [do: clauses]) do
