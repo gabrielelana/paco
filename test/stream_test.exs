@@ -147,14 +147,14 @@ defmodule Paco.StreamTest do
 
   test "parse stream when downstream halts the pipe as first command" do
     stream = ["a", "b", "c"]
-             |> Stream.each(&Helper.count(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Paco.Stream.parse(lit("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
                                {:halt, downstream_accumulator},
                                fn(_, _) ->
-                                 Helper.count(:downstream_called)
+                                 count(:downstream_called)
                                  {:cont, nil}
                                end)
 
@@ -168,14 +168,14 @@ defmodule Paco.StreamTest do
 
   test "parse stream when downstream suspend the pipe as first command" do
     stream = ["a", "b", "c"]
-             |> Stream.each(&Helper.count(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Paco.Stream.parse(lit("a"))
 
     downstream_accumulator = make_ref
     result = Enumerable.reduce(stream,
                                {:suspend, downstream_accumulator},
                                fn(_, _) ->
-                                 Helper.count(:downstream_called)
+                                 count(:downstream_called)
                                  {:cont, nil}
                                end)
 
@@ -191,9 +191,9 @@ defmodule Paco.StreamTest do
 
   test "parse stream when downstream halts" do
     result = ["a", "b", "c", "a", "b", "c"]
-             |> Stream.each(&Helper.count(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Paco.Stream.parse(lit("abc"))
-             |> Stream.each(&Helper.count(:downstream_called, &1))
+             |> Stream.each(&count(:downstream_called, &1))
              |> Stream.take(1)
              |> Enum.to_list
 
@@ -204,17 +204,25 @@ defmodule Paco.StreamTest do
 
   test "parse stream when upstream halts" do
     result = ["a", "b", "c", "a", "b", "c"]
-             |> Stream.each(&Helper.count(:upstream_called, &1))
+             |> Stream.each(&count(:upstream_called, &1))
              |> Stream.take(4)
              |> Paco.Stream.parse(lit("abc"))
-             |> Stream.each(&Helper.count(:downstream_called, &1))
+             |> Stream.each(&count(:downstream_called, &1))
              |> Enum.to_list
 
     # When the stream is halted from upstream and the parser is waiting
     # for more data we don't return a failure but we truncate the stream.
     # This behaviour is compatibile with Stream.chunk
     assert result == ["abc"]
-    assert Helper.counted(:upstream_called) == 5    # should have been 4???
-    assert Helper.counted(:downstream_called) == 1
+    assert counted(:upstream_called) == 5    # should have been 4???
+    assert counted(:downstream_called) == 1
   end
+
+
+  defp count(key), do: count(key, nil)
+  defp count(key, _) do
+    Process.put(key, Process.get(key, 0) + 1)
+  end
+
+  defp counted(key), do: Process.get(key, 0)
 end

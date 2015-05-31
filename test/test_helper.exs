@@ -16,13 +16,6 @@ defmodule Paco.Test.Helper do
     |> List.flatten
   end
 
-  def count(key), do: count(key, nil)
-  def count(key, _) do
-    Process.put(key, Process.get(key, 0) + 1)
-  end
-
-  def counted(key), do: Process.get(key, 0)
-
   def assert_events_notified(parser, text, expected) do
     alias Paco.Test.EventRecorder
     {:ok, collector} = EventRecorder.start_link
