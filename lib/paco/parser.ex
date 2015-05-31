@@ -9,18 +9,14 @@ defmodule Paco.Parser do
 
 
   defmacro bind(p, form, [do: clauses]) do
-    unless all_arrow_clauses?(clauses) do
-      raise ArgumentError, "expected -> clauses for do in bind combinator"
-    end
+    ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(form, clauses)))
     end
   end
 
   defmacro bind(p, [do: clauses]) do
-    unless all_arrow_clauses?(clauses) do
-      raise ArgumentError, "expected -> clauses for do in bind combinator"
-    end
+    ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
     end
@@ -52,6 +48,12 @@ defmodule Paco.Parser do
           failure
       end
       |> Paco.Collector.notify_ended(state)
+    end
+  end
+
+  defp ensure_are_all_arrow_clauses(clauses, where) do
+    unless all_arrow_clauses?(clauses) do
+      raise ArgumentError, "expected -> clauses for do in #{where}"
     end
   end
 
