@@ -1,12 +1,7 @@
 defmodule Paco.Macro.ParserDefinition do
-  # parser_ maybe(parser) do ... end
-  defmacro parser(definition, do: {:__block__, _, _} = block) do
-    define_parser(definition, do: block)
-  end
 
-  # parser_ skip(parser), do: fn %Paco.State{} -> ... end
-  defmacro parser(definition, do: {:fn, _, _} = function) do
-    define_parser(definition, do: {:__block__, [], [function]})
+  defmacro parser(definition, do: block) do
+    define_parser(definition, do: block)
   end
 
   defmacro parser(definition, to: {_, _, _} = parser) do
