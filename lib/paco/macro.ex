@@ -37,9 +37,9 @@ defmodule Paco.Macro.ParserDefinition do
     quote do
       def unquote(name)(unquote_splicing(args)) when unquote(guards) do
         %Paco.Parser{
-          id: id,
+          id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
-          combine: unquote(normalize(args)),
+          combine: unquote(Paco.Macro.ParserDefinition.normalize(args)),
           parse: unquote(block)
         }
       end
@@ -50,9 +50,9 @@ defmodule Paco.Macro.ParserDefinition do
     quote do
       def unquote(definition) do
         %Paco.Parser{
-          id: id,
+          id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
-          combine: unquote(normalize(args)),
+          combine: unquote(Paco.Macro.ParserDefinition.normalize(args)),
           parse: unquote(block)
         }
       end
@@ -73,27 +73,25 @@ end
 
 
 defmodule Paco.Macro.ParserModuleDefinition do
-  defmacro parser({name, _, args} = definition, do: block) do
+  defmacro parser(definition, do: block) do
+    name = extract_name(definition)
     quote do
+      require Paco.Macro.ParserDefinition
       @paco_parsers unquote(name)
-      def unquote(definition) do
-        %Paco.Parser{
-          id: Paco.Macro.ParserDefinition.id,
-          name: to_string(unquote(name)),
-          combine: unquote(Paco.Macro.ParserDefinition.normalize(args)),
-          parse: fn %Paco.State{} = state, _this ->
-                   case (unquote(block)) do
-                     %Paco.Parser{} = parser ->
-                       case parser.parse.(state, parser) do
-                         %Paco.Success{} = success ->
-                           success
-                         %Paco.Failure{} = failure ->
-                           %Paco.Failure{failure|what: unquote(name)}
-                       end
-                     _ ->
-                       raise RuntimeError, message: "Expected a %Paco.Parser"
-                   end
-                 end}
+      Paco.Macro.ParserDefinition.parser unquote(definition) do
+        fn %Paco.State{} = state, _this ->
+          case (unquote(block)) do
+            %Paco.Parser{} = parser ->
+              case parser.parse.(state, parser) do
+                %Paco.Success{} = success ->
+                  success
+                %Paco.Failure{} = failure ->
+                  %Paco.Failure{failure|what: unquote(name)}
+              end
+            _ ->
+              raise RuntimeError, message: "Expected a %Paco.Parser"
+          end
+        end
       end
     end
   end
@@ -122,6 +120,13 @@ defmodule Paco.Macro.ParserModuleDefinition do
   defmacro root({name, _, _}) do
     quote do
       @paco_root_parser unquote(name)
+    end
+  end
+
+  defp extract_name(definition) do
+    case definition do
+      {:when, _, [{name, _, _}|_]} -> name
+      {name, _, _} -> name
     end
   end
 end
