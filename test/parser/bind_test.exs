@@ -52,6 +52,16 @@ defmodule Paco.Parser.BindTest do
     assert describe(parser) == ~s|bind_to(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
+  test "fails if bind function raise an exception" do
+    parser = bind(lit("a"), fn(r) -> raise "boom!" end)
+    assert parse(parser, "a") == {:error,
+      """
+      Failed to match bind_to(lit("a"), fn/1) at 1:1, \
+      because it raised {:error, %RuntimeError{message: "boom!"}}
+      """
+    }
+  end
+
   test "doesn't report its on failure" do
     parser = bind(lit("a"), fn(r) -> r end)
     assert parse(parser, "b") == {:error,
