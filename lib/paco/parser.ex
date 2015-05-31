@@ -18,7 +18,6 @@ defmodule Paco.Parser do
     end
   end
 
-  # [do: [{:->, [line: 19], [["a"], 1]}, {:->, [line: 20], [["b"], 2]}]]
   defmacro bind(p, [do: clauses]) do
     unless all_arrow_clauses?(clauses) do
       raise ArgumentError, "expected -> clauses for do in bind combinator"
@@ -28,12 +27,12 @@ defmodule Paco.Parser do
     end
   end
 
-  # FUNCTION {:fn, [], [{:->, [line: 8], [[{:_, [line: 8], nil}], "b"]}]}
   defmacro bind(p, f) do
     quote bind_quoted: [p: p, f: f] do
       unless is_function(f) do
-        raise ArgumentError, "expected function as second argument of bind combinator"
+        raise ArgumentError, "expected a function as second argument of bind combinator"
       end
+      {:arity, bind_function_arity} = :erlang.fun_info(f, :arity)
       %Paco.Parser{
         id: Paco.Macro.id,
         name: "bind",
@@ -42,10 +41,10 @@ defmodule Paco.Parser do
                  Paco.Collector.notify_started(this, state)
                  case p.parse.(state, p) do
                    %Paco.Success{result: result} = success ->
-                     bound = case :erlang.fun_info(f, :arity) do
-                               {:arity, 1} ->
+                     bound = case bind_function_arity do
+                               1 ->
                                  f.(result)
-                               {:arity, 2} ->
+                               2 ->
                                  f.(result, %Paco.State{state|at: success.at, text: success.tail})
                      end
                      %Paco.Success{success|result: bound}
