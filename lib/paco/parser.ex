@@ -181,6 +181,7 @@ defmodule Paco.Parser do
   parser repeat(parser, {:at_most, n}), to: repeat(parser, {0, n})
   parser repeat(parser, {at_least, at_most}) do
     fn %Paco.State{at: at, text: text} = state, this ->
+      parser = from(parser)
       notify_started(this, state)
       successes = Stream.unfold({state, 0},
                              fn {_, n} when n == at_most -> nil

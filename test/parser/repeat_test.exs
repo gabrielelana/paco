@@ -25,7 +25,8 @@ defmodule Paco.Parser.RepeatTest do
   end
 
   test "autoboxing" do
-
+    assert parse(repeat("a"), "aaa") == {:ok, ["a", "a", "a"]}
+    assert parse(repeat({"a"}), "aaa") == {:ok, [{"a"}, {"a"}, {"a"}]}
   end
 
   test "fail to parse because it fails to match an exact number of times" do
