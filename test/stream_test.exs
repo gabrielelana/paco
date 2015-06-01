@@ -14,16 +14,6 @@ defmodule Paco.StreamTest do
     end
   end
 
-  test "autoboxing" do
-    for stream <- Helper.streams_of("ab") do
-      result = stream
-               |> Paco.Stream.parse("ab")
-               |> Enum.to_list
-
-      assert result == ["ab"]
-    end
-  end
-
   test "parse with more than one success" do
     for stream <- Helper.streams_of("abab") do
       result = stream
@@ -51,6 +41,24 @@ defmodule Paco.StreamTest do
                |> Enum.to_list
 
       assert [%Paco.Success{}] = result
+    end
+  end
+
+  test "parse success that yields on failure must not yield the end of input failure" do
+    result = ["ab"]
+             |> Paco.Stream.parse(lit("ab"), on_failure: :yield)
+             |> Enum.to_list
+
+    assert result == [{:ok, "ab"}]
+  end
+
+  test "autoboxing" do
+    for stream <- Helper.streams_of("ab") do
+      result = stream
+               |> Paco.Stream.parse("ab")
+               |> Enum.to_list
+
+      assert result == ["ab"]
     end
   end
 
@@ -134,23 +142,6 @@ defmodule Paco.StreamTest do
     assert result == [{:error,
       """
       Failed to match lit("") at 1:1, because it didn't consume any input
-      """
-    }]
-  end
-
-  test "parse always ends with a failure" do
-    result = ["aa"]
-             |> Paco.Stream.parse(lit("aa"), on_failure: :yield)
-             |> Enum.to_list
-
-    # The parser process after a success restarts the parser on what
-    # it's left of input, it doesn't know if the stream it's done or halted.
-    # Since the parser is already started and a parser could return only one
-    # of %Paco.Success or %Paco.Failure a %Paco.Failure is returned without
-    # introducing a special value or other hacks
-    assert result == [{:ok, "aa"}, {:error,
-      """
-      Failed to match lit("aa") at 1:3, because it reached the end of input
       """
     }]
   end

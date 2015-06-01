@@ -39,15 +39,15 @@ defmodule Paco.Stream do
   defp transform_with_parser(eos_probe, {running_parser, eos_probe, _} = accumulator) do
     # IO.puts("[STREAM] END OF INPUT")
     send(running_parser, :halted)
-    collect_from_parser([], accumulator)
+    collect_from_parser([], accumulator, true)
   end
   defp transform_with_parser(upstream_element, {running_parser, _, _} = accumulator) do
     # IO.puts("[STREAM] LOAD #{upstream_element} TO PARSER")
     send(running_parser, {:load, upstream_element})
-    collect_from_parser([], accumulator)
+    collect_from_parser([], accumulator, false)
   end
 
-  defp collect_from_parser(successes, {running_parser, _, opts} = accumulator) do
+  defp collect_from_parser(successes, {running_parser, _, opts} = accumulator, eos) do
     receive do
       {^running_parser, :more} ->
         # IO.puts("[STREAM] PARSER NEEDS MORE INPUT -> YIELD COLLECTED")
@@ -55,7 +55,10 @@ defmodule Paco.Stream do
       {^running_parser, %Paco.Success{} = success} ->
         # IO.puts("[STREAM] COLLECT SUCCESS: #{inspect(success)}")
         formatted = Paco.Success.format(success, Keyword.get(opts, :format))
-        collect_from_parser([formatted|successes], accumulator)
+        collect_from_parser([formatted|successes], accumulator, eos)
+      {^running_parser, %Paco.Failure{} = failure} when eos ->
+        # IO.puts("[STREAM] END OF INPUT -> YIELD COLLECTED")
+        {successes |> Enum.reverse, accumulator}
       {^running_parser, %Paco.Failure{} = failure} ->
         # IO.puts("[STREAM] FAILURE! #{inspect(failure)}")
         case {Keyword.get(opts, :on_failure), successes} do
@@ -86,10 +89,13 @@ defmodule Paco.Stream do
         {:suspended, acc, &run(stream, running_parser, &1, downstream_continuation)}
       {_, _} = halted_or_done ->
         # IO.puts("[STREAM] UPSTRAM IS #{inspect(halted_or_done)}")
-        # We already know that the stream is over because we have a probe
-        # at the end of the stream so that the transform_with_parser could
-        # have the chance to behave accordingly. So here we don't have to
-        # shutdown things
+        # We already know that the stream is over because we have a probe at
+        # the end of the stream, when transform_with_parser sees the probe it
+        # shuts down the parser. Here we don't have to do anything in
+        # particular.
+        #
+        # But this **is** the place to do that kind of things, the probe is an
+        # hack, problem is I still need to figure out how it works :-(
         halted_or_done
     end
   end
