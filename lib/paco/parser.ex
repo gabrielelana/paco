@@ -51,9 +51,9 @@ defmodule Paco.Parser do
             _kind, reason ->
               Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
           else
-            next_parser ->
-              next_parser = box(next_parser)
-              next_parser.parse.(Paco.State.update(state, success), next_parser)
+            p ->
+              p = box(p)
+              p.parse.(Paco.State.update(state, success), p)
           end
         %Paco.Failure{} = failure ->
           failure
