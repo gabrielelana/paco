@@ -6,12 +6,11 @@ defmodule Paco.Parser do
 
   def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
 
-
-  def from(%Paco.Parser{} = p), do: p
-  def from(%Regex{} = r), do: rex(r)
-  def from(nil), do: always(nil)
-  def from(s) when is_binary(s), do: lit(s)
-  def from(t), do: Paco.Parsable.to_parser(t)
+  def box(%Paco.Parser{} = p), do: p
+  def box(%Regex{} = r), do: rex(r)
+  def box(nil), do: always(nil)
+  def box(s) when is_binary(s), do: lit(s)
+  def box(t), do: Paco.Parsable.to_parser(t)
 
 
   defmacro then(p, form, [do: clauses]) do
@@ -38,7 +37,7 @@ defmodule Paco.Parser do
   end
 
   parser then_with(p, f) when is_function(f) do
-    p = from(p)
+    p = box(p)
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -54,7 +53,7 @@ defmodule Paco.Parser do
               Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
           else
             next_parser ->
-              next_parser = from(next_parser)
+              next_parser = box(next_parser)
               next_parser.parse.(Paco.State.update(state, success), next_parser)
           end
         %Paco.Failure{} = failure ->
@@ -92,7 +91,7 @@ defmodule Paco.Parser do
   end
 
   parser bind_to(p, f) when is_function(f) do
-    p = from(p)
+    p = box(p)
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -166,7 +165,7 @@ defmodule Paco.Parser do
   parser surrounded_by(parser, left, right) when is_binary(left) and is_binary(right),
     to: surrounded_by(parser, lex(left), lex(right))
   parser surrounded_by(parser, left, right),
-    as: sequence_of([skip(left), from(parser), skip(right)])
+    as: sequence_of([skip(left), box(parser), skip(right)])
         |> bind do: ([r] -> r; r -> r)
 
   parser many(p), to: repeat(p)
@@ -184,7 +183,7 @@ defmodule Paco.Parser do
   parser repeat(parser, {:at_most, n}), to: repeat(parser, {0, n})
   parser repeat(parser, {at_least, at_most}) do
     fn %Paco.State{at: at, text: text} = state, this ->
-      parser = from(parser)
+      parser = box(parser)
       notify_started(this, state)
       successes = Stream.unfold({state, 0},
                              fn {_, n} when n == at_most -> nil
@@ -230,7 +229,7 @@ defmodule Paco.Parser do
   end
 
   parser maybe(parser, opts \\ []) do
-    parser = from(parser)
+    parser = box(parser)
     has_default = Keyword.has_key?(opts, :default)
     fn state, this ->
       notify_started(this, state)
@@ -254,7 +253,7 @@ defmodule Paco.Parser do
   end
 
   parser skip(parser) do
-    parser = from(parser)
+    parser = box(parser)
     fn state, this ->
       notify_started(this, state)
       case parser.parse.(state, parser) do
@@ -270,7 +269,7 @@ defmodule Paco.Parser do
   parser sequence_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
-      parsers = Enum.map(parsers, &from/1)
+      parsers = Enum.map(parsers, &box/1)
       result = Enum.reduce(parsers, {state, from, []},
                            fn
                              (_, %Paco.Failure{} = failure) ->
@@ -302,7 +301,7 @@ defmodule Paco.Parser do
 
   parser one_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
-      parsers = Enum.map(parsers, &from/1)
+      parsers = Enum.map(parsers, &box/1)
       notify_started(this, state)
       result = Enum.find_value(parsers,
                                fn(parser) ->
