@@ -146,14 +146,14 @@ defmodule Paco.Parser do
 
 
   parser whitespace, as: while(&Paco.String.whitespace?/1, 1)
-                          |> silent
+                         |> silent
 
   parser whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
-                           |> silent
+                          |> silent
 
   parser lex(s), as: lit(s)
-                      |> surrounded_by(maybe(whitespaces))
-                      |> silent
+                     |> surrounded_by(maybe(whitespaces))
+                     |> silent
 
   parser surrounded_by(parser, around) when is_binary(around),
     to: surrounded_by(parser, lex(around), lex(around))
