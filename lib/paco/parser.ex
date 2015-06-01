@@ -170,7 +170,7 @@ defmodule Paco.Parser do
   parser exactly(p, n), to: repeat(p, n)
   parser at_least(p, n), to: repeat(p, {n, :infinity})
   parser at_most(p, n), to: repeat(p, {0, n})
-  parser one_of_more(p), to: repeat(p, {1, :infinity})
+  parser one_or_more(p), to: repeat(p, {1, :infinity})
   parser zero_or_more(p), to: repeat(p, {0, :infinity})
 
   parser repeat(p), to: repeat(p, {0, :infinity})
