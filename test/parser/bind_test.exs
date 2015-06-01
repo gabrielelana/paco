@@ -52,6 +52,12 @@ defmodule Paco.Parser.BindTest do
     assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
+  test "autoboxing" do
+    parser = bind("a", &String.duplicate(&1, 2))
+
+    assert parse(parser, "a") == {:ok, "aa"}
+  end
+
   test "fails if bind function raise an exception" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,

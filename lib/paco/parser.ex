@@ -90,6 +90,7 @@ defmodule Paco.Parser do
   end
 
   parser bind_to(p, f) when is_function(f) do
+    p = from(p)
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
