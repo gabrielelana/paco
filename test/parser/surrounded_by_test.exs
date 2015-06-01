@@ -11,6 +11,13 @@ defmodule Paco.Parser.SurroundedByTest do
     assert parse(surrounded_by(lit("a"), lit("*")), "*a*") == {:ok, "a"}
   end
 
+  test "boxing: boundaries are boxes with lex instead of lit" do
+    parser = surrounded_by("a", "[", "]")
+    assert parse(parser, "[a]") == {:ok, "a"}
+    assert parse(parser, "[ a ]") == {:ok, "a"}
+    assert parse(parser, " [a] ") == {:ok, "a"}
+  end
+
   test "describe" do
     assert describe(surrounded_by(lit("a"), lit("["), lit("]"))) ==
       ~s|surrounded_by(lit("a"), lit("["), lit("]"))|

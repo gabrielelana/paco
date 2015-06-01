@@ -155,11 +155,15 @@ defmodule Paco.Parser do
                       |> surrounded_by(maybe(whitespaces))
                       |> silent
 
+  parser surrounded_by(parser, around) when is_binary(around),
+    to: surrounded_by(parser, lex(around), lex(around))
   parser surrounded_by(parser, around),
     to: surrounded_by(parser, around, around)
 
+  parser surrounded_by(parser, left, right) when is_binary(left) and is_binary(right),
+    to: surrounded_by(parser, lex(left), lex(right))
   parser surrounded_by(parser, left, right),
-    as: sequence_of([skip(left), parser, skip(right)])
+    as: sequence_of([skip(left), from(parser), skip(right)])
         |> bind do: ([r] -> r; r -> r)
 
   parser many(p), to: repeat(p)
