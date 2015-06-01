@@ -23,6 +23,11 @@ defmodule Paco.Parser.SurroundedByTest do
       ~s|surrounded_by(lit("a"), lit("["), lit("]"))|
   end
 
+  test "describe displays things after boxing" do
+    assert describe(surrounded_by("a", "[", "]")) ==
+      ~s|surrounded_by(lit("a"), lex("["), lex("]"))|
+  end
+
   test "failure because of surrounded parser" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "[b]") == {:error,
       """

@@ -29,8 +29,10 @@ defmodule Paco.Macro.ParserDefinition do
   end
 
   defp define_parser({:when, _, [{name, _, args}, guards]}, do: block) do
+    {args, boxing} = Paco.Macro.ParserDefinition.extract_boxing(args)
     quote do
       def unquote(name)(unquote_splicing(args)) when unquote(guards) do
+        unquote_splicing(boxing)
         %Paco.Parser{
           id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
@@ -41,9 +43,11 @@ defmodule Paco.Macro.ParserDefinition do
     end
   end
 
-  defp define_parser({name, _, args} = definition, do: block) do
+  defp define_parser({name, _, args}, do: block) do
+    {args, boxing} = Paco.Macro.ParserDefinition.extract_boxing(args)
     quote do
-      def unquote(definition) do
+      def unquote(name)(unquote_splicing(args)) do
+        unquote_splicing(boxing)
         %Paco.Parser{
           id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
@@ -63,6 +67,26 @@ defmodule Paco.Macro.ParserDefinition do
   def normalize(nil), do: []
   def normalize(args) do
     args |> Enum.map(fn({:\\, _, [arg, _]}) -> arg; a -> a end)
+  end
+
+  def extract_boxing(nil), do: {[], []}
+  def extract_boxing(args), do: extract_boxing(args, {[], []})
+
+  def extract_boxing([], {args, boxing}), do: {Enum.reverse(args), Enum.reverse(boxing)}
+  def extract_boxing([{:box, _, [arg]}|tail], {args, boxing}) do
+    box = quote do
+      unquote(arg) = Paco.Parser.box(unquote(arg))
+    end
+    extract_boxing(tail, {[arg|args], [box|boxing]})
+  end
+  def extract_boxing([{:box_each, _, [arg]}|tail], {args, boxing}) do
+    box = quote do
+      unquote(arg) = Enum.map(unquote(arg), &Paco.Parser.box/1)
+    end
+    extract_boxing(tail, {[arg|args], [box|boxing]})
+  end
+  def extract_boxing([arg|tail], {args, boxing}) do
+    extract_boxing(tail, {[arg|args], boxing})
   end
 end
 
