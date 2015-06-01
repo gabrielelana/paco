@@ -204,6 +204,15 @@ defmodule Paco.Parser do
     end
   end
 
+
+  parser always(t) do
+    fn %Paco.State{at: at, text: text} = state, this ->
+      notify_started(this, state)
+      %Paco.Success{from: at, to: at, at: at, tail: text, result: t}
+      |> notify_ended(state)
+    end
+  end
+
   parser maybe(%Paco.Parser{} = parser, opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
     fn state, this ->
