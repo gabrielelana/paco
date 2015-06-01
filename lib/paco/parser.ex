@@ -8,8 +8,8 @@ defmodule Paco.Parser do
 
   def box(%Paco.Parser{} = p), do: p
   def box(%Regex{} = r), do: rex(r)
-  def box(nil), do: always(nil)
   def box(s) when is_binary(s), do: lit(s)
+  def box(nil), do: always(nil)
   def box(t), do: Paco.Parsable.to_parser(t)
 
 
