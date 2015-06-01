@@ -3,6 +3,10 @@ defmodule PacoTest do
 
   import Paco.Parser
 
+  test "parse with autoboxing" do
+    assert Paco.parse("a", "a") == {:ok, "a"}
+  end
+
   test "parse_all" do
     parser = one_of([lit("a"), lit("b"), lit("c")])
 

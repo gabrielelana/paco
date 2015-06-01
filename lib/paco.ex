@@ -1,36 +1,37 @@
 defmodule Paco do
 
-  def parse!(%Paco.Parser{} = parser, text, opts \\ []) do
-    parse(parser, text, Keyword.merge(opts, [on_failure: :raise]))
+  def parse!(p, text, opts \\ []) do
+    parse(p, text, Keyword.merge(opts, [on_failure: :raise]))
   end
 
-  def parse(%Paco.Parser{} = parser, text, opts \\ []) do
-    parser.parse.(Paco.State.from(text, opts), parser)
+  def parse(p, text, opts \\ []) do
+    p = Paco.Parser.box(p)
+    p.parse.(Paco.State.from(text, opts), p)
     |> handle_failure(Keyword.get(opts, :on_failure, :yield))
     |> format(Keyword.get(opts, :format, :tagged))
   end
 
-  def parse_all!(%Paco.Parser{} = parser, text, opts \\ []) do
-    parse_all(parser, text, Keyword.merge(opts, [on_failure: :raise]))
+  def parse_all!(p, text, opts \\ []) do
+    parse_all(p, text, Keyword.merge(opts, [on_failure: :raise]))
   end
 
-  def parse_all(%Paco.Parser{} = parser, text, opts \\ []) do
+  def parse_all(p, text, opts \\ []) do
     [text]
-    |> Paco.Stream.parse(parser, Keyword.merge(opts, [format: :raw, on_failure: :yield]))
+    |> Paco.Stream.parse(p, Keyword.merge(opts, [format: :raw, on_failure: :yield]))
     |> Enum.map(&handle_failure(&1, Keyword.get(opts, :on_failure, :yield)))
     |> Enum.map(&format(&1, Keyword.get(opts, :format, :tagged)))
   end
 
-  def describe(%Paco.Parser{} = p) do
+  def describe(p) do
     # IO.puts("DESCRIBE")
-    inspect(p)
+    inspect(Paco.Parser.box(p))
   end
 
-  def explain(%Paco.Parser{} = parser, text) do
+  def explain(p, text) do
     {:ok, pid} = GenEvent.start_link()
     try do
       GenEvent.add_handler(pid, Paco.Explainer, [])
-      parse(parser, text, collector: pid)
+      parse(p, text, collector: pid)
       GenEvent.call(pid, Paco.Explainer, :report)
     after
       GenEvent.stop(pid)
