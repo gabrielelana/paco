@@ -16,6 +16,10 @@ defmodule Paco.Parser.MaybeTest do
     assert parse(maybe(lit("a"), default: "a"), "b") == {:ok, "a"}
   end
 
+  test "autoboxing" do
+    assert parse(maybe("a"), "a") == {:ok, "a"}
+  end
+
   test "on failure it's skipped" do
     assert parse(sequence_of([maybe(lit("a")), lit("b")]), "b") == {:ok, ["b"]}
   end

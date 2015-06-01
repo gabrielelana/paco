@@ -226,7 +226,8 @@ defmodule Paco.Parser do
     end
   end
 
-  parser maybe(%Paco.Parser{} = parser, opts \\ []) do
+  parser maybe(parser, opts \\ []) do
+    parser = from(parser)
     has_default = Keyword.has_key?(opts, :default)
     fn state, this ->
       notify_started(this, state)
