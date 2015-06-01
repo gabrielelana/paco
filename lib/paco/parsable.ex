@@ -13,8 +13,9 @@ defprotocol Paco.Parsable do
 end
 
 defimpl Paco.Parsable, for: BitString do
+  import Paco.Parser
   def to_parser(s) when is_binary(s) do
-    Paco.Parser.lit(s)
+    lit(s)
   end
   def to_parser(s) do
     raise Protocol.UndefinedError, protocol: @protocol, value: s
@@ -32,11 +33,7 @@ end
 defimpl Paco.Parsable, for: Tuple do
   import Paco.Parser
   def to_parser(tuple) do
-    Tuple.to_list(tuple)
-    |> Enum.map(&from/1)
-    # TODO: to remove after we use from in sequence_of
-    # sequence_of
-    |> sequence_of
+    sequence_of(Tuple.to_list(tuple))
     |> bind(&List.to_tuple/1)
   end
 end
@@ -53,20 +50,12 @@ defimpl Paco.Parsable, for: List do
 
   defp to_parser_for_keyword(list) do
     {keys, values} = {Keyword.keys(list), Keyword.values(list)}
-    values
-    |> Enum.map(&from/1)
-    |> sequence_of
-    # TODO: to remove after we use from in sequence_of
-    # sequence_of(values)
+    sequence_of(values)
     |> bind(&(Enum.zip(keys, &1) |> Enum.into(Keyword.new)))
   end
 
   defp to_parser_for_list(list) do
-    list
-    |> Enum.map(&from/1)
-    |> sequence_of
-    # TODO: to remove after we use from in sequence_of
-    # sequence_of(list)
+    sequence_of(list)
   end
 end
 
@@ -74,11 +63,7 @@ defimpl Paco.Parsable, for: Map do
   import Paco.Parser
   def to_parser(map) do
     {keys, values} = {Map.keys(map), Map.values(map)}
-    values
-    |> Enum.map(&from/1)
-    |> sequence_of
-    # TODO: to remove after we use from in sequence_of
-    # sequence_of(values)
+    sequence_of(values)
     |> bind(&(Enum.zip(keys, &1) |> Enum.into(Map.new)))
   end
 end

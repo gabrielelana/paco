@@ -12,6 +12,10 @@ defmodule Paco.Parser.SequenceOfTest do
     assert parse(sequence_of([]), "a") == {:ok, []}
   end
 
+  test "parse sequence of terms" do
+    assert parse(sequence_of(["a", "b"]), "ab") == {:ok, ["a", "b"]}
+  end
+
   test "describe" do
     assert describe(sequence_of([lit("a"), lit("b")])) ==
       ~s|sequence_of([lit("a"), lit("b")])|

@@ -260,9 +260,12 @@ defmodule Paco.Parser do
   parser sequence_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
+      parsers = Enum.map(parsers, &from/1)
       result = Enum.reduce(parsers, {state, from, []},
                            fn
-                             (%Paco.Parser{} = parser, {state, to, results}) ->
+                             (_, %Paco.Failure{} = failure) ->
+                               failure
+                             (parser, {state, to, results}) ->
                                case parser.parse.(state, parser) do
                                  %Paco.Success{from: at, to: at, at: at, skip: true} ->
                                    {state, to, results}
@@ -275,8 +278,6 @@ defmodule Paco.Parser do
                                  %Paco.Failure{} = failure ->
                                    failure
                                end
-                             (_, %Paco.Failure{} = failure) ->
-                               failure
                            end)
 
       case result do
