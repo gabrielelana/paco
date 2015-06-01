@@ -17,7 +17,7 @@ defmodule Paco.Parser do
   defmacro then(p, form, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
-      then_choose(unquote(p), unquote(do_clauses_to_function(form, clauses)))
+      then_with(unquote(p), unquote(do_clauses_to_function(form, clauses)))
       |> as("then")
     end
   end
@@ -25,19 +25,19 @@ defmodule Paco.Parser do
   defmacro then(p, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
-      then_choose(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
+      then_with(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
       |> as("then")
     end
   end
 
   defmacro then(p, f) do
     quote do
-      then_choose(unquote(p), unquote(f))
+      then_with(unquote(p), unquote(f))
       |> as("then")
     end
   end
 
-  parser then_choose(p, f) when is_function(f) do
+  parser then_with(p, f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
