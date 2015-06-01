@@ -2,7 +2,7 @@ import Paco
 import Paco.Parser
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-word = while(letters) |> one_of_more
+word = while(letters) |> one_or_more
 separator = lex(",") |> skip
 terminator = lex("!") |> one_or_more |> skip
 greetings = sequence_of([word, separator, word, terminator])
