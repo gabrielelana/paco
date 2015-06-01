@@ -13,6 +13,12 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
   end
 
+  test "autoboxing" do
+    assert parse(one_of(["a", "b", "c"]), "a") == {:ok, "a"}
+    assert parse(one_of([{"a", "b"}, "c"]), "ab") == {:ok, {"a", "b"}}
+    assert parse(one_of([{"a", "b"}, "c"]), "c") == {:ok, "c"}
+  end
+
   test "doesn't need to consume all the text" do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "abc") == {:ok, "a"}
   end

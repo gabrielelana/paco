@@ -299,6 +299,7 @@ defmodule Paco.Parser do
 
   parser one_of(parsers) do
     fn %Paco.State{at: from, text: text} = state, this ->
+      parsers = Enum.map(parsers, &from/1)
       notify_started(this, state)
       result = Enum.find_value(parsers,
                                fn(parser) ->
