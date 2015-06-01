@@ -56,7 +56,7 @@ defmodule Paco.Stream do
         # IO.puts("[STREAM] COLLECT SUCCESS: #{inspect(success)}")
         formatted = Paco.Success.format(success, Keyword.get(opts, :format))
         collect_from_parser([formatted|successes], accumulator, eos)
-      {^running_parser, %Paco.Failure{} = failure} when eos ->
+      {^running_parser, %Paco.Failure{}} when eos ->
         # IO.puts("[STREAM] END OF INPUT -> YIELD COLLECTED")
         {successes |> Enum.reverse, accumulator}
       {^running_parser, %Paco.Failure{} = failure} ->
