@@ -1,10 +1,11 @@
 defmodule Paco.Stream do
 
-  def parse!(upstream, %Paco.Parser{} = parser, opts \\ []) do
+  def parse!(upstream, parser, opts \\ []) do
     parse(upstream, parser, Keyword.merge(opts, [on_failure: :raise]))
   end
 
-  def parse(upstream, %Paco.Parser{} = parser, opts \\ []) do
+  def parse(upstream, parser, opts \\ []) do
+    parser = Paco.Parser.box(parser)
     opts = case Keyword.get(opts, :on_failure, :hide) do
              :hide -> Keyword.merge([format: :flat, on_failure: :hide, wait_for_more: true], opts)
              :yield -> Keyword.merge([format: :tagged, wait_for_more: true], opts)

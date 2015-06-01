@@ -14,6 +14,16 @@ defmodule Paco.StreamTest do
     end
   end
 
+  test "autoboxing" do
+    for stream <- Helper.streams_of("ab") do
+      result = stream
+               |> Paco.Stream.parse("ab")
+               |> Enum.to_list
+
+      assert result == ["ab"]
+    end
+  end
+
   test "parse with more than one success" do
     for stream <- Helper.streams_of("abab") do
       result = stream
