@@ -251,6 +251,7 @@ defmodule Paco.Parser do
   end
 
   parser skip(parser) do
+    parser = from(parser)
     fn state, this ->
       notify_started(this, state)
       case parser.parse.(state, parser) do
