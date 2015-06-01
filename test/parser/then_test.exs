@@ -38,6 +38,12 @@ defmodule Paco.Parser.ThenTest do
     assert describe(parser) == ~s|then(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
+  test "autoboxing: given value and value returned from choose function are both boxed" do
+    parser = then("a", fn _ -> "b" end)
+
+    assert parse(parser, "ab") == {:ok, "b"}
+  end
+
   test "fails if choose function raise an exception" do
     parser = then(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,

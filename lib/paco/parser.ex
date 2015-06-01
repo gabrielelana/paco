@@ -38,6 +38,7 @@ defmodule Paco.Parser do
   end
 
   parser then_with(p, f) when is_function(f) do
+    p = from(p)
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       Paco.Collector.notify_started(this, state)
@@ -53,6 +54,7 @@ defmodule Paco.Parser do
               Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
           else
             next_parser ->
+              next_parser = from(next_parser)
               next_parser.parse.(Paco.State.update(state, success), next_parser)
           end
         %Paco.Failure{} = failure ->
