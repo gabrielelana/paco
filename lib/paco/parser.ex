@@ -6,6 +6,14 @@ defmodule Paco.Parser do
 
   def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
 
+
+  def from(%Paco.Parser{} = p), do: p
+  def from(%Regex{} = r), do: rex(r)
+  def from(nil), do: always(nil)
+  def from(s) when is_binary(s), do: lit(s)
+  def from(t), do: Paco.Parsable.to_parser(t)
+
+
   defmacro then(p, form, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
