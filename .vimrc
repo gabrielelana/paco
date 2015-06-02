@@ -11,3 +11,4 @@ let g:ctrlp_custom_ignore = "_build"
 nnoremap <silent> <Leader>c :SyntasticCheck<CR>
 nnoremap <silent> <Leader>a :exec "!mix test"<CR>
 nnoremap <silent> <Leader>f :exec "!mix test " . expand("%")<CR>
+nnoremap <silent> <Leader>r :exec "!mix run " . expand("%")<CR>
