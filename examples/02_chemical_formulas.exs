@@ -44,9 +44,10 @@ atomic_weight = %{
   "S"  => 32.0655,
 }
 
-weight = formula
-         |> bind(&(&1 |> Enum.map(fn({e, q}) -> Map.fetch!(atomic_weight, e) * q end))
-                      |> Enum.sum)
+calculate_weight = &(&1 |> Enum.map(fn({e, q}) -> Map.fetch!(atomic_weight, e) * q end)
+                        |> Enum.sum)
+
+weight = formula |> bind(calculate_weight)
 
 parse(weight, "C6H5OH") |> IO.inspect
 # >> {:ok, 94.11124}
