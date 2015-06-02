@@ -281,6 +281,35 @@ defmodule Paco.Parser do
     end
   end
 
+  parser only_if(box(p), f) do
+    {:arity, arity} = :erlang.fun_info(f, :arity)
+    fn state, this ->
+      notify_started(this, state)
+      case p.parse.(state, p) do
+        %Paco.Success{result: result} = success ->
+          try do
+            case arity do
+              1 -> f.(result)
+              2 -> f.(result, Paco.State.update(state, success))
+            end
+          catch
+            _kind, reason ->
+              Paco.Failure.at(state, Paco.describe(this),
+                              "raised an exception: #{Exception.message(reason)}")
+          else
+            true ->
+              success
+            false ->
+              Paco.Failure.at(state, Paco.describe(this),
+                              "considered #{inspect(result)} not acceptable")
+          end
+        %Paco.Failure{} = failure ->
+          failure
+      end
+      |> notify_ended(state)
+    end
+  end
+
   parser sequence_of(box_each(ps)) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
