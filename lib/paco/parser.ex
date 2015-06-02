@@ -159,6 +159,8 @@ defmodule Paco.Parser do
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 
+  parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
+
   parser surrounded_by(parser, around) when is_binary(around),
     to: surrounded_by(parser, lex(around), lex(around))
   parser surrounded_by(parser, around),
