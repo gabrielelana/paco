@@ -49,7 +49,7 @@ defmodule Paco.Parser.ThenTest do
     assert parse(parser, "a") == {:error,
       """
       Failed to match then(lit("a"), fn/1) at 1:1, \
-      because it raised %RuntimeError{message: "boom!"}
+      because it raised an exception: boom!
       """
     }
   end

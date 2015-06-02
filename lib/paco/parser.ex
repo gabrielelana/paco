@@ -49,7 +49,8 @@ defmodule Paco.Parser do
             end
           catch
             _kind, reason ->
-              Paco.Failure.at(state, Paco.describe(this), "raised #{inspect(reason)}")
+              Paco.Failure.at(state, Paco.describe(this),
+                              "raised an exception: #{Exception.message(reason)}")
           else
             p ->
               p = box(p)
