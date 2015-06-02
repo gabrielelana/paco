@@ -255,8 +255,25 @@ defmodule Paco.Parser do
     fn state, this ->
       notify_started(this, state)
       case p.parse.(state, p) do
+        %Paco.Success{keep: true} = success ->
+          %Paco.Success{success|keep: false}
         %Paco.Success{} = success ->
           %Paco.Success{success|skip: true}
+        %Paco.Failure{} = failure ->
+          failure
+      end
+      |> notify_ended(state)
+    end
+  end
+
+  parser keep(box(p)) do
+    fn state, this ->
+      notify_started(this, state)
+      case p.parse.(state, p) do
+        %Paco.Success{skip: true} = success ->
+          %Paco.Success{success|skip: false}
+        %Paco.Success{} = success ->
+          %Paco.Success{success|keep: true}
         %Paco.Failure{} = failure ->
           failure
       end

@@ -4,9 +4,11 @@ defmodule Paco.Success do
                          at: Paco.State.position,
                          tail: String.t,
                          result: any,
-                         skip: boolean}
+                         skip: boolean,
+                         keep: boolean}
 
-  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0}, tail: "", result: "", skip: false
+  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0},
+            tail: "", result: "", skip: false, keep: false
 
   def format(%Paco.Success{skip: true}, :flat), do: []
   def format(%Paco.Success{skip: true}, :raw), do: []
