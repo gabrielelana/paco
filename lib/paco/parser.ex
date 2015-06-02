@@ -161,6 +161,12 @@ defmodule Paco.Parser do
 
   parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
 
+  parser separated_by(p, s) when is_binary(s), to: separated_by(p, lex(s))
+  parser separated_by(box(p), box(s)),
+    as: (import Paco.Transform, only: [flatten_first: 1]
+         tail = many(sequence_of([skip(s), p])) |> bind(&flatten_first/1)
+         sequence_of([p, tail]) |> bind(&flatten_first/1))
+
   parser surrounded_by(parser, around) when is_binary(around),
     to: surrounded_by(parser, lex(around), lex(around))
   parser surrounded_by(parser, around),
