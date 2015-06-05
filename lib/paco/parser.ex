@@ -161,6 +161,23 @@ defmodule Paco.Parser do
 
   parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
 
+  parser followed_by(p, t), as: bind([p, skip(t)], &List.first/1)
+
+  parser recursive(f) do
+    fn state, this ->
+      box(f.(this)).parse.(state, this)
+    end
+  end
+
+  parser eof do
+    fn
+      %Paco.State{at: at, text: ""}, _ ->
+        %Paco.Success{from: at, to: at, at: at, tail: "", result: []}
+      %Paco.State{at: at, text: text}, this ->
+        %Paco.Failure{at: at, tail: text, what: Paco.describe(this), because: "expected the end of input"}
+    end
+  end
+
   parser separated_by(p, s) when is_binary(s), to: separated_by(p, lex(s))
   parser separated_by(box(p), box(s)),
     as: (import Paco.Transform, only: [flatten_first: 1]
