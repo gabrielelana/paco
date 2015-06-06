@@ -6,7 +6,7 @@ defmodule Paco.Parser do
   def as(%Paco.Parser{} = p, description), do: %Paco.Parser{p|description: description}
 
   def box(%Paco.Parser{} = p), do: p
-  def box(%Regex{} = r), do: rex(r)
+  def box(%Regex{} = r), do: re(r)
   def box(s) when is_binary(s), do: lit(s)
   def box(nil), do: always(nil)
   def box(t), do: Paco.Parsable.to_parser(t)
@@ -342,34 +342,35 @@ defmodule Paco.Parser do
     end
   end
 
-  parser rex(r) do
+  parser re(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
-        [{_, len}] ->
-          case Paco.String.seek(text, from, len) do
-            {_, "", _, _} when is_pid(stream) ->
+        [{_, n}] ->
+          case Paco.String.seek(text, n, from) do
+            {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
-            {s, tail, to, at} ->
+            {tail, s, to, at} ->
               %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
           end
-        [{_, len}|captures] ->
-          case Paco.String.seek(text, from, len) do
-            {_, "", _, _} when is_pid(stream) ->
+        [{_, n}|captures] ->
+          case Paco.String.seek(text, n, from) do
+            {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
-            {s, tail, to, at} ->
+            {tail, s, to, at} ->
               captures = case Regex.names(r) do
                 [] ->
                   captures
                   |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
                 _ ->
-                  [Regex.named_captures(r, text)]
+                  Regex.named_captures(r, text)
               end
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: {s, captures}}
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+          %Paco.Failure{from: from, text: text, expected: {:re, r},
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end

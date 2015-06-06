@@ -13,7 +13,7 @@ defmodule Paco.ParsableTest do
   end
 
   test "works on regular expressions" do
-    assert parse(box(~r/a/), "a") == parse(rex(~r/a/), "a")
+    assert parse(box(~r/a/), "a") == parse(re(~r/a/), "a")
   end
 
   test "works on atoms" do

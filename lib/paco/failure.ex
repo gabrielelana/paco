@@ -48,7 +48,9 @@ defmodule Paco.Failure do
     |> Enum.reject(&(&1 === :empty))
     |> Enum.join(" ")
   end
-  defp format_expected(s) when is_binary(s), do: quoted(s)
+  defp format_expected({:re, r}) do
+    inspect(r)
+  end
   defp format_expected({:until, p}) do
     ["something ended by", format_description({:until, p})]
     |> Enum.join(" ")
@@ -60,6 +62,9 @@ defmodule Paco.Failure do
   defp format_expected({:any, n, m}) do
     [format_limits({n, m}), "characters"]
     |> Enum.join(" ")
+  end
+  defp format_expected(s) when is_binary(s) do
+    quoted(s)
   end
 
   defp format_unexpected(%Paco.Failure{text: ""}), do: :empty
