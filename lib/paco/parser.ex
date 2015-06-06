@@ -382,7 +382,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, _} ->
-          %Paco.Failure{at: from, tail: text, expected: s}
+          %Paco.Failure{from: from, text: text, expected: ~s|"#{s}"|}
       end
     end
   end

@@ -68,8 +68,8 @@ defmodule Paco.Parser.LiteralTest do
   test "indexes for a failure" do
     parser = lit("a")
     failure = parser.parse.(Paco.State.from("bbb"), parser)
-    assert failure.at == {0, 1, 1}
-    assert failure.tail == "bbb"
+    assert failure.from == {0, 1, 1}
+    assert failure.text == "bbb"
   end
 
   test "stream mode success" do
