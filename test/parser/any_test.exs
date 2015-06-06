@@ -6,28 +6,35 @@ defmodule Paco.Parser.AnyTest do
 
   alias Paco.Test.Helper
 
-  test "success" do
+  test "parse any character for an exact number of times" do
     assert parse(any, "abc") == {:ok, "a"}
     assert parse(any(1), "abc") == {:ok, "a"}
+    assert parse(any(exactly: 1), "abc") == {:ok, "a"}
+
     assert parse(any(2), "abc") == {:ok, "ab"}
-    assert parse(any(1), "abc") == {:ok, "a"}
+    assert parse(any(3), "abc") == {:ok, "abc"}
   end
 
   test "works for composite graphemes" do
     assert parse(any, "e\x{0301}aaa") == {:ok, "e\x{0301}"}
   end
 
-  test "describe" do
-    assert describe(any) == "any(1)"
-    assert describe(any(1)) == "any(1)"
-    assert describe(any(4)) == "any(4)"
+  test "parse any character for a number of times" do
+    assert parse(any(at_most: 2), "abc") == {:ok, "ab"}
+    assert parse(any(less_than: 2), "abc") == {:ok, "a"}
+
+    assert parse(any(at_least: 3), "ab") == {:error,
+      ~s|expected at least 3 characters at 1:1 but got "ab"|
+    }
+    assert parse(any(more_than: 2), "ab") == {:error,
+      ~s|expected at least 3 characters at 1:1 but got "ab"|
+    }
   end
 
-  test "failure" do
-    assert parse(any(3), "aa") == {:error,
-      """
-      Failed to match any(3) at 1:1, because it reached the end of input
-      """
+  test "failure with description" do
+    parser = any(at_least: 3) |> as("TOKEN")
+    assert parse(parser, "ab") == {:error,
+      ~s|expected at least 3 characters (TOKEN) at 1:1 but got "ab"|
     }
   end
 

@@ -388,16 +388,22 @@ defmodule Paco.Parser do
     end
   end
 
-  parser any(n \\ 1) do
+  parser any, to: any({1, 1})
+  parser any(n) when is_integer(n), to: any({n, n})
+  parser any(opts) when is_list(opts), to: any(extract_limits(opts))
+  parser any({at_least, at_most}) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
-      case Paco.String.consume_any(text, n, from) do
-        {consumed, tail, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-        :end_of_input when is_pid(stream) ->
+      case Paco.String.consume_any(text, {at_least, at_most}, from) do
+        {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        :end_of_input ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this),
-                                  because: "reached the end of input"}
+        {tail, consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        {:not_enough, _, _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {:not_enough, _, _, _, _} ->
+          %Paco.Failure{from: from, text: text,
+                        expected: {:any, at_least, at_most},
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -423,7 +429,7 @@ defmodule Paco.Parser do
 
   parser while(p), to: while(p, {0, :infinity})
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
-  parser while(p, opts) when is_list(opts), to: while(p, while_limits(opts))
+  parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
   parser while(p, {at_least, at_most}) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
@@ -442,13 +448,13 @@ defmodule Paco.Parser do
     end
   end
 
-  defp while_limits([exactly: n]), do: {n, n}
-  defp while_limits([more_than: n]), do: {n+1, :infinity}
-  defp while_limits([less_than: n]), do: {0, n-1}
-  defp while_limits([more_than: n, less_than: m]) when n < m, do: {n+1, n-1}
-  defp while_limits([at_least: n]), do: {n, :infinity}
-  defp while_limits([at_most: n]), do: {0, n}
-  defp while_limits([at_least: n, at_most: m]) when n <= m, do: {n, m}
+  defp extract_limits([exactly: n]), do: {n, n}
+  defp extract_limits([more_than: n]), do: {n+1, :infinity}
+  defp extract_limits([less_than: n]), do: {0, n-1}
+  defp extract_limits([more_than: n, less_than: m]) when n < m, do: {n+1, n-1}
+  defp extract_limits([at_least: n]), do: {n, :infinity}
+  defp extract_limits([at_most: n]), do: {0, n}
+  defp extract_limits([at_least: n, at_most: m]) when n <= m, do: {n, m}
 
 
   defp wait_for_more_and_continue(state, this) do

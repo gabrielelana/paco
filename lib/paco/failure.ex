@@ -57,6 +57,10 @@ defmodule Paco.Failure do
     [format_limits({n, m}), "characters", format_description({:while, p})]
     |> Enum.join(" ")
   end
+  defp format_expected({:any, n, m}) do
+    [format_limits({n, m}), "characters"]
+    |> Enum.join(" ")
+  end
 
   defp format_unexpected(%Paco.Failure{text: ""}), do: :empty
   defp format_unexpected(%Paco.Failure{unexpected: nil}), do: :empty
