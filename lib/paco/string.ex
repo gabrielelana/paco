@@ -94,7 +94,6 @@ defmodule Paco.String do
 
   @spec consume_while(String.t, what, limits::limit, State.position)
     :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_expected, consumed::String.t, tail::String.t, to::State.position, at::State.position}
      | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
     when what: String.t | (String.t -> boolean)
 
