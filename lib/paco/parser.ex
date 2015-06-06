@@ -377,14 +377,12 @@ defmodule Paco.Parser do
   parser lit(s) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
-        {tail, to, at} ->
+        {tail, _, to, at} ->
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
-        :end_of_input when is_pid(stream) ->
+        {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        error ->
-          description = Paco.describe(this)
-          reason = if error == :end_of_input, do: "reached the end of input", else: nil
-          %Paco.Failure{at: from, tail: text, what: description, because: reason}
+        {_, _, _, _, _} ->
+          %Paco.Failure{at: from, tail: text, expected: s}
       end
     end
   end

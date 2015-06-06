@@ -17,6 +17,10 @@ defmodule Paco.Failure do
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
+  def format(%Paco.Failure{} = failure, :tagged), do: {:error, format(failure, :flat)}
+  def format(%Paco.Failure{at: {_, line, column}, tail: "", expected: expected}, :flat) do
+    ~s|expected "#{expected}" at #{line}:#{column} but got the end of input|
+  end
   def format(%Paco.Failure{at: {_, line, column}, tail: tail, expected: expected}, :flat) do
     ~s|expected "#{expected}" at #{line}:#{column} but got "#{tail}"|
   end

@@ -12,17 +12,13 @@ defmodule Paco.Parser.LiteralTest do
     assert parse(lit(""), "") == {:ok, ""}
   end
 
-  test "describe" do
-    assert describe(lit("a")) == ~s|lit("a")|
-    assert describe(lit("\n")) == ~s|lit("\\n")|
+  test "failure" do
+    assert parse(lit("aaa"), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
+    assert parse(lit("aaa"), "aa") == {:error, ~s|expected "aaa" at 1:1 but got "aa"|}
   end
 
-  test "failure" do
-    assert parse(lit("aaa"), "bbb") == {:error,
-      """
-      Failed to match lit("aaa") at 1:1
-      """
-    }
+  test "failure for end of input" do
+    assert parse(lit("aaa"), "") == {:error, ~s|expected "aaa" at 1:1 but got the end of input|}
   end
 
   test "skipped parsers should be removed from result" do
@@ -30,19 +26,7 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "skip doesn't influece failures" do
-    assert parse(skip(lit("aaa")), "bbb") == {:error,
-      """
-      Failed to match lit("aaa") at 1:1
-      """
-    }
-  end
-
-  test "failure for end of input" do
-    assert parse(lit("aaa"), "aa") == {:error,
-      """
-      Failed to match lit("aaa") at 1:1, because it reached the end of input
-      """
-    }
+    assert parse(skip(lit("aaa")), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
   end
 
   test "increment indexes for a match" do
