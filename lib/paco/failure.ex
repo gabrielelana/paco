@@ -48,7 +48,15 @@ defmodule Paco.Failure do
     |> Enum.reject(&(&1 === :empty))
     |> Enum.join(" ")
   end
-  defp format_expected(s) when is_binary(s), do: inspect(s)
+  defp format_expected({:until, p, text}) do
+    [ quoted(text),
+      "to be ended by",
+      format_description({:until, p})
+    ]
+    |> Enum.reject(&(&1 === :empty))
+    |> Enum.join(" ")
+  end
+  defp format_expected(s) when is_binary(s), do: quoted(s)
   defp format_expected({p, at_least, at_most}) do
     "#{format_limits({at_least, at_most})} characters #{format_description(p)}"
   end
@@ -65,7 +73,7 @@ defmodule Paco.Failure do
   end
   defp format_unexpected(unexpected) when is_binary(unexpected) do
     {unexpected, _} = String.next_grapheme(unexpected)
-    inspect(unexpected)
+    quoted(unexpected)
   end
 
   defp format_stack([]), do: :empty
@@ -74,23 +82,37 @@ defmodule Paco.Failure do
   defp format_position({_, line, column}), do: "at #{line}:#{column}"
 
   defp format_tail(""), do: "the end of input"
-  defp format_tail(text), do: inspect(text)
+  defp format_tail(text), do: quoted(text)
 
   defp format_limits({n, n}), do: "exactly #{n}"
   defp format_limits({n, _}), do: "at least #{n}"
 
+  defp format_description({:until, p}) when is_function(p) do
+    "a character which satisfy #{format_function(p)}"
+  end
+  defp format_description({:until, {p, _}}) do
+    quoted(p)
+  end
+  defp format_description({:until, p}) do
+    quoted(p)
+  end
   defp format_description(p) when is_binary(p) do
-    "in alphabet #{inspect(p)}"
+    "in alphabet #{quoted(p)}"
   end
   defp format_description(p) when is_function(p) do
-    about_p = :erlang.fun_info(p)
-    if Keyword.get(about_p, :type) == :external do
-      "which satisfy #{Keyword.get(about_p, :name)}"
+    "which satisfy #{format_function(p)}"
+  end
+
+  defp format_function(f) do
+    about_f = :erlang.fun_info(f)
+    if Keyword.get(about_f, :type) == :external do
+      Keyword.get(about_f, :name)
     else
-      "which satisfy fn/#{Keyword.get(about_p, :arity)}"
+      "fn/#{Keyword.get(about_f, :arity)}"
     end
   end
 
+  defp quoted(text), do: ~s|"#{text}"|
 
 
 

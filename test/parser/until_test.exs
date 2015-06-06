@@ -3,22 +3,46 @@ defmodule Paco.Parser.UntilTest do
 
   import Paco
   import Paco.Parser
+  import Paco.String, only: [uppercase?: 1]
 
   alias Paco.Test.Helper
 
-  test "success" do
+  test "parse until string boundary" do
     assert parse(until("c"), "abc") == {:ok, "ab"}
-    assert parse(until({"c", "\\"}), "ab\\cdce") == {:ok, "ab\\cd"}
+    assert parse(until("c"), "abcb") == {:ok, "ab"}
+  end
+
+  test "parse until string boundary with escape" do
+    assert parse(until("c", escaped_with: "\\"), "ab\\cdce") == {:ok, "ab\\cd"}
+  end
+
+  test "parse until a function boundary" do
     assert parse(until(&uppercase?/1), "abC") == {:ok, "ab"}
   end
 
-  test "describe" do
-    assert describe(until("c")) == ~s|until("c")|
-    assert describe(until(&uppercase?/1)) == "until(fn/1)"
+  test "failure when missing string boundary" do
+    assert parse(until("c"), "aaa") == {:error,
+      ~s|expected "aaa" to be ended by "c" at 1:1 but got "aaa"|
+    }
   end
 
-  test "empty result is not a failure" do
-    assert parse(until("c"), "ccc") == {:ok, ""}
+  test "failure when missing string boundary with escape" do
+    assert parse(until("c", escaped_with: "\\"), "a\\ca") == {:error,
+      ~S|expected "a\ca" to be ended by "c" at 1:1 but got "a\ca"|
+    }
+  end
+
+  test "failure when missing function boundary" do
+    assert parse(until(&uppercase?/1), "abc") == {:error,
+      ~s|expected "abc" to be ended by a character which satisfy uppercase? at 1:1 but got "abc"|
+    }
+  end
+
+  test "failure with description" do
+    parser = until("c") |> as("TOKEN")
+    assert parse(parser, "aaa") == {:error,
+      ~s|expected "aaa" to be ended by "c" (TOKEN) at 1:1 but got "aaa"|
+    }
   end
 
   test "stream mode until a boundary" do
@@ -34,20 +58,20 @@ defmodule Paco.Parser.UntilTest do
   test "stream mode until a boundary with escape" do
     for stream <- Helper.streams_of("a\\bab") do
       result = stream
-               |> Paco.Stream.parse(until({"b", "\\"}))
+               |> Paco.Stream.parse(until("b", escaped_with: "\\"))
                |> Enum.to_list
 
       assert result == ["a\\ba"]
     end
   end
 
-  test "stream mode until end of input" do
+  test "stream mode when missing boundary" do
     for stream <- Helper.streams_of("aa") do
       result = stream
                |> Paco.Stream.parse(until("b"))
                |> Enum.to_list
 
-      assert result == ["aa"]
+      assert result == []
     end
   end
 
@@ -57,9 +81,5 @@ defmodule Paco.Parser.UntilTest do
              |> Enum.to_list
 
     assert result == []
-  end
-
-  defp uppercase?(s) do
-    s == String.upcase(s)
   end
 end

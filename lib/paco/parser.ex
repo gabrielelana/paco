@@ -402,15 +402,20 @@ defmodule Paco.Parser do
     end
   end
 
-  parser until(p, opts \\ []) do
+  parser until(p, [escaped_with: escape]), to: until({p, escape})
+  parser until(p) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_until(text, p, from) do
-        {_, "", _, _} when is_pid(stream) ->
+        {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {consumed, tail, to, at} ->
+        {tail, consumed, to, at} ->
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-        _ ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+        {:not_enough, "", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {:not_enough, _, _, _, _} ->
+          %Paco.Failure{from: from, text: text,
+                        expected: {:until, p, text},
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end
