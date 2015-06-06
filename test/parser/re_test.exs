@@ -97,8 +97,8 @@ defmodule Paco.Parser.RegexTest do
   test "increment indexes for a failure" do
     parser = re(~r/a+/)
     failure = parser.parse.(Paco.State.from("bb"), parser)
-    assert failure.from == {0, 1, 1}
-    assert failure.text == "bb"
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "bb"
   end
 
   test "stream mode success" do

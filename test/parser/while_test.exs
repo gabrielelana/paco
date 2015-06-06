@@ -24,7 +24,7 @@ defmodule Paco.Parser.WhileTest do
     assert parse(while("abc", exactly: 2), "bbacbcd") == {:ok, "bb"}
 
     assert parse(while("abc", 3), "aad") == {:error,
-      ~s|expected exactly 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
+      ~s|expected exactly 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
   end
 
@@ -33,7 +33,7 @@ defmodule Paco.Parser.WhileTest do
     assert parse(while(&uppercase?/1, exactly: 2), "ABC") == {:ok, "AB"}
 
     assert parse(while(&uppercase?/1, 3), "ABc") == {:error,
-      ~s|expected exactly 3 characters which satisfy uppercase? at 1:1 but got "ABc", unexpected "c" at 1:3|
+      ~s|expected exactly 3 characters which satisfy uppercase? at 1:1 but got "ABc"|
     }
   end
 
@@ -42,17 +42,17 @@ defmodule Paco.Parser.WhileTest do
     assert parse(while("abc", less_than: 2), "bbacbc") == {:ok, "b"}
 
     assert parse(while("abc", at_least: 3), "aad") == {:error,
-      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
+      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
     assert parse(while("abc", more_than: 2), "aad") == {:error,
-      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
+      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
   end
 
   test "failure with description" do
     parser = while(&uppercase?/1, 3) |> as("TOKEN")
     assert parse(parser, "ABc") == {:error,
-      ~s|expected exactly 3 characters which satisfy uppercase? (TOKEN) at 1:1 but got "ABc", unexpected "c" at 1:3|
+      ~s|expected exactly 3 characters which satisfy uppercase? (TOKEN) at 1:1 but got "ABc"|
     }
   end
 

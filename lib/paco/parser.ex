@@ -369,9 +369,19 @@ defmodule Paco.Parser do
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          %Paco.Failure{from: from, text: text, expected: {:re, r},
+          %Paco.Failure{at: from, tail: text, expected: {:re, r},
                         stack: Paco.Failure.stack(this)}
       end
+    end
+  end
+
+  defp anchor(r) do
+    source = Regex.source(r)
+    if String.starts_with?(source, "\\A") do
+      r
+    else
+      {:ok, r} = Regex.compile("\\A#{source}")
+      r
     end
   end
 
@@ -383,7 +393,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, _} ->
-          %Paco.Failure{from: from, text: text, expected: s,
+          %Paco.Failure{at: from, tail: text, expected: s,
                         stack: Paco.Failure.stack(this)}
       end
     end
@@ -402,7 +412,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, _} ->
-          %Paco.Failure{from: from, text: text,
+          %Paco.Failure{at: from, tail: text,
                         expected: {:any, at_least, at_most},
                         stack: Paco.Failure.stack(this)}
       end
@@ -420,7 +430,7 @@ defmodule Paco.Parser do
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, _} ->
-          %Paco.Failure{from: from, text: text,
+          %Paco.Failure{at: from, tail: text,
                         expected: {:until, p},
                         stack: Paco.Failure.stack(this)}
       end
@@ -440,10 +450,9 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {:not_enough, unexpected, _, _, at} ->
-          %Paco.Failure{from: from, text: text,
+        {:not_enough, _, _, _, _} ->
+          %Paco.Failure{at: from, tail: text,
                         expected: {:while, p, at_least, at_most},
-                        at: at, unexpected: unexpected,
                         stack: Paco.Failure.stack(this)}
       end
     end
@@ -457,7 +466,6 @@ defmodule Paco.Parser do
   defp extract_limits([at_most: n]), do: {0, n}
   defp extract_limits([at_least: n, at_most: m]) when n <= m, do: {n, m}
 
-
   defp wait_for_more_and_continue(state, this) do
     %Paco.State{text: text, stream: stream} = state
     send(stream, {self, :more})
@@ -468,16 +476,6 @@ defmodule Paco.Parser do
         # The stream is over, switching to a non stream mode is equal to
         # tell the parser to behave knowing that more input will never come
         this.parse.(%Paco.State{state|stream: nil}, this)
-    end
-  end
-
-  defp anchor(r) do
-    source = Regex.source(r)
-    if String.starts_with?(source, "\\A") do
-      r
-    else
-      {:ok, r} = Regex.compile("\\A#{source}")
-      r
     end
   end
 end
