@@ -226,6 +226,7 @@ defmodule Paco.String do
 
 
 
+  @spec line_at(text::String.t, at::State.position) :: String.t
 
   def line_at(text, at) do
     case String.at(text, at) do
