@@ -382,7 +382,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, _} ->
-          %Paco.Failure{from: from, text: text, expected: ~s|"#{s}"|}
+          %Paco.Failure{from: from, text: text, expected: s}
       end
     end
   end
@@ -428,32 +428,10 @@ defmodule Paco.Parser do
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, unexpected, _, _, at} ->
-          %Paco.Failure{from: from, at: at, text: text,
-                        expected: while_expected(p, {at_least, at_most}),
-                        unexpected: while_unexpected(unexpected), at: at}
+          %Paco.Failure{from: from, text: text,
+                        expected: {p, at_least, at_most},
+                        at: at, unexpected: unexpected}
       end
-    end
-  end
-
-  defp while_expected(p, {n, m}) do
-    "#{while_expected_limits({n, m})} characters #{while_expected_description(p)}"
-  end
-
-  defp while_unexpected(unexpected) do
-    {unexpected, _} = String.next_grapheme(unexpected)
-    inspect(unexpected)
-  end
-
-  defp while_expected_limits({n, n}), do: "exactly #{n}"
-  defp while_expected_limits({n, _}), do: "at least #{n}"
-
-  defp while_expected_description(p) when is_binary(p), do: "in alphabet #{inspect(p)}"
-  defp while_expected_description(p) when is_function(p) do
-    about_p = :erlang.fun_info(p)
-    if Keyword.get(about_p, :type) == :external do
-      "which satisfy #{Keyword.get(about_p, :name)}"
-    else
-      "which satisfy fn/#{Keyword.get(about_p, :arity)}"
     end
   end
 

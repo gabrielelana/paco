@@ -33,14 +33,37 @@ defmodule Paco.Failure do
   end
 
   defp format_expected(%Paco.Failure{from: {_, line, column}, text: "", expected: expected}) do
-    ~s|expected #{expected} at #{line}:#{column} but got the end of input|
+    "expected #{format_expected(expected)} at #{line}:#{column} but got the end of input"
   end
   defp format_expected(%Paco.Failure{from: {_, line, column}, text: tail, expected: expected}) do
-    ~s|expected #{expected} at #{line}:#{column} but got "#{tail}"|
+    "expected #{format_expected(expected)} at #{line}:#{column} but got #{inspect(tail)}"
+  end
+  defp format_expected(s) when is_binary(s), do: inspect(s)
+  defp format_expected({p, at_least, at_most}) do
+    "#{format_limits({at_least, at_most})} characters #{format_description(p)}"
+  end
+
+  defp format_limits({n, n}), do: "exactly #{n}"
+  defp format_limits({n, _}), do: "at least #{n}"
+
+  defp format_description(p) when is_binary(p) do
+    "in alphabet #{inspect(p)}"
+  end
+  defp format_description(p) when is_function(p) do
+    about_p = :erlang.fun_info(p)
+    if Keyword.get(about_p, :type) == :external do
+      "which satisfy #{Keyword.get(about_p, :name)}"
+    else
+      "which satisfy fn/#{Keyword.get(about_p, :arity)}"
+    end
   end
 
   defp format_unexpected(%Paco.Failure{at: {_, line, column}, unexpected: unexpected}) do
-    ~s|unexpected #{unexpected} at #{line}:#{column}|
+    "unexpected #{format_unexpected(unexpected)} at #{line}:#{column}"
+  end
+  defp format_unexpected(unexpected) when is_binary(unexpected) do
+    {unexpected, _} = String.next_grapheme(unexpected)
+    inspect(unexpected)
   end
 
 
