@@ -26,22 +26,48 @@ defmodule Paco.Failure do
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
   def format(%Paco.Failure{} = failure, :tagged), do: {:error, format(failure, :flat)}
-  def format(%Paco.Failure{text: ""} = failure, :flat), do: format_expected(failure)
-  def format(%Paco.Failure{unexpected: nil} = failure, :flat), do: format_expected(failure)
   def format(%Paco.Failure{} = failure, :flat) do
-    Enum.join([format_expected(failure), format_unexpected(failure)], ", ")
+    [ format_expected(failure),
+      format_unexpected(failure)
+    ]
+    |> Enum.reject(&(&1 === :empty))
+    |> Enum.join(", ")
   end
 
-  defp format_expected(%Paco.Failure{from: {_, line, column}, text: "", expected: expected}) do
-    "expected #{format_expected(expected)} at #{line}:#{column} but got the end of input"
-  end
-  defp format_expected(%Paco.Failure{from: {_, line, column}, text: tail, expected: expected}) do
-    "expected #{format_expected(expected)} at #{line}:#{column} but got #{inspect(tail)}"
+  defp format_expected(%Paco.Failure{} = failure) do
+    [ "expected",
+      format_expected(failure.expected),
+      format_position(failure.from),
+      "but got",
+      format_tail(failure.text)
+    ]
+    |> Enum.reject(&(&1 === :empty))
+    |> Enum.join(" ")
   end
   defp format_expected(s) when is_binary(s), do: inspect(s)
   defp format_expected({p, at_least, at_most}) do
     "#{format_limits({at_least, at_most})} characters #{format_description(p)}"
   end
+
+  defp format_unexpected(%Paco.Failure{text: ""}), do: :empty
+  defp format_unexpected(%Paco.Failure{unexpected: nil}), do: :empty
+  defp format_unexpected(%Paco.Failure{} = failure) do
+    [ "unexpected",
+      format_unexpected(failure.unexpected),
+      format_position(failure.at),
+    ]
+    |> Enum.reject(&(&1 === :empty))
+    |> Enum.join(" ")
+  end
+  defp format_unexpected(unexpected) when is_binary(unexpected) do
+    {unexpected, _} = String.next_grapheme(unexpected)
+    inspect(unexpected)
+  end
+
+  defp format_position({_, line, column}), do: "at #{line}:#{column}"
+
+  defp format_tail(""), do: "the end of input"
+  defp format_tail(text), do: inspect(text)
 
   defp format_limits({n, n}), do: "exactly #{n}"
   defp format_limits({n, _}), do: "at least #{n}"
@@ -58,13 +84,8 @@ defmodule Paco.Failure do
     end
   end
 
-  defp format_unexpected(%Paco.Failure{at: {_, line, column}, unexpected: unexpected}) do
-    "unexpected #{format_unexpected(unexpected)} at #{line}:#{column}"
-  end
-  defp format_unexpected(unexpected) when is_binary(unexpected) do
-    {unexpected, _} = String.next_grapheme(unexpected)
-    inspect(unexpected)
-  end
+
+
 
 
   # def format(%Paco.Failure{at: {_, line, column}, what: what, because: nil}, :flat) do
