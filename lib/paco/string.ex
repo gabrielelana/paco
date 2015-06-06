@@ -89,16 +89,25 @@ defmodule Paco.String do
 
 
 
+  @spec consume(text::String.t, limits::limit, at::State.position)
+    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
 
-  def consume_any(text, what, at), do: consume_any(text, "", what, at, at)
+  def consume_any(text, {at_least, at_most}, at),
+    do: consume_any(text, "", {at_least, at_most, 0}, at, at)
+  def consume_any(text, n, at),
+    do: consume_any(text, "", {n, n, 0}, at, at)
 
-  defp consume_any(text, consumed, 0, to, at), do: {consumed, text, to, at}
-  defp consume_any(text, consumed, n, _to, at) when is_number(n) and n > 0 do
+  defp consume_any(text, consumed, {at_least, at_most, n}, to, at) do
     case next_grapheme(text) do
+      {h, tail} when n+1 == at_most  ->
+        {consumed <> h, tail, at, position_after(at, h)}
       {h, tail} ->
-        consume_any(tail, consumed <> h, n - 1, at, position_after(at, h))
+        consume_any(tail, consumed <> h, {at_least, at_most, n+1}, at, position_after(at, h))
+      nil when n < at_least ->
+        {:not_enough, consumed, text, to, at}
       nil ->
-        :end_of_input
+        {consumed, text, to, at}
     end
   end
 
