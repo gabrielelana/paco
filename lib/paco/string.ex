@@ -69,20 +69,20 @@ defmodule Paco.String do
 
 
   @spec consume(text::String.t, expected::String.t, at::State.position)
-    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_expected, consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+    :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
+     | {:not_expected, tail::String.t, consumed::String.t, to::State.position, at::State.position}
+     | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
 
   def consume(text, expected, at), do: consume(text, "", expected, at, at)
 
-  defp consume(text, consumed, "", to, at), do: {consumed, text, to, at}
-  defp consume("", consumed, _, to, at), do: {:not_enough, consumed, "", to, at}
+  defp consume(text, consumed, "", to, at), do: {text, consumed, to, at}
+  defp consume("", consumed, _, to, at), do: {:not_enough, "", consumed, to, at}
   defp consume(text, consumed, expected, to, at) do
     {h1, t1} = next_grapheme(text)
     {h2, t2} = next_grapheme(expected)
     case {h1, h2} do
       {h, h} -> consume(t1, consumed <> h, t2, at, position_after(at, h))
-      _      -> {:not_expected, consumed, text, to, at}
+      _      -> {:not_expected, text, consumed, to, at}
     end
   end
 
@@ -90,8 +90,8 @@ defmodule Paco.String do
 
 
   @spec consume(text::String.t, limits::limit, at::State.position)
-    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+    :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
+     | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
 
   def consume_any(text, {at_least, at_most}, at),
     do: consume_any(text, "", {at_least, at_most, 0}, at, at)
@@ -101,13 +101,13 @@ defmodule Paco.String do
   defp consume_any(text, consumed, {at_least, at_most, n}, to, at) do
     case next_grapheme(text) do
       {h, tail} when n+1 == at_most  ->
-        {consumed <> h, tail, at, position_after(at, h)}
+        {tail, consumed <> h, at, position_after(at, h)}
       {h, tail} ->
         consume_any(tail, consumed <> h, {at_least, at_most, n+1}, at, position_after(at, h))
       nil when n < at_least ->
-        {:not_enough, consumed, text, to, at}
+        {:not_enough, text, consumed, to, at}
       nil ->
-        {consumed, text, to, at}
+        {text, consumed, to, at}
     end
   end
 
@@ -116,8 +116,8 @@ defmodule Paco.String do
 
 
   @spec consume_while(text::String.t, what, limits::limit, at::State.position)
-    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+    :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
+     | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
     when what: String.t | (String.t -> boolean)
 
   def consume_while(text, what, {at_least, at_most}, at),
@@ -139,18 +139,18 @@ defmodule Paco.String do
       {h, tail} ->
         case f.(h) do
           true when n+1 == at_most ->
-            {consumed <> h, tail, at, position_after(at, h)}
+            {tail, consumed <> h, at, position_after(at, h)}
           true ->
             consume_while(tail, consumed <> h, f, {at_least, at_most, n+1}, at, position_after(at, h))
           false when n < at_least ->
-            {:not_enough, consumed, text, to, at}
+            {:not_enough, text, consumed, to, at}
           false ->
-            {consumed, text, to, at}
+            {text, consumed, to, at}
         end
       nil when n < at_least ->
-        {:not_enough, consumed, text, to, at}
+        {:not_enough, text, consumed, to, at}
       nil ->
-        {consumed, text, to, at}
+        {text, consumed, to, at}
     end
   end
 
@@ -158,8 +158,8 @@ defmodule Paco.String do
 
 
   @spec consume_until(text::String.t, what, at::State.position)
-    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+    :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
+     | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
     when what: (String.t -> boolean) | {boundary::String.t, escape::String.t}
 
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
@@ -168,12 +168,12 @@ defmodule Paco.String do
     case next_grapheme(text) do
       {h, tail} ->
         if (f.(h)) do
-          {consumed, text, to, at}
+          {text, consumed, to, at}
         else
           consume_until(tail, consumed <> h, f, at, position_after(at, h))
         end
       nil ->
-        {:not_enough, consumed, text, to, at}
+        {:not_enough, text, consumed, to, at}
     end
   end
   defp consume_until(text, consumed, {boundary, escape}, to, at) do
@@ -188,18 +188,18 @@ defmodule Paco.String do
   defp consume_until_boundary(text, consumed, boundary, to, at, next) do
     case consume(text, "", boundary, to, at) do
       {_, _, _, _} ->
-        {consumed, text, to, at}
+        {text, consumed, to, at}
       {:not_expected, _, _, _, _} ->
         {h, tail} = next_grapheme(text)
         next.(tail, consumed <> h, at, position_after(at, h), next)
       {:not_enough, _, _, _, _} ->
-        {:not_enough, consumed, text, to, at}
+        {:not_enough, text, consumed, to, at}
     end
   end
 
   defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
     case consume(text, "", escape <> boundary, to, at) do
-      {_, tail, to, at} ->
+      {tail, _, to, at} ->
         consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
       _ ->
         consume_until_boundary(text, consumed, boundary, to, at, next)
@@ -209,18 +209,18 @@ defmodule Paco.String do
 
 
   @spec seek(text::String.t, n::non_neg_integer, at::State.position)
-    :: {seeked::String.t, tail::String.t, to::State.position, at::State.position}
-     | {:not_enough, seeked::String.t, tail::String.t, to::State.position, at::State.position}
+    :: {tail::String.t, seeked::String.t, to::State.position, at::State.position}
+     | {:not_enough, tail::String.t, seeked::String.t, to::State.position, at::State.position}
 
   def seek(text, n, at), do: seek(text, "", n, at, at)
 
-  defp seek(text, seeked, 0, to, at), do: {seeked, text, to, at}
+  defp seek(text, seeked, 0, to, at), do: {text, seeked, to, at}
   defp seek(text, seeked, n, to, at) do
     case next_grapheme(text) do
       {h, tail} ->
         seek(tail, seeked <> h, n-1, at, position_after(at, h))
       nil ->
-        {:not_enough, seeked, text, to, at}
+        {:not_enough, text, seeked, to, at}
     end
   end
 
