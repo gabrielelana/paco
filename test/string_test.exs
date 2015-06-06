@@ -91,25 +91,33 @@ defmodule Paco.StringTest do
 
   test "consume_until given function returns true" do
     assert consume_until("abc   ", &whitespace?/1, {0, 1, 1}) == {"abc", "   ", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("abc", &whitespace?/1, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("", &whitespace?/1, {0, 1, 1}) == {"", "", {0, 1, 1}, {0, 1, 1}}
+    assert consume_until("abc ", &whitespace?/1, {0, 1, 1}) == {"abc", " ", {2, 1, 3}, {3, 1, 4}}
+    assert consume_until(" ", &whitespace?/1, {0, 1, 1}) == {"", " ", {0, 1, 1}, {0, 1, 1}}
+
+    assert consume_until("", &whitespace?/1, {0, 1, 1}) == {:not_enough, "", "", {0, 1, 1}, {0, 1, 1}}
+    assert consume_until("abc", &whitespace?/1, {0, 1, 1}) == {:not_enough, "abc", "", {2, 1, 3}, {3, 1, 4}}
   end
 
   test "consume_until a boundary" do
     assert consume_until("a[b]", "[", {0, 1, 1}) == {"a", "[b]", {0, 1, 1}, {1, 1, 2}}
     assert consume_until("aaa[b]", "[", {0, 1, 1}) == {"aaa", "[b]", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("aaa", "[", {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume_until("aaa[", "[", {0, 1, 1}) == {"aaa", "[", {2, 1, 3}, {3, 1, 4}}
+
+    assert consume_until("", "[", {0, 1, 1}) == {:not_enough, "", "", {0, 1, 1}, {0, 1, 1}}
+    assert consume_until("aaa", "[", {0, 1, 1}) == {:not_enough, "aaa", "", {2, 1, 3}, {3, 1, 4}}
   end
 
   test "consume_until a boundary with more than one character" do
     assert consume_until("aaabbb", "bbb", {0, 1, 1}) == {"aaa", "bbb", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("aaa", "bbb", {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume_until("aaa", "bbb", {0, 1, 1}) == {:not_enough, "aaa", "", {2, 1, 3}, {3, 1, 4}}
   end
 
   test "consume_until a boundary with escape" do
     assert consume_until("a\\[b[c]", {"[", "\\"}, {0, 1, 1}) == {"a\\[b", "[c]", {3, 1, 4}, {4, 1, 5}}
-    assert consume_until("abc", {"[", "\\"}, {0, 1, 1}) == {"abc", "", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("abc\\", {"[", "\\"}, {0, 1, 1}) == {"abc\\", "", {3, 1, 4}, {4, 1, 5}}
+    assert consume_until("abc\\[[", {"[", "\\"}, {0, 1, 1}) == {"abc\\[", "[", {4, 1, 5}, {5, 1, 6}}
+
+    assert consume_until("\\[", {"[", "\\"}, {0, 1, 1}) == {:not_enough, "\\[", "", {1, 1, 2}, {2, 1, 3}}
+    assert consume_until("abc\\[", {"[", "\\"}, {0, 1, 1}) == {:not_enough, "abc\\[", "", {4, 1, 5}, {5, 1, 6}}
   end
 
   test "consume_until a boundary with escape with more than one character" do
