@@ -48,17 +48,14 @@ defmodule Paco.Failure do
     |> Enum.reject(&(&1 === :empty))
     |> Enum.join(" ")
   end
+  defp format_expected(s) when is_binary(s), do: quoted(s)
   defp format_expected({:until, p, text}) do
-    [ quoted(text),
-      "to be ended by",
-      format_description({:until, p})
-    ]
-    |> Enum.reject(&(&1 === :empty))
+    [quoted(text), "to be ended by", format_description({:until, p})]
     |> Enum.join(" ")
   end
-  defp format_expected(s) when is_binary(s), do: quoted(s)
-  defp format_expected({p, at_least, at_most}) do
-    "#{format_limits({at_least, at_most})} characters #{format_description(p)}"
+  defp format_expected({:while, p, n, m}) do
+    [format_limits({n, m}), "characters", format_description({:while, p})]
+    |> Enum.join(" ")
   end
 
   defp format_unexpected(%Paco.Failure{text: ""}), do: :empty
@@ -96,10 +93,10 @@ defmodule Paco.Failure do
   defp format_description({:until, p}) do
     quoted(p)
   end
-  defp format_description(p) when is_binary(p) do
+  defp format_description({:while, p}) when is_binary(p) do
     "in alphabet #{quoted(p)}"
   end
-  defp format_description(p) when is_function(p) do
+  defp format_description({:while, p}) when is_function(p) do
     "which satisfy #{format_function(p)}"
   end
 

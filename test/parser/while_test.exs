@@ -50,9 +50,9 @@ defmodule Paco.Parser.WhileTest do
   end
 
   test "failure with description" do
-    parser = while(&uppercase?/1, 3) |> as("KEYCODE")
+    parser = while(&uppercase?/1, 3) |> as("TOKEN")
     assert parse(parser, "ABc") == {:error,
-      ~s|expected exactly 3 characters which satisfy uppercase? (KEYCODE) at 1:1 but got "ABc", unexpected "c" at 1:3|
+      ~s|expected exactly 3 characters which satisfy uppercase? (TOKEN) at 1:1 but got "ABc", unexpected "c" at 1:3|
     }
   end
 

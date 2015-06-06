@@ -435,7 +435,7 @@ defmodule Paco.Parser do
           wait_for_more_and_continue(state, this)
         {:not_enough, unexpected, _, _, at} ->
           %Paco.Failure{from: from, text: text,
-                        expected: {p, at_least, at_most},
+                        expected: {:while, p, at_least, at_most},
                         at: at, unexpected: unexpected,
                         stack: Paco.Failure.stack(this)}
       end
