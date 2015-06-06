@@ -1,9 +1,9 @@
 defmodule Paco.Parser do
   import Paco.Macro.ParserDefinition
 
-  defstruct id: nil, name: nil, combine: nil, parse: nil
+  defstruct id: nil, name: nil, description: nil, combine: nil, parse: nil
 
-  def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
+  def as(%Paco.Parser{} = p, description), do: %Paco.Parser{p|description: description}
 
   def box(%Paco.Parser{} = p), do: p
   def box(%Regex{} = r), do: rex(r)
