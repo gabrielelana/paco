@@ -114,12 +114,13 @@ defmodule Paco.String do
                           {at_least, at_most, n+1},
                           at, position_after(at, h))
           false when n < at_least ->
-            :error
+            {:not_enough, consumed, text, to, at}
           false ->
             {consumed, text, to, at}
         end
       nil when n < at_least ->
-        :end_of_input
+        {:not_enough, consumed, text, to, at}
+        # :end_of_input
       nil ->
         {consumed, text, to, at}
     end

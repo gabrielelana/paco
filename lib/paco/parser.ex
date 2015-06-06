@@ -2,9 +2,9 @@ defmodule Paco.Parser do
   import Paco.Macro.ParserDefinition
   import Paco.Collector
 
-  defstruct id: nil, name: nil, combine: nil, parse: nil
+  defstruct id: nil, name: nil, description: nil, combine: nil, parse: nil
 
-  def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|name: name}
+  def as(%Paco.Parser{} = p, name), do: %Paco.Parser{p|description: name}
 
   def box(%Paco.Parser{} = p), do: p
   def box(%Regex{} = r), do: rex(r)
@@ -362,7 +362,7 @@ defmodule Paco.Parser do
         {%Paco.State{at: at, text: text}, to, results} ->
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this), because: failure}
+          failure
       end
       |> notify_ended(state)
     end
@@ -371,23 +371,32 @@ defmodule Paco.Parser do
   parser one_of(box_each(ps)) do
     fn %Paco.State{at: from, text: text} = state, this ->
       notify_started(this, state)
-      result = Enum.find_value(ps,
-                               fn(p) ->
-                                 case p.parse.(state, p) do
-                                   %Paco.Success{} = success -> success
-                                   _ -> false
-                                 end
+      result = Enum.reduce(ps, [],
+                               fn
+                                 (p, %Paco.Success{} = success) ->
+                                   success
+                                 (p, failures) ->
+                                   case p.parse.(state, p) do
+                                     %Paco.Success{} = success -> success
+                                     %Paco.Failure{} = failure -> [failure|failures]
+                                   end
                                end)
 
       case result do
         %Paco.Success{} = success ->
           success
-        _ ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
+        # TODO: [] -> success
+        failures ->
+          farthest_failure_between(failures)
        end
        |> notify_ended(state)
     end
   end
+
+  defp farthest_failure_between(failures), do: Enum.reduce(failures, nil, &farthest_failure_between/2)
+  defp farthest_failure_between(%Paco.Failure{} = failure, nil), do: failure
+  defp farthest_failure_between(%Paco.Failure{at: {n,_,_}} = failure, %Paco.Failure{at: {m,_,_}}), do: failure
+  defp farthest_failure_between(_, %Paco.Failure{} = failure), do: failure
 
   parser rex(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
@@ -440,9 +449,13 @@ defmodule Paco.Parser do
           wait_for_more_and_continue(state, this)
         error ->
           notify_started(this, state)
-          description = Paco.describe(this)
-          reason = if error == :end_of_input, do: "reached the end of input", else: nil
-          failure = %Paco.Failure{at: from, tail: text, what: description, because: reason}
+          {_, line, column} = from
+          message = if error == :end_of_input do
+                      ~s|expected "#{s}" at #{line}:#{column} but got the end of input|
+                    else
+                      ~s|expected "#{s}" at #{line}:#{column} but got "#{String.strip(text)}"|
+                    end
+          failure = %Paco.Failure{at: from, tail: text, message: message}
           notify_ended(failure, state)
       end
     end
@@ -500,6 +513,19 @@ defmodule Paco.Parser do
           notify_ended(success, state)
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
+        {:not_enough, consumed, "", to, at} ->
+          {_, line, column} = from
+          message = ~s|expected at least #{at_least} of #{inspect(p)} at #{line}:#{column} but got the end of input|
+          failure = %Paco.Failure{at: from, tail: "", message: message}
+          notify_ended(failure, state)
+        {:not_enough, consumed, tail, to, at} ->
+          {_, line, column} = from
+          message = case this.description do
+            nil -> ~s|expected at least #{at_least} of #{inspect(p)} at #{line}:#{column} but got: "#{String.strip(tail)}"|
+            description -> ~s|expected #{description} at #{line}:#{column} but got: "#{String.strip(tail)}"|
+          end
+          failure = %Paco.Failure{at: from, tail: tail, message: message}
+          notify_ended(failure, state)
         error ->
           notify_started(this, state)
           description = Paco.describe(this)
