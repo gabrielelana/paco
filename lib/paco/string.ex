@@ -115,7 +115,7 @@ defmodule Paco.String do
 
 
 
-  @spec consume_while(String.t, what, limits::limit, State.position)
+  @spec consume_while(text::String.t, what, limits::limit, at::State.position)
     :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
      | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
     when what: String.t | (String.t -> boolean)
@@ -226,6 +226,16 @@ defmodule Paco.String do
 
 
 
+  defp position_after({n, l, c}, grapheme) do
+    if newline?(grapheme) do
+      {n + 1, l + 1, 1}
+    else
+      {n + 1, l, c + 1}
+    end
+  end
+
+
+
   @spec line_at(text::String.t, at::State.position) :: String.t
 
   def line_at(text, at) do
@@ -265,14 +275,6 @@ defmodule Paco.String do
         else
           {in_line, next.(at)}
         end
-    end
-  end
-
-  defp position_after({n, l, c}, grapheme) do
-    if newline?(grapheme) do
-      {n + 1, l + 1, 1}
-    else
-      {n + 1, l, c + 1}
     end
   end
 end
