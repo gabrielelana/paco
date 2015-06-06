@@ -1,5 +1,6 @@
 defmodule Paco.String do
   import String
+  alias Paco.State
 
   @nl ["\x{000A}",         # LINE FEED
        "\x{000B}",         # LINE TABULATION
@@ -89,6 +90,13 @@ defmodule Paco.String do
     end
   end
 
+  @typep limit :: exactly::non_neg_integer | {at_least::non_neg_integer, at_most::non_neg_integer}
+
+  @spec consume_while(String.t, what, limits::limit, State.position)
+    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_expected, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+    when what: String.t | (String.t -> boolean)
 
   def consume_while(text, what, {at_least, at_most}, at),
       do: consume_while(text, "", what, {at_least, at_most, 0}, at, at)
@@ -103,6 +111,7 @@ defmodule Paco.String do
     f = fn(h) -> Enum.any?(expected, &(&1 == h)) end
     consume_while(text, consumed, f, limits, at, at)
   end
+
   defp consume_while(text, consumed, f, {at_least, at_most, n}, to, at) when is_function(f) do
     case next_grapheme(text) do
       {h, tail} ->
@@ -110,20 +119,22 @@ defmodule Paco.String do
           true when n+1 == at_most ->
             {consumed <> h, tail, at, position_after(at, h)}
           true ->
-            consume_while(tail, consumed <> h, f,
-                          {at_least, at_most, n+1},
-                          at, position_after(at, h))
+            consume_while(tail, consumed <> h, f, {at_least, at_most, n+1}, at, position_after(at, h))
           false when n < at_least ->
-            :error
+            {:not_enough, consumed, text, to, at}
           false ->
             {consumed, text, to, at}
         end
       nil when n < at_least ->
-        :end_of_input
+        {:not_enough, consumed, text, to, at}
       nil ->
         {consumed, text, to, at}
     end
   end
+
+
+
+
 
 
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
