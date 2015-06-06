@@ -63,6 +63,12 @@ defmodule Paco.String do
   end
   def letter?(_), do: false
 
+  @uppercase ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","X","Y","Z"]
+  for uppercase <- @uppercase do
+    def uppercase?(<<unquote(uppercase)>>), do: true
+  end
+  def uppercase?(_), do: false
+
   @typep limit :: exactly::non_neg_integer | {at_least::non_neg_integer, at_most::non_neg_integer}
 
 
