@@ -22,6 +22,9 @@ defmodule Paco.Failure do
                   stack: Keyword.get(:stack, opts, [])}
   end
 
+  def stack(%Paco.Parser{description: nil}), do: []
+  def stack(%Paco.Parser{description: description}), do: [description]
+
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
@@ -37,6 +40,7 @@ defmodule Paco.Failure do
   defp format_expected(%Paco.Failure{} = failure) do
     [ "expected",
       format_expected(failure.expected),
+      format_stack(failure.stack),
       format_position(failure.from),
       "but got",
       format_tail(failure.text)
@@ -63,6 +67,9 @@ defmodule Paco.Failure do
     {unexpected, _} = String.next_grapheme(unexpected)
     inspect(unexpected)
   end
+
+  defp format_stack([]), do: :empty
+  defp format_stack(descriptions), do: "(#{Enum.join(descriptions, ">")})"
 
   defp format_position({_, line, column}), do: "at #{line}:#{column}"
 

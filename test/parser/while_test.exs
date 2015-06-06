@@ -49,6 +49,13 @@ defmodule Paco.Parser.WhileTest do
     }
   end
 
+  test "failure with description" do
+    parser = while(&uppercase?/1, 3) |> as("KEYCODE")
+    assert parse(parser, "ABc") == {:error,
+      ~s|expected exactly 3 characters which satisfy uppercase? (KEYCODE) at 1:1 but got "ABc", unexpected "c" at 1:3|
+    }
+  end
+
   test "stream mode" do
     for stream <- Helper.streams_of("aab") do
       result = stream

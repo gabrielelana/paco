@@ -21,6 +21,11 @@ defmodule Paco.Parser.LiteralTest do
     assert parse(lit("aaa"), "") == {:error, ~s|expected "aaa" at 1:1 but got the end of input|}
   end
 
+  test "failure with description" do
+    parser = lit("aaa") |> as("A")
+    assert parse(parser, "") == {:error, ~s|expected "aaa" (A) at 1:1 but got the end of input|}
+  end
+
   test "skipped parsers should be removed from result" do
     assert parse(skip(lit("a")), "a") == {:ok, []}
   end

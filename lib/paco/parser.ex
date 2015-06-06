@@ -382,7 +382,8 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, _} ->
-          %Paco.Failure{from: from, text: text, expected: s}
+          %Paco.Failure{from: from, text: text, expected: s,
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -430,7 +431,8 @@ defmodule Paco.Parser do
         {:not_enough, unexpected, _, _, at} ->
           %Paco.Failure{from: from, text: text,
                         expected: {p, at_least, at_most},
-                        at: at, unexpected: unexpected}
+                        at: at, unexpected: unexpected,
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end
