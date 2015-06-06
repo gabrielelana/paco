@@ -294,7 +294,7 @@ defmodule Paco.Parser do
   end
 
   parser sequence_of(box_each(ps)) do
-    fn %Paco.State{at: from, text: text} = state, this ->
+    fn %Paco.State{at: from} = state, this ->
       result = Enum.reduce(ps, {state, from, []},
                            fn
                              (_, %Paco.Failure{} = failure) ->
@@ -318,7 +318,7 @@ defmodule Paco.Parser do
         {%Paco.State{at: at, text: text}, to, results} ->
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this), because: failure}
+          Paco.Failure.stack(failure, this)
       end
     end
   end

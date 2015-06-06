@@ -19,6 +19,11 @@ defmodule Paco.Failure do
   def stack(%Paco.Parser{description: nil}), do: []
   def stack(%Paco.Parser{description: description}), do: [description]
 
+  def stack(failure, %Paco.Parser{description: nil}), do: failure
+  def stack(failure, %Paco.Parser{description: description}) do
+    %Paco.Failure{failure|stack: [description|failure.stack]}
+  end
+
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
@@ -29,7 +34,7 @@ defmodule Paco.Failure do
       format_stack(failure.stack),
       format_position(failure.at),
       "but got",
-      format_tail(failure.tail)
+      format_tail(failure.tail, failure.expected)
     ]
     |> Enum.reject(&(&1 === :empty))
     |> Enum.join(" ")
@@ -55,12 +60,20 @@ defmodule Paco.Failure do
   end
 
   defp format_stack([]), do: :empty
-  defp format_stack(descriptions), do: "(#{Enum.join(descriptions, ">")})"
+  defp format_stack(descriptions) do
+    ["(", descriptions |> Enum.reverse |> Enum.join(" < "), ")"]
+    |> Enum.join("")
+  end
 
   defp format_position({_, line, column}), do: "at #{line}:#{column}"
 
-  defp format_tail(""), do: "the end of input"
-  defp format_tail(text), do: quoted(text)
+  defp format_tail("", _), do: "the end of input"
+  defp format_tail(tail, s) when is_binary(s) do
+    quoted(String.slice(tail, 0, String.length(s)))
+  end
+  defp format_tail(tail, _) do
+    quoted(tail)
+  end
 
   defp format_limits({n, n}), do: "exactly #{n}"
   defp format_limits({n, _}), do: "at least #{n}"
