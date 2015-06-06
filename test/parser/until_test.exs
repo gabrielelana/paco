@@ -22,26 +22,26 @@ defmodule Paco.Parser.UntilTest do
 
   test "failure when missing string boundary" do
     assert parse(until("c"), "aaa") == {:error,
-      ~s|expected "aaa" to be ended by "c" at 1:1 but got "aaa"|
+      ~s|expected something ended by "c" at 1:1 but got "aaa"|
     }
   end
 
   test "failure when missing string boundary with escape" do
     assert parse(until("c", escaped_with: "\\"), "a\\ca") == {:error,
-      ~S|expected "a\ca" to be ended by "c" at 1:1 but got "a\ca"|
+      ~S|expected something ended by "c" at 1:1 but got "a\ca"|
     }
   end
 
   test "failure when missing function boundary" do
     assert parse(until(&uppercase?/1), "abc") == {:error,
-      ~s|expected "abc" to be ended by a character which satisfy uppercase? at 1:1 but got "abc"|
+      ~s|expected something ended by a character which satisfy uppercase? at 1:1 but got "abc"|
     }
   end
 
   test "failure with description" do
     parser = until("c") |> as("TOKEN")
     assert parse(parser, "aaa") == {:error,
-      ~s|expected "aaa" to be ended by "c" (TOKEN) at 1:1 but got "aaa"|
+      ~s|expected something ended by "c" (TOKEN) at 1:1 but got "aaa"|
     }
   end
 
