@@ -414,28 +414,57 @@ defmodule Paco.Parser do
     end
   end
 
+
   parser while(p), to: while(p, {0, :infinity})
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
-  parser while(p, {:more_than, n}), to: while(p, {n+1, :infinity})
-  parser while(p, {:less_than, n}), to: while(p, {0, n-1})
-  parser while(p, {:at_least, n}), to: while(p, {n, :infinity})
-  parser while(p, {:at_most, n}), to: while(p, {0, n})
+  parser while(p, opts) when is_list(opts), to: while(p, while_limits(opts))
   parser while(p, {at_least, at_most}) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
-        {_, "", _, _} when is_pid(stream) ->
+        {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {consumed, tail, to, at} ->
+        {tail, consumed, to, at} ->
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-        :end_of_input when is_pid(stream) ->
+        {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        error ->
-          description = Paco.describe(this)
-          reason = if error == :end_of_input, do: "reached the end of input", else: nil
-          %Paco.Failure{at: from, tail: text, what: description, because: reason}
+        {:not_enough, unexpected, _, _, at} ->
+          %Paco.Failure{from: from, at: at, text: text,
+                        expected: while_expected(p, {at_least, at_most}),
+                        unexpected: while_unexpected(unexpected), at: at}
       end
     end
   end
+
+  defp while_expected(p, {n, m}) do
+    "#{while_expected_limits({n, m})} characters #{while_expected_description(p)}"
+  end
+
+  defp while_unexpected(unexpected) do
+    {unexpected, _} = String.next_grapheme(unexpected)
+    inspect(unexpected)
+  end
+
+  defp while_expected_limits({n, n}), do: "exactly #{n}"
+  defp while_expected_limits({n, _}), do: "at least #{n}"
+
+  defp while_expected_description(p) when is_binary(p), do: "in alphabet #{inspect(p)}"
+  defp while_expected_description(p) when is_function(p) do
+    about_p = :erlang.fun_info(p)
+    if Keyword.get(about_p, :type) == :external do
+      "which satisfy #{Keyword.get(about_p, :name)}"
+    else
+      "which satisfy fn/#{Keyword.get(about_p, :arity)}"
+    end
+  end
+
+  defp while_limits([exactly: n]), do: {n, n}
+  defp while_limits([more_than: n]), do: {n+1, :infinity}
+  defp while_limits([less_than: n]), do: {0, n-1}
+  defp while_limits([more_than: n, less_than: m]) when n < m, do: {n+1, n-1}
+  defp while_limits([at_least: n]), do: {n, :infinity}
+  defp while_limits([at_most: n]), do: {0, n}
+  defp while_limits([at_least: n, at_most: m]) when n <= m, do: {n, m}
+
 
   defp wait_for_more_and_continue(state, this) do
     %Paco.State{text: text, stream: stream} = state

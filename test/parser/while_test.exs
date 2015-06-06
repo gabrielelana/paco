@@ -3,44 +3,49 @@ defmodule Paco.Parser.WhileTest do
 
   import Paco
   import Paco.Parser
+  import Paco.String, only: [uppercase?: 1]
 
   alias Paco.Test.Helper
 
-  test "parse graphemes in alphabet" do
+  test "parse characters in alphabet" do
     assert parse(while("abc"), "bbacbcd") == {:ok, "bbacbc"}
-  end
-
-  test "parse graphemes for which a given function returns true" do
-    assert parse(while(&uppercase?/1), "ABc") == {:ok, "AB"}
-  end
-
-  test "parse graphemes in alpahbet for an exact number of times" do
-    assert parse(while("abc", 2), "bbacbcd") == {:ok, "bb"}
-  end
-
-  test "parse graphemes in alpahbet for a number of time less than (or equal to) m" do
-    assert parse(while("abc", {:at_most, 2}), "bbacbc") == {:ok, "bb"}
-    assert parse(while("abc", {:less_than, 2}), "bbacbc") == {:ok, "b"}
-  end
-
-  test "empty result is not a failure" do
     assert parse(while("abc"), "xxx") == {:ok, ""}
+    assert parse(while("abc"), "") == {:ok, ""}
   end
 
-  test "fails at the end of input when lower limit is not reached" do
-    assert parse(while("abc", {:at_least, 3}), "ab") == {:error,
-      """
-      Failed to match while("abc", {3, :infinity}) at 1:1, \
-      because it reached the end of input
-      """
+  test "parse characters for which a given function returns true" do
+    assert parse(while(&uppercase?/1), "ABc") == {:ok, "AB"}
+    assert parse(while(&uppercase?/1), "abc") == {:ok, ""}
+    assert parse(while(&uppercase?/1), "") == {:ok, ""}
+  end
+
+  test "parse characters in alpahbet for an exact number of times" do
+    assert parse(while("abc", 2), "bbacbcd") == {:ok, "bb"}
+    assert parse(while("abc", exactly: 2), "bbacbcd") == {:ok, "bb"}
+
+    assert parse(while("abc", 3), "aad") == {:error,
+      ~s|expected exactly 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
     }
   end
 
-  test "fails when collected grahemes are less than required" do
-    assert parse(while("abc", {:more_than, 2}), "abx") == {:error,
-      """
-      Failed to match while("abc", {3, :infinity}) at 1:1
-      """
+  test "parse characters for which a given function returns true for an exact number of times" do
+    assert parse(while(&uppercase?/1, 2), "ABC") == {:ok, "AB"}
+    assert parse(while(&uppercase?/1, exactly: 2), "ABC") == {:ok, "AB"}
+
+    assert parse(while(&uppercase?/1, 3), "ABc") == {:error,
+      ~s|expected exactly 3 characters which satisfy uppercase? at 1:1 but got "ABc", unexpected "c" at 1:3|
+    }
+  end
+
+  test "parse characters in alpahbet for a number of times" do
+    assert parse(while("abc", at_most: 2), "bbacbc") == {:ok, "bb"}
+    assert parse(while("abc", less_than: 2), "bbacbc") == {:ok, "b"}
+
+    assert parse(while("abc", at_least: 3), "aad") == {:error,
+      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
+    }
+    assert parse(while("abc", more_than: 2), "aad") == {:error,
+      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad", unexpected "d" at 1:3|
     }
   end
 
@@ -90,9 +95,5 @@ defmodule Paco.Parser.WhileTest do
 
       assert result == ["aaa"]
     end
-  end
-
-  defp uppercase?(s) do
-    s == String.upcase(s)
   end
 end
