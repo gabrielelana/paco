@@ -4,24 +4,25 @@ defmodule Paco.StringTest do
   import Paco.String
 
   test "consume" do
-    assert consume("a", "a", {0, 1, 1}) == {"", {0, 1, 1}, {1, 1, 2}}
-    assert consume("aa", "aa", {0, 1, 1}) == {"", {1, 1, 2}, {2, 1, 3}}
-    assert consume("aaa", "aaa", {0, 1, 1}) == {"", {2, 1, 3}, {3, 1, 4}}
-    assert consume("aaab", "aaa", {0, 1, 1}) == {"b", {2, 1, 3}, {3, 1, 4}}
-    assert consume("", "a", {0, 1, 1}) == :end_of_input
-    assert consume("b", "a", {0, 1, 1}) == :error
+    assert consume("a", "a", {0, 1, 1}) == {"a", "", {0, 1, 1}, {1, 1, 2}}
+    assert consume("aa", "aa", {0, 1, 1}) == {"aa", "", {1, 1, 2}, {2, 1, 3}}
+    assert consume("aaa", "aaa", {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert consume("aaab", "aaa", {0, 1, 1}) == {"aaa", "b", {2, 1, 3}, {3, 1, 4}}
+    assert consume("", "aa", {0, 1, 1}) == {:not_enough, "", "", {0, 1, 1}, {0, 1, 1}}
+    assert consume("a", "aa", {0, 1, 1}) == {:not_enough, "a", "", {0, 1, 1}, {1, 1, 2}}
+    assert consume("ab", "aa", {0, 1, 1}) == {:not_expected, "a", "b", {0, 1, 1}, {1, 1, 2}}
   end
 
   test "consume with newlines" do
-    assert consume("a\na", "a\na", {0, 1, 1}) == {"", {2, 2, 1}, {3, 2, 2}}
-    assert consume("\naa", "\naa", {0, 1, 1}) == {"", {2, 2, 2}, {3, 2, 3}}
-    assert consume("aa\n", "aa\n", {0, 1, 1}) == {"", {2, 1, 3}, {3, 2, 1}}
-    assert consume("aa\n\n", "aa\n", {0, 1, 1}) == {"\n", {2, 1, 3}, {3, 2, 1}}
-    assert consume("a\na\n", "a\na\n", {0, 1, 1}) == {"", {3, 2, 2}, {4, 3, 1}}
+    assert consume("a\na", "a\na", {0, 1, 1}) == {"a\na", "", {2, 2, 1}, {3, 2, 2}}
+    assert consume("\naa", "\naa", {0, 1, 1}) == {"\naa", "", {2, 2, 2}, {3, 2, 3}}
+    assert consume("aa\n", "aa\n", {0, 1, 1}) == {"aa\n", "", {2, 1, 3}, {3, 2, 1}}
+    assert consume("aa\n\n", "aa\n", {0, 1, 1}) == {"aa\n", "\n", {2, 1, 3}, {3, 2, 1}}
+    assert consume("a\na\n", "a\na\n", {0, 1, 1}) == {"a\na\n", "", {3, 2, 2}, {4, 3, 1}}
   end
 
   test "consume with composed newlines" do
-    assert consume("a\r\na", "a\r\na", {0, 1, 1}) == {"", {2, 2, 1}, {3, 2, 2}}
+    assert consume("a\r\na", "a\r\na", {0, 1, 1}) == {"a\r\na", "", {2, 2, 1}, {3, 2, 2}}
   end
 
   test "consume_any" do

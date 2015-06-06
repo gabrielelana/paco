@@ -63,19 +63,31 @@ defmodule Paco.String do
   end
   def letter?(_), do: false
 
+  @typep limit :: exactly::non_neg_integer | {at_least::non_neg_integer, at_most::non_neg_integer}
 
-  def consume(text, expected, at), do: consume(text, expected, at, at)
 
-  defp consume(text, "", to, at), do: {text, to, at}
-  defp consume("", _, _, _), do: :end_of_input
-  defp consume(text, expected, _to, at) do
+
+
+  @spec consume(text::String.t, expected::String.t, at::State.position)
+    :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_expected, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
+
+  def consume(text, expected, at), do: consume(text, "", expected, at, at)
+
+  defp consume(text, consumed, "", to, at), do: {consumed, text, to, at}
+  defp consume("", consumed, _, to, at), do: {:not_enough, consumed, "", to, at}
+  defp consume(text, consumed, expected, to, at) do
     {h1, t1} = next_grapheme(text)
     {h2, t2} = next_grapheme(expected)
     case {h1, h2} do
-      {h, h} -> consume(t1, t2, at, position_after(at, h))
-      _ -> :error
+      {h, h} -> consume(t1, consumed <> h, t2, at, position_after(at, h))
+      _      -> {:not_expected, consumed, text, to, at}
     end
   end
+
+
+
 
 
   def consume_any(text, what, at), do: consume_any(text, "", what, at, at)
@@ -90,7 +102,9 @@ defmodule Paco.String do
     end
   end
 
-  @typep limit :: exactly::non_neg_integer | {at_least::non_neg_integer, at_most::non_neg_integer}
+
+
+
 
   @spec consume_while(String.t, what, limits::limit, State.position)
     :: {consumed::String.t, tail::String.t, to::State.position, at::State.position}
@@ -160,7 +174,7 @@ defmodule Paco.String do
   end
 
   defp consume_until_boundary(text, consumed, boundary, to, at, next) do
-    case consume(text, boundary, to, at) do
+    case consume(text, "", boundary, to, at) do
       {_, _, _} ->
         {consumed, text, to, at}
       :error ->
@@ -172,7 +186,7 @@ defmodule Paco.String do
   end
 
   defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
-    case consume(text, escape <> boundary, to, at) do
+    case consume(text, "", escape <> boundary, to, at) do
       {tail, to, at} ->
         consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
       _ ->
