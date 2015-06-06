@@ -162,7 +162,6 @@ defmodule Paco.String do
      | {:not_enough, consumed::String.t, tail::String.t, to::State.position, at::State.position}
     when what: (String.t -> boolean) | {boundary::String.t, escape::String.t}
 
-
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
 
   defp consume_until(text, consumed, f, to, at) when is_function(f) do
@@ -208,14 +207,25 @@ defmodule Paco.String do
   end
 
 
-  def seek(text, at, len), do: seek(text, "", at, at, len)
 
-  defp seek(text, seeked, to, at, 0), do: {seeked, text, to, at}
-  defp seek("", seeked, to, at, _), do: {seeked, "", to, at}
-  defp seek(text, seeked, _, at, len) do
-    {h, tail} = next_grapheme(text)
-    seek(tail, seeked <> h, at, position_after(at, h), len-1)
+  @spec seek(text::String.t, n::non_neg_integer, at::State.position)
+    :: {seeked::String.t, tail::String.t, to::State.position, at::State.position}
+     | {:not_enough, seeked::String.t, tail::String.t, to::State.position, at::State.position}
+
+  def seek(text, n, at), do: seek(text, "", n, at, at)
+
+  defp seek(text, seeked, 0, to, at), do: {seeked, text, to, at}
+  defp seek(text, seeked, n, to, at) do
+    case next_grapheme(text) do
+      {h, tail} ->
+        seek(tail, seeked <> h, n-1, at, position_after(at, h))
+      nil ->
+        {:not_enough, seeked, text, to, at}
+    end
   end
+
+
+
 
   def line_at(text, at) do
     case String.at(text, at) do

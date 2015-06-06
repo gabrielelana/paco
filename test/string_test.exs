@@ -126,9 +126,10 @@ defmodule Paco.StringTest do
   end
 
   test "seek" do
-    assert seek("aaa", {0, 1, 1}, 3) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
-    assert seek("aaab", {0, 1, 1}, 3) == {"aaa", "b", {2, 1, 3}, {3, 1, 4}}
-    assert seek("a\na", {0, 1, 1}, 3) == {"a\na", "", {2, 2, 1}, {3, 2, 2}}
+    assert seek("aaa", 3, {0, 1, 1}) == {"aaa", "", {2, 1, 3}, {3, 1, 4}}
+    assert seek("aaab", 3, {0, 1, 1}) == {"aaa", "b", {2, 1, 3}, {3, 1, 4}}
+    assert seek("a\na", 3, {0, 1, 1}) == {"a\na", "", {2, 2, 1}, {3, 2, 2}}
+    assert seek("aaa", 4, {0, 1, 1}) == {:not_enough, "aaa", "", {2, 1, 3}, {3, 1, 4}}
   end
 
   test "line_at" do
