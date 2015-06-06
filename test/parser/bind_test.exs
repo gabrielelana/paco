@@ -4,8 +4,6 @@ defmodule Paco.Parser.BindTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "bind to a function" do
     parser = bind(lit("a"), fn(_) -> "b" end)
 
@@ -82,23 +80,5 @@ defmodule Paco.Parser.BindTest do
     parse(parser, "b")
 
     assert Process.get(:called, false) == false
-  end
-
-  test "notify events on success" do
-    parser = bind(lit("a"), fn(r) -> r end)
-
-    Helper.assert_events_notified(parser, "a", [
-      {:started, ~s|bind(lit("a"), fn/1)|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-    ])
-  end
-
-  test "notify events on failure" do
-    parser = bind(lit("a"), fn(r) -> r end)
-
-    Helper.assert_events_notified(parser, "b", [
-      {:started, ~s|bind(lit("a"), fn/1)|},
-      {:failed, {0, 1, 1}},
-    ])
   end
 end

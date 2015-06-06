@@ -1,6 +1,5 @@
 defmodule Paco.Parser do
   import Paco.Macro.ParserDefinition
-  import Paco.Collector
 
   defstruct id: nil, name: nil, combine: nil, parse: nil
 
@@ -39,7 +38,6 @@ defmodule Paco.Parser do
   parser then_with(box(p), f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
-      Paco.Collector.notify_started(this, state)
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
           try do
@@ -59,7 +57,6 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           failure
       end
-      |> Paco.Collector.notify_ended(state)
     end
   end
 
@@ -93,7 +90,6 @@ defmodule Paco.Parser do
   parser bind_to(box(p), f) when is_function(f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
-      Paco.Collector.notify_started(this, state)
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
           try do
@@ -112,7 +108,6 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           failure
       end
-      |> Paco.Collector.notify_ended(state)
     end
   end
 
@@ -148,14 +143,11 @@ defmodule Paco.Parser do
 
 
   parser whitespace, as: while(&Paco.String.whitespace?/1, 1)
-                         |> silent
 
   parser whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
-                          |> silent
 
   parser lex(s), as: lit(s)
                      |> surrounded_by(maybe(whitespaces))
-                     |> silent
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 
@@ -193,7 +185,6 @@ defmodule Paco.Parser do
   parser repeat(p, {:at_most, n}), to: repeat(p, {0, n})
   parser repeat(box(p), {at_least, at_most}) do
     fn %Paco.State{at: at, text: text} = state, this ->
-      notify_started(this, state)
       successes = Stream.unfold({state, 0},
                              fn {_, n} when n == at_most -> nil
                                 {state, n} ->
@@ -224,23 +215,19 @@ defmodule Paco.Parser do
           results = successes |> Enum.map(&(&1.result))
           %Paco.Success{last_success|from: at, result: results}
       end
-      |> notify_ended(state)
     end
   end
 
 
   parser always(t) do
-    fn %Paco.State{at: at, text: text} = state, this ->
-      notify_started(this, state)
+    fn %Paco.State{at: at, text: text}, _ ->
       %Paco.Success{from: at, to: at, at: at, tail: text, result: t}
-      |> notify_ended(state)
     end
   end
 
   parser maybe(box(p), opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
-    fn state, this ->
-      notify_started(this, state)
+    fn state, _ ->
       case p.parse.(state, p) do
         %Paco.Success{} = success ->
           success
@@ -250,19 +237,11 @@ defmodule Paco.Parser do
         %Paco.Failure{at: at, tail: tail} ->
           %Paco.Success{from: at, to: at, at: at, tail: tail, skip: true}
       end
-      |> notify_ended(state)
-    end
-  end
-
-  parser silent(parser) do
-    fn state, _ ->
-      parser.parse.(%Paco.State{state|silent: true}, parser)
     end
   end
 
   parser skip(box(p)) do
-    fn state, this ->
-      notify_started(this, state)
+    fn state, _ ->
       case p.parse.(state, p) do
         %Paco.Success{keep: true} = success ->
           %Paco.Success{success|keep: false}
@@ -271,13 +250,11 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           failure
       end
-      |> notify_ended(state)
     end
   end
 
   parser keep(box(p)) do
-    fn state, this ->
-      notify_started(this, state)
+    fn state, _ ->
       case p.parse.(state, p) do
         %Paco.Success{skip: true} = success ->
           %Paco.Success{success|skip: false}
@@ -286,14 +263,12 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           failure
       end
-      |> notify_ended(state)
     end
   end
 
   parser only_if(box(p), f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
-      notify_started(this, state)
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
           try do
@@ -315,13 +290,11 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           failure
       end
-      |> notify_ended(state)
     end
   end
 
   parser sequence_of(box_each(ps)) do
     fn %Paco.State{at: from, text: text} = state, this ->
-      notify_started(this, state)
       result = Enum.reduce(ps, {state, from, []},
                            fn
                              (_, %Paco.Failure{} = failure) ->
@@ -347,13 +320,11 @@ defmodule Paco.Parser do
         %Paco.Failure{} = failure ->
           %Paco.Failure{at: from, tail: text, what: Paco.describe(this), because: failure}
       end
-      |> notify_ended(state)
     end
   end
 
   parser one_of(box_each(ps)) do
     fn %Paco.State{at: from, text: text} = state, this ->
-      notify_started(this, state)
       result = Enum.find_value(ps,
                                fn(p) ->
                                  case p.parse.(state, p) do
@@ -368,7 +339,6 @@ defmodule Paco.Parser do
         _ ->
           %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
        end
-       |> notify_ended(state)
     end
   end
 
@@ -380,10 +350,7 @@ defmodule Paco.Parser do
             {_, "", _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
             {s, tail, to, at} ->
-              notify_started(this, state)
-              success = %Paco.Success{from: from, to: to, at: at,
-                                      tail: tail, result: s}
-              notify_ended(success, state)
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
           end
         [{_, len}|captures] ->
           case Paco.String.seek(text, from, len) do
@@ -397,17 +364,12 @@ defmodule Paco.Parser do
                 _ ->
                   [Regex.named_captures(r, text)]
               end
-              notify_started(this, state)
-              success = %Paco.Success{from: from, to: to, at: at,
-                                      tail: tail, result: [s|captures]}
-              notify_ended(success, state)
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: [s|captures]}
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          notify_started(this, state)
-          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
-          notify_ended(failure, state)
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
       end
     end
   end
@@ -416,17 +378,13 @@ defmodule Paco.Parser do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, to, at} ->
-          notify_started(this, state)
-          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
-          notify_ended(success, state)
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         error ->
-          notify_started(this, state)
           description = Paco.describe(this)
           reason = if error == :end_of_input, do: "reached the end of input", else: nil
-          failure = %Paco.Failure{at: from, tail: text, what: description, because: reason}
-          notify_ended(failure, state)
+          %Paco.Failure{at: from, tail: text, what: description, because: reason}
       end
     end
   end
@@ -435,16 +393,12 @@ defmodule Paco.Parser do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_any(text, n, from) do
         {consumed, tail, to, at} ->
-          notify_started(this, state)
-          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-          notify_ended(success, state)
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         :end_of_input ->
-          notify_started(this, state)
-          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this),
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this),
                                   because: "reached the end of input"}
-          notify_ended(failure, state)
       end
     end
   end
@@ -455,13 +409,9 @@ defmodule Paco.Parser do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
-          notify_started(this, state)
-          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-          notify_ended(success, state)
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         _ ->
-          notify_started(this, state)
-          failure = %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
-          notify_ended(failure, state)
+          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
       end
     end
   end
@@ -478,17 +428,13 @@ defmodule Paco.Parser do
         {_, "", _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {consumed, tail, to, at} ->
-          notify_started(this, state)
-          success = %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-          notify_ended(success, state)
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         :end_of_input when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         error ->
-          notify_started(this, state)
           description = Paco.describe(this)
           reason = if error == :end_of_input, do: "reached the end of input", else: nil
-          failure = %Paco.Failure{at: from, tail: text, what: description, because: reason}
-          notify_ended(failure, state)
+          %Paco.Failure{at: from, tail: text, what: description, because: reason}
       end
     end
   end
@@ -498,7 +444,6 @@ defmodule Paco.Parser do
     send(stream, {self, :more})
     receive do
       {:load, more_text} ->
-        notify_loaded(more_text, state)
         this.parse.(%Paco.State{state|text: text <> more_text}, this)
       :halted ->
         # The stream is over, switching to a non stream mode is equal to

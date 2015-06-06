@@ -48,20 +48,6 @@ defmodule Paco.Parser.RegexTest do
     }
   end
 
-  test "notify events on success" do
-    Helper.assert_events_notified(rex(~r/a+/), "aaa", [
-      {:started, "rex(~r/a+/)"},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
-  test "notify events on failure" do
-    Helper.assert_events_notified(rex(~r/b+/), "aaa", [
-      {:started, "rex(~r/b+/)"},
-      {:failed, {0, 1, 1}},
-    ])
-  end
-
   test "increment indexes for a match" do
     parser = rex(~r/a+/)
     success = parser.parse.(Paco.State.from("aaabbb"), parser)

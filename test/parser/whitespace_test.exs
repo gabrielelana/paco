@@ -8,6 +8,10 @@ defmodule Paco.Parser.WhitespaceTest do
     assert parse(whitespace, "  ") == {:ok, " "}
   end
 
+  test "pase whitespaces" do
+    assert parse(whitespaces, "   ") == {:ok, "   "}
+  end
+
   test "fail to parse a single whitespace" do
     assert parse(whitespace, "a") == {:error,
       """
@@ -16,52 +20,10 @@ defmodule Paco.Parser.WhitespaceTest do
     }
   end
 
-  test "silences its internals" do
-    parser = whitespace
-
-    assert explain(parser, " ") == {:ok,
-      """
-      Matched whitespace from 1:1 to 1:1
-      1:
-         ^
-      """
-    }
-    assert explain(parser, "a") == {:ok,
-      """
-      Failed to match whitespace at 1:1
-      1: a
-         ^
-      """
-    }
-  end
-
-  test "paser whitespaces" do
-    assert parse(whitespaces, "   ") == {:ok, "   "}
-  end
-
   test "fail to parse whitespaces" do
     assert parse(whitespaces, "a") == {:error,
       """
       Failed to match whitespaces at 1:1
-      """
-    }
-  end
-
-  test "whitespaces silences its internals" do
-    parser = whitespaces
-
-    assert explain(parser, "   ") == {:ok,
-      """
-      Matched whitespaces from 1:1 to 1:3
-      1:
-         ^ ^
-      """
-    }
-    assert explain(parser, "a") == {:ok,
-      """
-      Failed to match whitespaces at 1:1
-      1: a
-         ^
       """
     }
   end

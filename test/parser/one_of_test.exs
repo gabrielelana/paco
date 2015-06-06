@@ -4,8 +4,6 @@ defmodule Paco.Parser.OneOfTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "parse one of the parsers" do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "a") == {:ok, "a"}
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "b") == {:ok, "b"}
@@ -47,27 +45,6 @@ defmodule Paco.Parser.OneOfTest do
       Failed to match one_of([lit("a"), lit("b")]) at 1:1
       """
     }
-  end
-
-  test "notify events on success because first succeeded" do
-    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "a", [
-      {:started, ~s|one_of([lit("a"), lit("b")])|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-    ])
-  end
-
-  test "notify events on success because last succeeded" do
-    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "b", [
-      {:started, ~s|one_of([lit("a"), lit("b")])|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {1, 1, 2}},
-    ])
-  end
-
-  test "notify events on failure" do
-    Helper.assert_events_notified(one_of([lit("a"), lit("b")]), "c", [
-      {:started, ~s|one_of([lit("a"), lit("b")])|},
-      {:failed, {0, 1, 1}},
-    ])
   end
 
   test "do not consume input with a failure" do

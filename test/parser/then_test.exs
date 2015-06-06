@@ -4,8 +4,6 @@ defmodule Paco.Parser.ThenTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "choose with a function" do
     parser = lit("a") |> then(fn s -> lit(s) end)
 
@@ -68,23 +66,5 @@ defmodule Paco.Parser.ThenTest do
     parse(parser, "b")
 
     assert Process.get(:called, false) == false
-  end
-
-  test "notify events on success" do
-    parser = then(lit("a"), fn(s) -> lit(s) end)
-
-    Helper.assert_events_notified(parser, "aa", [
-      {:started, ~s|then(lit("a"), fn/1)|},
-      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
-    ])
-  end
-
-  test "notify events on failure" do
-    parser = then(lit("a"), fn(s) -> lit(s) end)
-
-    Helper.assert_events_notified(parser, "b", [
-      {:started, ~s|then(lit("a"), fn/1)|},
-      {:failed, {0, 1, 1}},
-    ])
   end
 end

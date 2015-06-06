@@ -4,8 +4,6 @@ defmodule Paco.Parser.SequenceOfTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "parse sequence of parsers" do
     assert parse(sequence_of([lit("a"), lit("b")]), "ab") == {:ok, ["a", "b"]}
     assert parse(sequence_of([lit("a")]), "a") == {:ok, ["a"]}
@@ -52,27 +50,6 @@ defmodule Paco.Parser.SequenceOfTest do
       because it reached the end of input
       """
     }
-  end
-
-  test "notify events on success" do
-    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ab", [
-      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
-      {:matched, {0, 1, 1}, {1, 1, 2}, {2, 1, 3}},
-    ])
-  end
-
-  test "notify events on failure because of first failed" do
-    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "cc", [
-      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
-      {:failed, {0, 1, 1}},
-    ])
-  end
-
-  test "notify events on failure because of last failed" do
-    Helper.assert_events_notified(sequence_of([lit("a"), lit("b")]), "ac", [
-      {:started, ~s|sequence_of([lit("a"), lit("b")])|},
-      {:failed, {0, 1, 1}},
-    ])
   end
 
   test "do not consume input with a partial failure" do

@@ -4,8 +4,6 @@ defmodule Paco.Parser.SurroundedByTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "success" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "[a]") == {:ok, "a"}
     assert parse(surrounded_by(lit("a"), lit("*")), "*a*") == {:ok, "a"}
@@ -53,25 +51,5 @@ defmodule Paco.Parser.SurroundedByTest do
       because it failed to match lit("]") at 1:3
       """
     }
-  end
-
-  test "notify events on success" do
-    parser = lit("a") |> surrounded_by(lit("["), lit("]"))
-    Helper.assert_events_notified(parser, "[a]", [
-      {:started, ~s|surrounded_by(lit("a"), lit("["), lit("]"))|},
-      {:started, ~s|lit("a")|},
-      {:matched, {1, 1, 2}, {1, 1, 2}, {2, 1, 3}},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}}
-    ])
-  end
-
-  test "notify events on failure" do
-    parser = lit("a") |> surrounded_by(lit("["), lit("]"))
-    Helper.assert_events_notified(parser, "[b]", [
-      {:started, ~s|surrounded_by(lit("a"), lit("["), lit("]"))|},
-      {:started, ~s|lit("a")|},
-      {:failed, {1, 1, 2}},
-      {:failed, {0, 1, 1}}
-    ])
   end
 end

@@ -21,13 +21,6 @@ defmodule Paco.Parser.UntilTest do
     assert parse(until("c"), "ccc") == {:ok, ""}
   end
 
-  test "notify events on success" do
-    Helper.assert_events_notified(until(" "), "aaa ", [
-      {:started, ~s|until(" ")|},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
   test "stream mode until a boundary" do
     for stream <- Helper.streams_of("aab") do
       result = stream

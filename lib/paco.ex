@@ -27,17 +27,6 @@ defmodule Paco do
     inspect(Paco.Parser.box(p))
   end
 
-  def explain(p, text) do
-    {:ok, pid} = GenEvent.start_link()
-    try do
-      GenEvent.add_handler(pid, Paco.Explainer, [])
-      parse(p, text, collector: pid)
-      GenEvent.call(pid, Paco.Explainer, :report)
-    after
-      GenEvent.stop(pid)
-    end
-  end
-
   @doc false
   defmacro __using__(_) do
     quote do

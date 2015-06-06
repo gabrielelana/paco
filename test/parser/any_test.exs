@@ -31,20 +31,6 @@ defmodule Paco.Parser.AnyTest do
     }
   end
 
-  test "notify events on success" do
-    Helper.assert_events_notified(any(3), "aaa ", [
-      {:started, "any(3)"},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
-  test "notify events on failure" do
-    Helper.assert_events_notified(any(4), "aaa", [
-      {:started, "any(4)"},
-      {:failed, {0, 1, 1}}
-    ])
-  end
-
   test "stream mode success" do
     for stream <- Helper.streams_of("abc") do
       result = stream

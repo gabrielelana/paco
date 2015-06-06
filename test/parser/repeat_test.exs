@@ -4,8 +4,6 @@ defmodule Paco.Parser.RepeatTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "parse" do
     assert parse(repeat(lit("a"), 0), "aaa") == {:ok, []}
     assert parse(repeat(lit("a"), 1), "aaa") == {:ok, ["a"]}
@@ -54,19 +52,5 @@ defmodule Paco.Parser.RepeatTest do
       because it matched 1 times instead of at least 2 times
       """
     }
-  end
-
-  test "notify events on success" do
-    Helper.assert_events_notified(repeat(lit("a")), "aaa", [
-      {:started, ~s|repeat(lit("a"), {0, :infinity})|},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
-  test "notify events on failure" do
-    Helper.assert_events_notified(repeat(lit("a"), {:at_least, 2}), "abb", [
-      {:started, ~s|repeat(lit("a"), {2, :infinity})|},
-      {:failed, {0, 1, 1}}
-    ])
   end
 end

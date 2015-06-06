@@ -4,8 +4,6 @@ defmodule Paco.Parser.AlwaysTest do
   import Paco
   import Paco.Parser
 
-  alias Paco.Test.Helper
-
   test "always succeed" do
     assert parse(always("a"), "a") == {:ok, "a"}
     assert parse(always("a"), "b") == {:ok, "a"}
@@ -23,12 +21,5 @@ defmodule Paco.Parser.AlwaysTest do
     success = parser.parse.(Paco.State.from("a"), parser)
     assert success.at == {0, 1, 1}
     assert success.tail == "a"
-  end
-
-  test "notify events on success" do
-    Helper.assert_events_notified(always("a"), "", [
-      {:started, ~s|always("a")|},
-      {:matched, {0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
-    ])
   end
 end

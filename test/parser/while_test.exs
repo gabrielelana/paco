@@ -44,13 +44,6 @@ defmodule Paco.Parser.WhileTest do
     }
   end
 
-  test "notify events on success" do
-    Helper.assert_events_notified(while("a"), "aaa ", [
-      {:started, ~s|while("a", {0, :infinity})|},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
   test "stream mode" do
     for stream <- Helper.streams_of("aab") do
       result = stream

@@ -45,20 +45,6 @@ defmodule Paco.Parser.LiteralTest do
     }
   end
 
-  test "notify events on success" do
-    Helper.assert_events_notified(lit("aaa"), "aaa", [
-      {:started, ~s|lit("aaa")|},
-      {:matched, {0, 1, 1}, {2, 1, 3}, {3, 1, 4}},
-    ])
-  end
-
-  test "notify events on failure" do
-    Helper.assert_events_notified(lit("bbb"), "aaa", [
-      {:started, ~s|lit("bbb")|},
-      {:failed, {0, 1, 1}},
-    ])
-  end
-
   test "increment indexes for a match" do
     parser = lit("aaa")
     success = parser.parse.(Paco.State.from("aaa"), parser)

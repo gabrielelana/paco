@@ -15,14 +15,12 @@ defmodule Paco.Macro.ParserDefinition do
       parser unquote(definition) do
         parser = unquote(parser)
         fn %Paco.State{} = state, this ->
-          Paco.Collector.notify_started(this, state)
           case parser.parse.(state, parser) do
             %Paco.Success{} = success ->
               success
             %Paco.Failure{} = failure ->
               %Paco.Failure{failure|what: Paco.describe(this), because: failure.because}
           end
-          |> Paco.Collector.notify_ended(state)
         end
       end
     end
