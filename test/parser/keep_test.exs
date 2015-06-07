@@ -5,21 +5,7 @@ defmodule Paco.Parser.KeepTest do
   import Paco.Parser
 
   test "keep what is skipped" do
-    assert parse(surrounded_by(lit("a"), lex("*")), "*a*") == {:ok, "a"}
-
     assert parse(surrounded_by(lit("a"), keep(lex("*"))), "*a*") == {:ok, ["*", "a", "*"]}
-  end
-
-  test "failures are ignored" do
-    parser = surrounded_by(lit("a"), keep(lex("*")))
-
-    assert parse(parser, "[a]") == {:error,
-      """
-      Failed to match surrounded_by(lit("a"), keep(lex("*")), keep(lex("*"))) at 1:1, \
-      because it failed to match lex("*") at 1:1, \
-      because it failed to match lit("*") at 1:1
-      """
-    }
   end
 
   test "keep a skip" do
