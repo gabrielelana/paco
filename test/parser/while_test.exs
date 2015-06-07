@@ -56,6 +56,17 @@ defmodule Paco.Parser.WhileTest do
     }
   end
 
+  test "failure has confidence" do
+    parser = while(&uppercase?/1, 3)
+
+    f1 = parser.parse.(Paco.State.from("aaa"), parser)
+    f2 = parser.parse.(Paco.State.from("Aaa"), parser)
+    f3 = parser.parse.(Paco.State.from("AAa"), parser)
+
+    assert f1.confidence < f2.confidence
+    assert f2.confidence < f3.confidence
+  end
+
   test "stream mode" do
     for stream <- Helper.streams_of("aab") do
       result = stream
