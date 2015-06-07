@@ -1,17 +1,19 @@
 defmodule Paco.Failure do
   @type t :: %__MODULE__{at: Paco.State.position,
                          tail: String.t,
+                         confidence: integer,
                          expected: String.t,
                          message: String.t | nil,
                          stack: [String.t],
 
                          tail: String.t, what: any, because: any}
 
-  defexception at: {0, 0, 0}, tail: "", expected: "", message: nil, stack: [],
+  defexception at: {0, 0, 0}, tail: "", confidence: 0, expected: "", message: nil, stack: [],
                what: nil, because: nil
 
   def at(%Paco.State{at: at, text: text}, expected, opts \\ []) do
     %Paco.Failure{at: at, tail: text, expected: expected,
+                  confidence: Keyword.get(:confidence, opts, 0),
                   message: Keyword.get(:message, opts, nil),
                   stack: Keyword.get(:stack, opts, [])}
   end
