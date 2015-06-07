@@ -18,6 +18,12 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "a,b") == {:ok, ["a"]}
   end
 
+  test "boxing: delimiter is boxes with lex instead of lit" do
+    parser = separated_by("a", ",")
+    assert parse(parser, "a,a") == {:ok, ["a", "a"]}
+    assert parse(parser, "a , a") == {:ok, ["a", "a"]}
+  end
+
   test "fails on end of input" do
     parser = lit("a") |> separated_by(lex(","))
     assert parse(parser, "") == {:error,
