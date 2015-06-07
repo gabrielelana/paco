@@ -4,12 +4,9 @@ defmodule Paco.Failure do
                          confidence: integer,
                          expected: String.t,
                          message: String.t | nil,
-                         stack: [String.t],
+                         stack: [String.t]}
 
-                         tail: String.t, what: any, because: any}
-
-  defexception at: {0, 0, 0}, tail: "", confidence: 0, expected: "", message: nil, stack: [],
-               what: nil, because: nil
+  defexception at: {0, 0, 0}, tail: "", confidence: 0, expected: "", message: nil, stack: []
 
   def at(%Paco.State{at: at, text: text}, opts \\ []) do
     %Paco.Failure{at: at, tail: text,
