@@ -38,6 +38,17 @@ defmodule Paco.Parser.AnyTest do
     }
   end
 
+  test "failure has confidence" do
+    parser = any(3)
+
+    f1 = parser.parse.(Paco.State.from(""), parser)
+    f2 = parser.parse.(Paco.State.from("a"), parser)
+    f3 = parser.parse.(Paco.State.from("aa"), parser)
+
+    assert f1.confidence < f2.confidence
+    assert f2.confidence < f3.confidence
+  end
+
   test "stream mode success" do
     for stream <- Helper.streams_of("abc") do
       result = stream
