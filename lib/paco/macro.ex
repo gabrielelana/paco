@@ -19,7 +19,7 @@ defmodule Paco.Macro.ParserDefinition do
             %Paco.Success{} = success ->
               success
             %Paco.Failure{} = failure ->
-              %Paco.Failure{failure|what: Paco.describe(this), because: failure.because}
+              failure |> Paco.Failure.stack(this)
           end
         end
       end
