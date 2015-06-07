@@ -177,44 +177,42 @@ defmodule Paco.Parser do
 
   parser repeat(p), to: repeat(p, {0, :infinity})
   parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
-  parser repeat(p, {:more_than, n}), to: repeat(p, {n+1, :infinity})
-  parser repeat(p, {:less_than, n}), to: repeat(p, {0, n-1})
-  parser repeat(p, {:at_least, n}), to: repeat(p, {n, :infinity})
-  parser repeat(p, {:at_most, n}), to: repeat(p, {0, n})
+  parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
   parser repeat(box(p), {at_least, at_most}) do
-    fn %Paco.State{at: at, text: text} = state, this ->
-      successes = Stream.unfold({state, 0},
-                             fn {_, n} when n == at_most -> nil
-                                {state, n} ->
-                                  case p.parse.(state, p) do
-                                    %Paco.Success{skip: true} = success ->
-                                      {:skip, {Paco.State.update(state, success), n + 1}}
-                                    %Paco.Success{} = success ->
-                                      {success, {Paco.State.update(state, success), n + 1}}
-                                    %Paco.Failure{} ->
-                                      nil
-                                  end
-                             end)
-               |> Enum.filter(&match?(%Paco.Success{}, &1))
-               |> Enum.to_list
-
-      failure = %Paco.Failure{at: at, tail: text, what: Paco.describe(this)}
-      case Enum.count(successes) do
-        n when n != at_least and at_least == at_most ->
-          because = "matched #{n} times instead of #{at_least}"
-          %Paco.Failure{failure|because: because}
-        n when n < at_least ->
-          because = "matched #{n} times instead of at least #{at_least} times"
-          %Paco.Failure{failure|because: because}
-        n when n == 0 and at_least == 0 ->
-          %Paco.Success{from: at, to: at, at: at, tail: text, result: []}
-        _ ->
-          last_success = List.last(successes)
+    fn %Paco.State{at: from} = state, this ->
+      case unfold_repeat(p, state, at_most) do
+        {n, _, failure} when n < at_least ->
+          expected = {:repeat, failure.expected, n, at_least, at_most}
+          %Paco.Failure{failure|expected: expected} |> Paco.Failure.stack(this)
+        {0, _, _} ->
+          %Paco.Success{from: from, to: from, at: from, tail: from, result: []}
+        {_, successes, _} ->
           results = successes |> Enum.map(&(&1.result))
-          %Paco.Success{last_success|from: at, result: results}
+          %Paco.Success{List.last(successes)|from: from, result: results}
       end
     end
   end
+
+  defp unfold_repeat(p, state, at_most) do
+    unfold_repeat(p, state, 0, at_most, [])
+  end
+
+  defp unfold_repeat(_, _, n, n, successes) do
+    {n, successes |> Enum.reverse, nil}
+  end
+  defp unfold_repeat(p, state, n, m, successes) do
+    case p.parse.(state, p) do
+      %Paco.Success{skip: true} = success ->
+        state = Paco.State.update(state, success)
+        unfold_repeat(p, state, n+1, m, successes)
+      %Paco.Success{} = success ->
+        state = Paco.State.update(state, success)
+        unfold_repeat(p, state, n+1, m, [success|successes])
+      %Paco.Failure{} = failure ->
+        {n, successes, failure}
+    end
+  end
+
 
 
   parser always(t) do
@@ -222,6 +220,8 @@ defmodule Paco.Parser do
       %Paco.Success{from: at, to: at, at: at, tail: text, result: t}
     end
   end
+
+
 
   parser maybe(box(p), opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
@@ -238,6 +238,8 @@ defmodule Paco.Parser do
     end
   end
 
+
+
   parser skip(box(p)) do
     fn state, _ ->
       case p.parse.(state, p) do
@@ -251,6 +253,8 @@ defmodule Paco.Parser do
     end
   end
 
+
+
   parser keep(box(p)) do
     fn state, _ ->
       case p.parse.(state, p) do
@@ -263,6 +267,8 @@ defmodule Paco.Parser do
       end
     end
   end
+
+
 
   parser only_if(box(p), f) do
     {:arity, arity} = :erlang.fun_info(f, :arity)

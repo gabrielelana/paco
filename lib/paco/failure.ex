@@ -50,9 +50,11 @@ defmodule Paco.Failure do
     failure.message
     |> String.split("%", trim: true)
     |> Enum.map(&String.strip/1)
-    |> Enum.map(fn("STACK") -> format_stack(failure.stack)
-                  ("AT")    -> format_position(failure.at)
-                  (token)   -> token
+    |> Enum.map(fn("EXPECTED") -> format_expected(failure.expected)
+                  ("STACK")    -> format_stack(failure.stack)
+                  ("AT")       -> format_position(failure.at)
+                  ("TAIL")     -> format_tail(failure.tail, failure.expected)
+                  (token)      -> token
                 end)
     |> Enum.reject(&(&1 == :empty or &1 == ""))
     |> Enum.join(" ")
@@ -73,6 +75,18 @@ defmodule Paco.Failure do
     [format_limits({n, m}), "characters"]
     |> Enum.join(" ")
   end
+  defp format_expected({:repeat, expected, 0, at_least, _}) do
+    ["at least", at_least, format_expected(expected)]
+    |> Enum.join(" ")
+  end
+  defp format_expected({:repeat, expected, consumed, at_least, at_least}) do
+    [at_least - consumed, "more", format_expected(expected)]
+    |> Enum.join(" ")
+  end
+  defp format_expected({:repeat, expected, consumed, at_least, _}) do
+    ["at least", at_least - consumed, "more", format_expected(expected)]
+    |> Enum.join(" ")
+  end
   defp format_expected(s) when is_binary(s) do
     quoted(s)
   end
@@ -88,6 +102,9 @@ defmodule Paco.Failure do
   defp format_tail("", _), do: "the end of input"
   defp format_tail(tail, s) when is_binary(s) do
     quoted(String.slice(tail, 0, String.length(s)))
+  end
+  defp format_tail(tail, {:repeat, _, consumed, at_least, _}) do
+    quoted(String.slice(tail, 0, at_least - consumed))
   end
   defp format_tail(tail, _) do
     quoted(tail)
