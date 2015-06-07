@@ -73,19 +73,14 @@ defmodule Paco.Parser.SequenceOfTest do
   end
 
   test "fails in stream mode when don't consume any input" do
-    # result = [""]
-    #          |> Paco.Stream.parse(sequence_of([]))
-    #          |> Enum.to_list
-    # assert result == []
+    result = [""]
+             |> Paco.Stream.parse(sequence_of([]))
+             |> Enum.to_list
+    assert result == []
 
-    # result = [""]
-    #          |> Paco.Stream.parse(sequence_of([]), on_failure: :yield)
-    #          |> Enum.to_list
-    # assert result == [{:error,
-    #   """
-    #   Failed to match sequence_of() at 1:1, \
-    #   because it didn't consume any input
-    #   """
-    # }]
+    result = [""]
+             |> Paco.Stream.parse(sequence_of([]), on_failure: :yield)
+             |> Enum.to_list
+    assert result == [{:error, ~s|failure! parser didn't consume any input|}]
   end
 end

@@ -142,19 +142,14 @@ defmodule Paco.Parser.RegexTest do
   end
 
   test "stream mode failure because it doesn't consume any input" do
-    # parser = re(~r/a*/)
-    # for stream <- Helper.streams_of("bbb") do
-    #   result = stream
-    #            |> Paco.Stream.parse(parser, on_failure: :yield)
-    #            |> Enum.to_list
+    parser = re(~r/a*/)
+    for stream <- Helper.streams_of("bbb") do
+      result = stream
+               |> Paco.Stream.parse(parser, on_failure: :yield)
+               |> Enum.to_list
 
-    #   assert result == [{:error,
-    #     """
-    #     Failed to match re(~r/a*/) at 1:1, \
-    #     because it didn't consume any input
-    #     """
-    #   }]
-    # end
+      assert result == [{:error, ~s|failure! parser didn't consume any input|}]
+    end
   end
 
   test "stream mode for an empty input" do
