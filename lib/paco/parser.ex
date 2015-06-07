@@ -12,11 +12,11 @@ defmodule Paco.Parser do
   def box(t), do: Paco.Parsable.to_parser(t)
 
 
+
   defmacro then(p, form, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "then combinator")
     quote do
       then_with(unquote(p), unquote(do_clauses_to_function(form, clauses)))
-      |> as("then")
     end
   end
 
@@ -24,14 +24,12 @@ defmodule Paco.Parser do
     ensure_are_all_arrow_clauses(clauses, "then combinator")
     quote do
       then_with(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
-      |> as("then")
     end
   end
 
   defmacro then(p, f) do
     quote do
       then_with(unquote(p), unquote(f))
-      |> as("then")
     end
   end
 
@@ -47,8 +45,9 @@ defmodule Paco.Parser do
             end
           catch
             _kind, reason ->
-              Paco.Failure.at(state, Paco.describe(this),
-                              "raised an exception: #{Exception.message(reason)}")
+              exception = Exception.message(reason)
+              message = "error! choose function %STACK% raised: #{exception} %AT%"
+              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             p ->
               p = box(p)
@@ -59,8 +58,6 @@ defmodule Paco.Parser do
       end
     end
   end
-
-
 
 
 
@@ -104,6 +101,7 @@ defmodule Paco.Parser do
               %Paco.Success{success|result: result}
           end
         %Paco.Failure{} = failure ->
+          # TODO failure |> Paco.Failure.stack(this)
           failure
       end
     end
@@ -144,8 +142,7 @@ defmodule Paco.Parser do
 
   parser whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
 
-  parser lex(s), as: lit(s)
-                     |> surrounded_by(maybe(whitespaces))
+  parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 

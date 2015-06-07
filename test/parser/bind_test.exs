@@ -45,14 +45,13 @@ defmodule Paco.Parser.BindTest do
 
   test "boxing" do
     parser = bind("a", &String.duplicate(&1, 2))
-
     assert parse(parser, "a") == {:ok, "aa"}
   end
 
   test "fails if bind function raise an exception" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
-      ~s|error! bind function raised: "boom!" at 1:1|
+      ~s|error! bind function raised: boom! at 1:1|
     }
   end
 

@@ -4,15 +4,12 @@ defmodule Paco.Parser.ThenTest do
   import Paco
   import Paco.Parser
 
-  test "choose with a function" do
+  test "choose next parser with a function" do
     parser = lit("a") |> then(fn s -> lit(s) end)
-
     assert parse(parser, "aa") == {:ok, "a"}
-
-    assert describe(parser) == ~s|then(lit("a"), fn/1)|
   end
 
-  test "choose with a function with result and state" do
+  test "choose next parser with a function with result and state" do
     parser = lit("a")
              |> then(fn(s, %Paco.State{at: {_, ln, _}}) ->
                        while(s, ln)
@@ -20,10 +17,10 @@ defmodule Paco.Parser.ThenTest do
 
     parser = sequence_of([parser, skip(lit("\n")), parser])
 
-    assert parse(parser, "aa\naaaa") == {:ok, ["a", "aa"]}
+    assert parse(parser, "aa\naaa") == {:ok, ["a", "aa"]}
   end
 
-  test "choose with a block" do
+  test "choose next parser with a block" do
     parser = one_of([lit("a"), lit("b")])
              |> then do
                   "a" -> lit("a")
@@ -32,32 +29,24 @@ defmodule Paco.Parser.ThenTest do
 
     assert parse(parser, "aa") == {:ok, "a"}
     assert parse(parser, "bbb") == {:ok, "bb"}
-
-    assert describe(parser) == ~s|then(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
-  test "autoboxing: given value and value returned from choose function are both boxed" do
+  test "boxing: the parameter and the return value are both boxed" do
     parser = then("a", fn _ -> "b" end)
-
     assert parse(parser, "ab") == {:ok, "b"}
   end
 
   test "fails if choose function raise an exception" do
     parser = then(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
-      """
-      Failed to match then(lit("a"), fn/1) at 1:1, \
-      because it raised an exception: boom!
-      """
+      ~s|error! choose function raised: boom! at 1:1|
     }
   end
 
-  test "it doesn't show up in failure message" do
-    parser = then(lit("a"), fn(s) -> lit(s) end)
-    assert parse(parser, "b") == {:error,
-      """
-      Failed to match lit("a") at 1:1
-      """
+  test "failure with description" do
+    parser = then(lit("a"), fn _  -> raise "boom!" end) |> as("CHOOSE")
+    assert parse(parser, "a") == {:error,
+      ~s|error! choose function (CHOOSE) raised: boom! at 1:1|
     }
   end
 
