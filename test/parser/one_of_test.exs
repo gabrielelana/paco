@@ -9,6 +9,7 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "b") == {:ok, "b"}
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "c") == {:ok, "c"}
     assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
+    assert parse(one_of([]), "a") == {:ok, ""}
   end
 
   test "boxing" do

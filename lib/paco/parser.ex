@@ -329,13 +329,14 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn state, _ ->
+    fn %Paco.State{at: at, text: text} = state, _ ->
       case reduce_one_of(ps, state) do
-        # [] -> ???
+        [] ->
+          %Paco.Success{from: at, to: at, at: at, tail: text, result: ""}
         %Paco.Success{} = success ->
           success
         failures ->
-          keep_farthest_failure(failures)
+          one_of_farthest_failure(failures)
       end
     end
   end
@@ -352,20 +353,20 @@ defmodule Paco.Parser do
     end
   end
 
-  defp keep_farthest_failure(failures) do
-    Enum.reduce(failures, nil, &keep_farthest_failure/2)
+  defp one_of_farthest_failure(failures) do
+    Enum.reduce(failures, nil, &one_of_farthest_failure/2)
   end
 
-  defp keep_farthest_failure(failure, nil), do: failure
-  defp keep_farthest_failure(%Paco.Failure{at: {n,_,_}} = failure,
+  defp one_of_farthest_failure(failure, nil), do: failure
+  defp one_of_farthest_failure(%Paco.Failure{at: {n,_,_}} = failure,
                              %Paco.Failure{at: {m,_,_}})
                              when n > m, do: failure
-  defp keep_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: n} = failure,
+  defp one_of_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: n} = failure,
                              %Paco.Failure{at: {x,_,_}, confidence: m})
                              when n > m, do: failure
-  defp keep_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: y} = failure,
+  defp one_of_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: y} = failure,
                              %Paco.Failure{at: {x,_,_}, confidence: y}), do: failure
-  defp keep_farthest_failure(_, failure), do: failure
+  defp one_of_farthest_failure(_, failure), do: failure
 
 
 
