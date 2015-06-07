@@ -13,7 +13,7 @@ defmodule Paco.Parser do
 
 
   defmacro then(p, form, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "bind combinator")
+    ensure_are_all_arrow_clauses(clauses, "then combinator")
     quote do
       then_with(unquote(p), unquote(do_clauses_to_function(form, clauses)))
       |> as("then")
@@ -21,7 +21,7 @@ defmodule Paco.Parser do
   end
 
   defmacro then(p, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "bind combinator")
+    ensure_are_all_arrow_clauses(clauses, "then combinator")
     quote do
       then_with(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
       |> as("then")
