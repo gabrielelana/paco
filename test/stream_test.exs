@@ -52,7 +52,7 @@ defmodule Paco.StreamTest do
     assert result == [{:ok, "ab"}]
   end
 
-  test "autoboxing" do
+  test "boxing" do
     for stream <- Helper.streams_of("ab") do
       result = stream
                |> Paco.Stream.parse("ab")
@@ -73,51 +73,37 @@ defmodule Paco.StreamTest do
   end
 
   test "parse failure with yield on failure" do
-    parser = lit("ab")
-
     for stream <- Helper.streams_of("abac") do
       result = stream
-               |> Paco.Stream.parse(parser, on_failure: :yield)
+               |> Paco.Stream.parse(lit("ab"), on_failure: :yield)
                |> Enum.to_list
 
       # The format is automatically set to :tagged otherwise would
       # be impossibile to differentiate between an error string and
       # a string result of a successful parser
-      assert result == [{:ok, "ab"}, {:error,
-        """
-        Failed to match lit("ab") at 1:3
-        """
-      }]
+      assert result == [{:ok, "ab"}, {:error, ~s|expected "ab" at 1:3 but got "ac"|}]
     end
   end
 
   test "parse failure with raise on failure" do
-    parser = lit("a")
-
-    for stream <- Helper.streams_of("e") do
+    for stream <- Helper.streams_of("b") do
       assert_raise Paco.Failure,
-                   """
-                   Failed to match lit("a") at 1:1
-                   """,
+                   ~s|expected "a" at 1:1 but got "b"|,
                    fn ->
                      stream
-                     |> Paco.Stream.parse(parser, on_failure: :raise)
+                     |> Paco.Stream.parse(lit("a"), on_failure: :raise)
                      |> Enum.to_list
                    end
     end
   end
 
   test "Paco.Stream.parse!(s, p) is same as Paco.Stream.parse(e, p, on_failure: :raise)" do
-    parser = lit("a")
-
-    for stream <- Helper.streams_of("e") do
+    for stream <- Helper.streams_of("b") do
       assert_raise Paco.Failure,
-                   """
-                   Failed to match lit("a") at 1:1
-                   """,
+                   ~s|expected "a" at 1:1 but got "b"|,
                    fn ->
                      stream
-                     |> Paco.Stream.parse!(parser)
+                     |> Paco.Stream.parse!(lit("a"))
                      |> Enum.to_list
                    end
     end
@@ -139,11 +125,7 @@ defmodule Paco.StreamTest do
     result = ["aaa"]
              |> Paco.Stream.parse(parser, on_failure: :yield)
              |> Enum.to_list
-    assert result == [{:error,
-      """
-      Failed to match lit("") at 1:1, because it didn't consume any input
-      """
-    }]
+    assert result == [{:error, ~s|failure! parser didn't consume any input|}]
   end
 
   test "parse stream when downstream halts the pipe as first command" do

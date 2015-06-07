@@ -117,10 +117,8 @@ defmodule Paco.Stream do
                          case Paco.parse(parser, text, opts) do
                            %Paco.Success{from: at, to: at, at: at} ->
                              # IO.puts("[PARSER] FAILURE! DIDN'T CONSUME ANY INPUT")
-                             failure = %Paco.Failure{at: at,
-                                                     tail: text,
-                                                     what: Paco.describe(parser),
-                                                     because: "didn't consume any input"}
+                             message = "failure! parser didn't consume any input"
+                             failure = %Paco.Failure{at: at, tail: text, message: message}
                              {failure, {at, "", :halt}}
                            %Paco.Success{at: at, tail: tail} = success ->
                              # IO.puts("[PARSER] SUCCESS! #{inspect(success)}")

@@ -70,7 +70,9 @@ defmodule Paco.Macro.ParserDefinition do
   def extract_boxing(nil), do: {[], []}
   def extract_boxing(args), do: extract_boxing(args, {[], []})
 
-  def extract_boxing([], {args, boxing}), do: {Enum.reverse(args), Enum.reverse(boxing)}
+  def extract_boxing([], {args, boxing}) do
+    {Enum.reverse(args), Enum.reverse(boxing)}
+  end
   def extract_boxing([{:box, _, [arg]}|tail], {args, boxing}) do
     box = quote do
       unquote(arg) = Paco.Parser.box(unquote(arg))
@@ -96,14 +98,14 @@ defmodule Paco.Macro.ParserModuleDefinition do
       require Paco.Macro.ParserDefinition
       @paco_parsers unquote(name)
       Paco.Macro.ParserDefinition.parser unquote(definition) do
-        fn %Paco.State{} = state, _this ->
+        fn %Paco.State{} = state, this ->
           case (unquote(block)) do
             %Paco.Parser{} = parser ->
               case parser.parse.(state, parser) do
                 %Paco.Success{} = success ->
                   success
                 %Paco.Failure{} = failure ->
-                  %Paco.Failure{failure|what: unquote(name)}
+                  failure |> Paco.Failure.stack(this)
               end
             _ ->
               raise RuntimeError, message: "Expected a %Paco.Parser"

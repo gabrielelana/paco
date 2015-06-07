@@ -17,70 +17,51 @@ defmodule PacoTest do
   end
 
   test "parse_all stops at the first failure" do
-    parser = one_of([lit("a"), lit("b"), lit("c")])
-
-    assert Paco.parse_all(parser, "afa") == [{:ok, "a"}, {:error,
-      """
-      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
-      """
-    }]
-    assert Paco.parse_all(parser, "abfa") == [{:ok, "a"}, {:ok, "b"}, {:error,
-      """
-      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:3
-      """
-    }]
-    assert [{:ok, "a"}, {:ok, "b"}, {:error, _}] = Paco.parse_all(parser, "abfa")
+    assert Paco.parse_all(lit("a"), "baa") == [
+      {:error, ~s|expected "a" at 1:1 but got "b"|}
+    ]
+    assert Paco.parse_all(lit("a"), "aba") == [
+      {:ok, "a"}, {:error, ~s|expected "a" at 1:2 but got "b"|}
+    ]
+    assert Paco.parse_all(lit("a"), "aab") == [
+      {:ok, "a"}, {:ok, "a"}, {:error, ~s|expected "a" at 1:3 but got "b"|}
+    ]
   end
 
   test "parse_all will consider failure an empty match" do
     assert Paco.parse_all(lit(""), "abc") == [{:error,
-      """
-      Failed to match lit("") at 1:1, because it didn't consume any input
-      """
+        ~s|failure! parser didn't consume any input|
     }]
   end
 
   test "parse_all with flat format" do
-    parser = one_of([lit("a"), lit("b"), lit("c")])
-
-    assert Paco.parse_all(parser, "abc", format: :flat) == ["a", "b", "c"]
-    assert Paco.parse_all(parser, "afa", format: :flat) == ["a",
-      """
-      Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
-      """
+    assert Paco.parse_all(lit("a"), "aaa", format: :flat) == ["a", "a", "a"]
+    assert Paco.parse_all(lit("a"), "afa", format: :flat) == [
+      "a", ~s|expected "a" at 1:2 but got "f"|
     ]
   end
 
   test "parse_all with raw format" do
-    parser = one_of([lit("a"), lit("b"), lit("c")])
     alias Paco.Success, as: S
     alias Paco.Failure, as: F
 
-    assert [%S{}, %S{}, %S{}] = Paco.parse_all(parser, "abc", format: :raw)
-    assert [%S{}, %F{}] = Paco.parse_all(parser, "afc", format: :raw)
+    assert [%S{}, %S{}, %S{}] = Paco.parse_all(lit("a"), "aaa", format: :raw)
+    assert [%S{}, %F{}] = Paco.parse_all(lit("a"), "aba", format: :raw)
   end
 
   test "parse_all with raise on failure option" do
-    parser = one_of([lit("a"), lit("b"), lit("c")])
-
     assert_raise Paco.Failure,
-                 """
-                 Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
-                 """,
+                 ~s|expected "a" at 1:2 but got "b"|,
                  fn ->
-                   Paco.parse_all(parser, "afc", on_failure: :raise)
+                   Paco.parse_all(lit("a"), "aba", on_failure: :raise)
                  end
   end
 
   test "parse_all! same as parse_all with raise on failure option" do
-    parser = one_of([lit("a"), lit("b"), lit("c")])
-
     assert_raise Paco.Failure,
-                 """
-                 Failed to match one_of([lit("a"), lit("b"), lit("c")]) at 1:2
-                 """,
+                 ~s|expected "a" at 1:2 but got "b"|,
                  fn ->
-                   Paco.parse_all!(parser, "afc")
+                   Paco.parse_all!(lit("a"), "aba")
                  end
   end
 end
