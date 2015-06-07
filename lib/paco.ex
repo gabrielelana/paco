@@ -22,11 +22,6 @@ defmodule Paco do
     |> Enum.map(&format(&1, Keyword.get(opts, :format, :tagged)))
   end
 
-  def describe(p) do
-    # IO.puts("DESCRIBE")
-    inspect(Paco.Parser.box(p))
-  end
-
   @doc false
   defmacro __using__(_) do
     quote do

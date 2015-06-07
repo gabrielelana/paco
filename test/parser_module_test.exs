@@ -48,12 +48,6 @@ defmodule Paco.ParserModuleTest do
     parser bbb, do: lit("bbb")
   end
 
-  test "describe" do
-    assert Paco.describe(UsePacoReferenceOtherParsers.all) == "all"
-    assert Paco.describe(UsePacoReferenceOtherParsers.aaa) == "aaa"
-    assert Paco.describe(UsePacoReferenceOtherParsers.bbb) == "bbb"
-  end
-
   test "use paco, reference other parsers" do
     assert UsePacoReferenceOtherParsers.parse("aaabbb") == {:ok, ["aaa", "bbb"]}
   end
