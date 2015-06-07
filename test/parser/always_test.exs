@@ -12,10 +12,6 @@ defmodule Paco.Parser.AlwaysTest do
     assert parse(always(nil), "") == {:ok, nil}
   end
 
-  test "describe" do
-    assert describe(always("a")) == ~s|always("a")|
-  end
-
   test "doesn't consume any input" do
     parser = always("something")
     success = parser.parse.(Paco.State.from("a"), parser)
