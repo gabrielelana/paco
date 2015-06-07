@@ -219,6 +219,19 @@ defmodule Paco.Parser do
   end
 
 
+  parser fail_with(p, message) do
+    fn state, this ->
+      case p.parse.(state, p) do
+        %Paco.Success{} = success ->
+          success
+        %Paco.Failure{} = failure ->
+          %Paco.Failure{failure|message: message}
+          |> Paco.Failure.stack(this)
+      end
+    end
+  end
+
+
 
   parser maybe(box(p), opts \\ []) do
     has_default = Keyword.has_key?(opts, :default)
