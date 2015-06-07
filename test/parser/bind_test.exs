@@ -6,10 +6,7 @@ defmodule Paco.Parser.BindTest do
 
   test "bind to a function" do
     parser = bind(lit("a"), fn(_) -> "b" end)
-
     assert parse(parser, "a") == {:ok, "b"}
-
-    assert describe(parser) == ~s|bind(lit("a"), fn/1)|
   end
 
   test "bind to a function with result and state" do
@@ -26,8 +23,6 @@ defmodule Paco.Parser.BindTest do
 
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
-
-    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
   test "bind to a block with result and state" do
@@ -46,11 +41,9 @@ defmodule Paco.Parser.BindTest do
 
     assert parse(parser, "a") == {:ok, 1}
     assert parse(parser, "b") == {:ok, 2}
-
-    assert describe(parser) == ~s|bind(one_of([lit("a"), lit("b")]), fn/1)|
   end
 
-  test "autoboxing" do
+  test "boxing" do
     parser = bind("a", &String.duplicate(&1, 2))
 
     assert parse(parser, "a") == {:ok, "aa"}
@@ -59,19 +52,14 @@ defmodule Paco.Parser.BindTest do
   test "fails if bind function raise an exception" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
-      """
-      Failed to match bind(lit("a"), fn/1) at 1:1, \
-      because it raised an exception: boom!
-      """
+      ~s|error! bind function raised "boom!" at 1:1|
     }
   end
 
-  test "it doesn't show up in failure message" do
-    parser = bind(lit("a"), fn(r) -> r end)
-    assert parse(parser, "b") == {:error,
-      """
-      Failed to match lit("a") at 1:1
-      """
+  test "failure with description" do
+    parser = bind(lit("a"), fn _  -> raise "boom!" end) |> as ("BIND")
+    assert parse(parser, "a") == {:error,
+      ~s|error! bind function (BIND) raised "boom!" at 1:1|
     }
   end
 

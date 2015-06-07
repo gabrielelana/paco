@@ -68,7 +68,6 @@ defmodule Paco.Parser do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(form, clauses)))
-      |> as("bind")
     end
   end
 
@@ -76,14 +75,12 @@ defmodule Paco.Parser do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
       bind_to(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
-      |> as("bind")
     end
   end
 
   defmacro bind(p, f) do
     quote do
       bind_to(unquote(p), unquote(f))
-      |> as("bind")
     end
   end
 
@@ -99,8 +96,9 @@ defmodule Paco.Parser do
             end
           catch
             _kind, reason ->
-              Paco.Failure.at(state, Paco.describe(this),
-                              "raised an exception: #{Exception.message(reason)}")
+              exception = Exception.message(reason)
+              message = ~s|error! bind function %STACK% raised "#{exception}" %AT%|
+              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             result ->
               %Paco.Success{success|result: result}
@@ -301,7 +299,7 @@ defmodule Paco.Parser do
         {%Paco.State{at: at, text: text}, to, results} ->
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
-          Paco.Failure.stack(failure, this)
+          failure |> Paco.Failure.stack(this)
       end
     end
   end

@@ -11,11 +11,12 @@ defmodule Paco.Failure do
   defexception at: {0, 0, 0}, tail: "", confidence: 0, expected: "", message: nil, stack: [],
                what: nil, because: nil
 
-  def at(%Paco.State{at: at, text: text}, expected, opts \\ []) do
-    %Paco.Failure{at: at, tail: text, expected: expected,
-                  confidence: Keyword.get(:confidence, opts, 0),
-                  message: Keyword.get(:message, opts, nil),
-                  stack: Keyword.get(:stack, opts, [])}
+  def at(%Paco.State{at: at, text: text}, opts \\ []) do
+    %Paco.Failure{at: at, tail: text,
+                  expected: Keyword.get(opts, :expected, ""),
+                  confidence: Keyword.get(opts, :confidence, 0),
+                  message: Keyword.get(opts, :message, nil),
+                  stack: Keyword.get(opts, :stack, [])}
   end
 
   def stack(%Paco.Parser{description: nil}), do: []
@@ -30,7 +31,7 @@ defmodule Paco.Failure do
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
   def format(%Paco.Failure{} = failure, :tagged), do: {:error, format(failure, :flat)}
-  def format(%Paco.Failure{} = failure, :flat) do
+  def format(%Paco.Failure{message: nil} = failure, :flat) do
     [ "expected",
       format_expected(failure.expected),
       format_stack(failure.stack),
@@ -39,6 +40,21 @@ defmodule Paco.Failure do
       format_tail(failure.tail, failure.expected)
     ]
     |> Enum.reject(&(&1 === :empty))
+    |> Enum.join(" ")
+  end
+  def format(%Paco.Failure{} = failure, :flat) do
+    format_message(failure)
+  end
+
+  defp format_message(failure) do
+    failure.message
+    |> String.split("%", trim: true)
+    |> Enum.map(fn("STACK") -> format_stack(failure.stack)
+                  ("AT")    -> format_position(failure.at)
+                  (token)   -> token
+                end)
+    |> Enum.reject(&(&1 === :empty))
+    |> Enum.map(&String.strip/1)
     |> Enum.join(" ")
   end
 
