@@ -528,9 +528,3 @@ defmodule Paco.Parser do
     end
   end
 end
-
-defimpl Inspect, for: Paco.Parser do
-  def inspect(p, opts) do
-    Paco.Inspect.parser(p, opts)
-  end
-end
