@@ -329,14 +329,14 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn %Paco.State{at: at, text: text} = state, _ ->
+    fn %Paco.State{at: at, text: text} = state, this ->
       case reduce_one_of(ps, state) do
         [] ->
           %Paco.Success{from: at, to: at, at: at, tail: text, result: ""}
         %Paco.Success{} = success ->
           success
         failures ->
-          one_of_farthest_failure(failures)
+          one_of_farthest_failure(failures) |> Paco.Failure.stack(this)
       end
     end
   end

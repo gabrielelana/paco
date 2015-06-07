@@ -62,6 +62,32 @@ defmodule Paco.Parser.OneOfTest do
     }
   end
 
+  test "failure with description" do
+    parser = one_of([lit("aa"), lit("bb")]) |> as("ONE_OF")
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "aa" (ONE_OF) at 1:1 but got "ac"|
+    }
+  end
+
+  test "failure with nested description" do
+    parser = lit("aa") |> as("LIT")
+    parser = one_of([parser, lit("bb")])
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "aa" (LIT) at 1:1 but got "ac"|
+    }
+  end
+
+  test "failure with stack of descriptions" do
+    parser = lit("aa") |> as("LIT")
+    parser = one_of([parser, lit("bb")]) |> as ("ONE_OF")
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "aa" (LIT < ONE_OF) at 1:1 but got "ac"|
+    }
+  end
+
   test "report position of the farthest failure" do
     parser = one_of([sequence_of([lit("a"), lit("b")]),
                      sequence_of([lit("b"), lit("c")])])

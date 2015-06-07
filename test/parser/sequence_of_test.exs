@@ -38,12 +38,12 @@ defmodule Paco.Parser.SequenceOfTest do
   end
 
   test "failure with description" do
-    parser = sequence_of([lit("a"), lit("b")]) |> as ("SEQUENCE")
+    parser = sequence_of([lit("a"), lit("b")]) |> as ("SEQUENCE_OF")
     assert parse(parser, "bb") == {:error,
-      ~s|expected "a" (SEQUENCE) at 1:1 but got "b"|
+      ~s|expected "a" (SEQUENCE_OF) at 1:1 but got "b"|
     }
     assert parse(parser, "aa") == {:error,
-      ~s|expected "b" (SEQUENCE) at 1:2 but got "a"|
+      ~s|expected "b" (SEQUENCE_OF) at 1:2 but got "a"|
     }
   end
 
@@ -57,11 +57,11 @@ defmodule Paco.Parser.SequenceOfTest do
     }
   end
 
-  test "failure with composed description" do
+  test "failure with stack of descriptions" do
     parser = lit("a") |> as("TOKEN")
-    parser = sequence_of([parser, lit("b")]) |> as("SEQUENCE")
+    parser = sequence_of([parser, lit("b")]) |> as("SEQUENCE_OF")
     assert parse(parser, "bb") == {:error,
-      ~s|expected "a" (TOKEN < SEQUENCE) at 1:1 but got "b"|
+      ~s|expected "a" (TOKEN < SEQUENCE_OF) at 1:1 but got "b"|
     }
   end
 
