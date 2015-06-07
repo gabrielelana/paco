@@ -138,9 +138,11 @@ defmodule Paco.Parser do
   end
 
 
-  parser whitespace, as: while(&Paco.String.whitespace?/1, 1)
+  parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
+                         |> fail_with("expected 1 whitespace %AT% but got %TAIL%")
 
-  parser whitespaces, as: while(&Paco.String.whitespace?/1, {:at_least, 1})
+  parser whitespaces, as: while(&Paco.String.whitespace?/1, at_least: 1)
+                          |> fail_with("expected at least 1 whitespace %AT% but got %TAIL%")
 
   parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
 

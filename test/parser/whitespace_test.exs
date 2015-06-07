@@ -8,23 +8,19 @@ defmodule Paco.Parser.WhitespaceTest do
     assert parse(whitespace, "  ") == {:ok, " "}
   end
 
-  test "pase whitespaces" do
+  test "parse whitespaces" do
     assert parse(whitespaces, "   ") == {:ok, "   "}
   end
 
   test "fail to parse a single whitespace" do
     assert parse(whitespace, "a") == {:error,
-      """
-      Failed to match whitespace at 1:1
-      """
+      ~s|expected 1 whitespace at 1:1 but got "a"|
     }
   end
 
   test "fail to parse whitespaces" do
     assert parse(whitespaces, "a") == {:error,
-      """
-      Failed to match whitespaces at 1:1
-      """
+      ~s|expected at least 1 whitespace at 1:1 but got "a"|
     }
   end
 end
