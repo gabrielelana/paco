@@ -49,12 +49,12 @@ defmodule Paco.Failure do
   defp format_message(failure) do
     failure.message
     |> String.split("%", trim: true)
+    |> Enum.map(&String.strip/1)
     |> Enum.map(fn("STACK") -> format_stack(failure.stack)
                   ("AT")    -> format_position(failure.at)
                   (token)   -> token
                 end)
-    |> Enum.reject(&(&1 === :empty))
-    |> Enum.map(&String.strip/1)
+    |> Enum.reject(&(&1 == :empty or &1 == ""))
     |> Enum.join(" ")
   end
 

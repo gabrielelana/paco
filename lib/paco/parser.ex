@@ -276,14 +276,15 @@ defmodule Paco.Parser do
             end
           catch
             _kind, reason ->
-              Paco.Failure.at(state, Paco.describe(this),
-                              "raised an exception: #{Exception.message(reason)}")
+              exception = Exception.message(reason)
+              message = "error! only_if function %STACK% raised: #{exception} %AT%"
+              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             true ->
               success
             false ->
-              Paco.Failure.at(state, Paco.describe(this),
-                              "considered #{inspect(result)} not acceptable")
+              message = "#{inspect(result)} is not acceptable %STACK% %AT%"
+              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           end
         %Paco.Failure{} = failure ->
           failure
