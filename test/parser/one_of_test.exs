@@ -53,8 +53,12 @@ defmodule Paco.Parser.OneOfTest do
     }
   end
 
-  test "keep all contending failures" do
-    # TODO
+  test "keep first failure when ambiguous" do
+    parser = one_of([lit("aa"), lit("ab")])
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "aa" at 1:1 but got "ac"|
+    }
   end
 
   test "report position of the farthest failure" do
