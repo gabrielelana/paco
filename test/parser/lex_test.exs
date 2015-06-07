@@ -15,16 +15,15 @@ defmodule Paco.Parser.LexemeTest do
     assert parse(lex("aaa"), "aaa") == {:ok, "aaa"}
   end
 
-  test "describe" do
-    assert describe(lex("a")) == ~s|lex("a")|
-  end
-
   test "failure" do
     assert parse(lex("aaa"), "bbb") == {:error,
-      """
-      Failed to match lex("aaa") at 1:1, \
-      because it failed to match lit("aaa") at 1:1
-      """
+      ~s|expected "aaa" at 1:1 but got "bbb"|
+    }
+  end
+
+  test "failure with description" do
+    assert parse(lex("aaa") |> as("LEX"), "bbb") == {:error,
+      ~s|expected "aaa" (LEX) at 1:1 but got "bbb"|
     }
   end
 end
