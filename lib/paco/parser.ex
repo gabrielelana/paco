@@ -97,7 +97,7 @@ defmodule Paco.Parser do
           catch
             _kind, reason ->
               exception = Exception.message(reason)
-              message = ~s|error! bind function %STACK% raised "#{exception}" %AT%|
+              message = "error! bind function %STACK% raised: #{exception} %AT%"
               Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             result ->

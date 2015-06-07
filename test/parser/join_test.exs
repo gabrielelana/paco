@@ -15,22 +15,14 @@ defmodule Paco.Parser.JoinTest do
   test "doesn't join failures" do
     parser = sequence_of([lit("a"), lit("b")]) |> join
 
-    assert parse(parser, "ac") == {:error,
-      """
-      Failed to match join(sequence_of([lit("a"), lit("b")]), "") at 1:1, \
-      because it failed to match lit("b") at 1:2
-      """
-    }
+    assert parse(parser, "ac") == {:error, ~s|expected "b" at 1:2 but got "c"|}
   end
 
   test "fails when results are not convertible to binaries" do
     parser = [{"a"}, {"b"}] |> join
 
     assert parse(parser, "ab") == {:error,
-      """
-      Failed to match join([{"a"}, {"b"}], "") at 1:1, \
-      because it raised an exception: protocol String.Chars not implemented for {"a"}
-      """
+      ~s|error! bind function raised: protocol String.Chars not implemented for {"a"} at 1:1|
     }
   end
 end

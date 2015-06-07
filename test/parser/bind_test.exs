@@ -52,14 +52,14 @@ defmodule Paco.Parser.BindTest do
   test "fails if bind function raise an exception" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
-      ~s|error! bind function raised "boom!" at 1:1|
+      ~s|error! bind function raised: "boom!" at 1:1|
     }
   end
 
   test "failure with description" do
     parser = bind(lit("a"), fn _  -> raise "boom!" end) |> as ("BIND")
     assert parse(parser, "a") == {:error,
-      ~s|error! bind function (BIND) raised "boom!" at 1:1|
+      ~s|error! bind function (BIND) raised: boom! at 1:1|
     }
   end
 
