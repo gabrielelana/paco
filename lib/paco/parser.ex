@@ -452,9 +452,10 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {:not_enough, _, _, _, _} ->
+        {:not_enough, _, consumed, _, _} ->
           %Paco.Failure{at: from, tail: text,
                         expected: {:until, p},
+                        confidence: String.length(consumed),
                         stack: Paco.Failure.stack(this)}
       end
     end

@@ -45,6 +45,17 @@ defmodule Paco.Parser.UntilTest do
     }
   end
 
+  test "failure has confidence" do
+    parser = until("c")
+
+    f1 = parser.parse.(Paco.State.from("a"), parser)
+    f2 = parser.parse.(Paco.State.from("aa"), parser)
+    f3 = parser.parse.(Paco.State.from("aaa"), parser)
+
+    assert f1.confidence < f2.confidence
+    assert f2.confidence < f3.confidence
+  end
+
   test "stream mode until a boundary" do
     for stream <- Helper.streams_of("aab") do
       result = stream
