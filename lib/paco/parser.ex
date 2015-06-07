@@ -359,7 +359,10 @@ defmodule Paco.Parser do
   defp keep_farthest_failure(failure, nil), do: failure
   defp keep_farthest_failure(%Paco.Failure{at: {n,_,_}} = failure,
                              %Paco.Failure{at: {m,_,_}})
-                             when n >= m, do: failure
+                             when n > m, do: failure
+  defp keep_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: n} = failure,
+                             %Paco.Failure{at: {x,_,_}, confidence: m})
+                             when n > m, do: failure
   defp keep_farthest_failure(_, failure), do: failure
 
 

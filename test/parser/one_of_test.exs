@@ -23,15 +23,14 @@ defmodule Paco.Parser.OneOfTest do
   end
 
   test "keep farthest failure" do
-    # TODO
-    # parser = one_of([lit("ab"), lit("bc")])
+    parser = one_of([lit("ab"), lit("bc")])
 
-    # assert parse(parser, "ac") == {:error,
-    #   ~s|expected "ab" at 1:1 but got "ac"|
-    # }
-    # assert parse(parser, "ba") == {:error,
-    #   ~s|expected "bc" at 1:1 but got "ba"|
-    # }
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "ab" at 1:1 but got "ac"|
+    }
+    assert parse(parser, "ba") == {:error,
+      ~s|expected "bc" at 1:1 but got "ba"|
+    }
   end
 
   test "keep deep farthest failure" do
@@ -43,6 +42,14 @@ defmodule Paco.Parser.OneOfTest do
     }
     assert parse(parser, "ba") == {:error,
       ~s|expected "c" at 1:2 but got "a"|
+    }
+  end
+
+  test "lit goes farther than while" do
+    parser = one_of([while("ab", 2), lit("ab")])
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "ab" at 1:1 but got "ac"|
     }
   end
 
