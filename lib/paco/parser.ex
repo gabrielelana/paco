@@ -293,28 +293,11 @@ defmodule Paco.Parser do
     end
   end
 
+
+
   parser sequence_of(box_each(ps)) do
     fn %Paco.State{at: from} = state, this ->
-      result = Enum.reduce(ps, {state, from, []},
-                           fn
-                             (_, %Paco.Failure{} = failure) ->
-                               failure
-                             (p, {state, to, results}) ->
-                               case p.parse.(state, p) do
-                                 %Paco.Success{from: at, to: at, at: at, skip: true} ->
-                                   {state, to, results}
-                                 %Paco.Success{from: at, to: at, at: at, result: result} ->
-                                   {state, to, [result|results]}
-                                 %Paco.Success{to: to, skip: true} = success ->
-                                   {Paco.State.update(state, success), to, results}
-                                 %Paco.Success{to: to, result: result} = success ->
-                                   {Paco.State.update(state, success), to, [result|results]}
-                                 %Paco.Failure{} = failure ->
-                                   failure
-                               end
-                           end)
-
-      case result do
+      case reduce_sequence_of(ps, state, from) do
         {%Paco.State{at: at, text: text}, to, results} ->
           %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
@@ -322,6 +305,28 @@ defmodule Paco.Parser do
       end
     end
   end
+
+  defp reduce_sequence_of(ps, state, from) do
+    Enum.reduce(ps, {state, from, []}, &reduce_sequence_of/2)
+  end
+
+  defp reduce_sequence_of(_, %Paco.Failure{} = failure), do: failure
+  defp reduce_sequence_of(p, {state, to, results}) do
+    case p.parse.(state, p) do
+      %Paco.Success{from: at, to: at, at: at, skip: true} ->
+        {state, to, results}
+      %Paco.Success{from: at, to: at, at: at, result: result} ->
+        {state, to, [result|results]}
+      %Paco.Success{to: to, skip: true} = success ->
+        {Paco.State.update(state, success), to, results}
+      %Paco.Success{to: to, result: result} = success ->
+        {Paco.State.update(state, success), to, [result|results]}
+      %Paco.Failure{} = failure ->
+        failure
+    end
+  end
+
+
 
   parser one_of(box_each(ps)) do
     fn %Paco.State{at: from, text: text} = state, this ->
