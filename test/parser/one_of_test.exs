@@ -11,27 +11,10 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
   end
 
-  test "autoboxing" do
+  test "boxing" do
     assert parse(one_of(["a", "b", "c"]), "a") == {:ok, "a"}
     assert parse(one_of([{"a", "b"}, "c"]), "ab") == {:ok, {"a", "b"}}
     assert parse(one_of([{"a", "b"}, "c"]), "c") == {:ok, "c"}
-  end
-
-  test "doesn't need to consume all the text" do
-    assert parse(one_of([lit("a"), lit("b"), lit("c")]), "abc") == {:ok, "a"}
-  end
-
-  test "always fails with no parsers" do
-    assert parse(one_of([]), "a") == {:error,
-      """
-      Failed to match one_of() at 1:1
-      """
-    }
-  end
-
-  test "describe" do
-    assert describe(one_of([lit("a")])) == ~s|one_of([lit("a")])|
-    assert describe(one_of([lit("a"), lit("b")])) == ~s|one_of([lit("a"), lit("b")])|
   end
 
   test "skipped parsers should be removed from result" do
@@ -39,18 +22,39 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), skip(lit("b"))]), "b") == {:ok, []}
   end
 
-  test "fail to parse" do
-    assert parse(one_of([lit("a"), lit("b")]), "c") == {:error,
-      """
-      Failed to match one_of([lit("a"), lit("b")]) at 1:1
-      """
+  test "keep farthest failure" do
+    # TODO
+    # parser = one_of([lit("ab"), lit("bc")])
+
+    # assert parse(parser, "ac") == {:error,
+    #   ~s|expected "ab" at 1:1 but got "ac"|
+    # }
+    # assert parse(parser, "ba") == {:error,
+    #   ~s|expected "bc" at 1:1 but got "ba"|
+    # }
+  end
+
+  test "keep deep farthest failure" do
+    parser = one_of([sequence_of([lit("a"), lit("b")]),
+                     sequence_of([lit("b"), lit("c")])])
+
+    assert parse(parser, "ac") == {:error,
+      ~s|expected "b" at 1:2 but got "c"|
+    }
+    assert parse(parser, "ba") == {:error,
+      ~s|expected "c" at 1:2 but got "a"|
     }
   end
 
-  test "do not consume input with a failure" do
-    parser = one_of([lit("a"), lit("b")])
-    failure = parser.parse.(Paco.State.from("c"), parser)
-    assert failure.at == {0, 1, 1}
+  test "keep all contending failures" do
+    # TODO
+  end
+
+  test "report position of the farthest failure" do
+    parser = one_of([sequence_of([lit("a"), lit("b")]),
+                     sequence_of([lit("b"), lit("c")])])
+    failure = parser.parse.(Paco.State.from("ac"), parser)
+    assert failure.at == {1, 1, 2}
     assert failure.tail == "c"
   end
 end

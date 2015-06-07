@@ -65,7 +65,7 @@ defmodule Paco.Parser.SequenceOfTest do
     }
   end
 
-  test "report position of the failure failure" do
+  test "report position of the farthest failure" do
     parser = sequence_of([lit("a"), lit("b")])
     failure = parser.parse.(Paco.State.from("aa"), parser)
     assert failure.at == {1, 1, 2}

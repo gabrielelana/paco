@@ -329,23 +329,40 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn %Paco.State{at: from, text: text} = state, this ->
-      result = Enum.find_value(ps,
-                               fn(p) ->
-                                 case p.parse.(state, p) do
-                                   %Paco.Success{} = success -> success
-                                   _ -> false
-                                 end
-                               end)
-
-      case result do
+    fn state, _ ->
+      case reduce_one_of(ps, state) do
+        # [] -> ???
         %Paco.Success{} = success ->
           success
-        _ ->
-          %Paco.Failure{at: from, tail: text, what: Paco.describe(this)}
-       end
+        failures ->
+          keep_farthest_failure(failures)
+      end
     end
   end
+
+  defp reduce_one_of(ps, state) do
+    Enum.reduce(ps, {state, []}, &reduce_one_of_each/2) |> elem(1)
+  end
+
+  defp reduce_one_of_each(_, {_, %Paco.Success{}} = success), do: success
+  defp reduce_one_of_each(p, {state, failures}) do
+    case p.parse.(state, p) do
+      %Paco.Success{} = success -> {state, success}
+      %Paco.Failure{} = failure -> {state, [failure|failures]}
+    end
+  end
+
+  defp keep_farthest_failure(failures) do
+    Enum.reduce(failures, nil, &keep_farthest_failure/2)
+  end
+
+  defp keep_farthest_failure(failure, nil), do: failure
+  defp keep_farthest_failure(%Paco.Failure{at: {n,_,_}} = failure,
+                             %Paco.Failure{at: {m,_,_}})
+                             when n >= m, do: failure
+  defp keep_farthest_failure(_, failure), do: failure
+
+
 
   parser re(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
