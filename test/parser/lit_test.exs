@@ -26,6 +26,17 @@ defmodule Paco.Parser.LiteralTest do
     assert parse(parser, "") == {:error, ~s|expected "aaa" (A) at 1:1 but got the end of input|}
   end
 
+  test "failure has confidence" do
+    parser = lit("aaa")
+
+    f1 = parser.parse.(Paco.State.from("bbb"), parser)
+    f2 = parser.parse.(Paco.State.from("abb"), parser)
+    f3 = parser.parse.(Paco.State.from("aab"), parser)
+
+    assert f1.confidence < f2.confidence
+    assert f2.confidence < f3.confidence
+  end
+
   test "skipped parsers should be removed from result" do
     assert parse(skip(lit("a")), "a") == {:ok, []}
   end
