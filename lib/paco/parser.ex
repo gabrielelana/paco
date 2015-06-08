@@ -104,9 +104,9 @@ defmodule Paco.Parser do
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 
-  parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
+  parser replace_with(p, v), as: bind(p, fn _ -> v end)
 
-  parser followed_by(p, t), to: bind([p, skip(t)], &List.first/1)
+  parser followed_by(p, t), as: bind([p, skip(t)], &List.first/1)
 
   parser recursive(f) do
     fn state, this ->
