@@ -25,6 +25,14 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "b") == {:ok, 2}
   end
 
+  test "bind can terminate with a failure" do
+    parser = lit("a") |> bind(fn(_, state) ->
+                                Paco.Failure.at(state, message: "bind gone wrong")
+                              end)
+
+    assert parse(parser, "a") == {:error, ~s|bind gone wrong|}
+  end
+
   test "bind to a block with result and state" do
     parser = one_of([lit("a"), lit("bb")])
              |> bind :result_and_state do
