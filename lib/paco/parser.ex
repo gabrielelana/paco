@@ -181,8 +181,7 @@ defmodule Paco.Parser do
     fn %Paco.State{at: from} = state, this ->
       case unfold_repeat(p, state, at_most) do
         {n, _, failure} when n < at_least ->
-          expected = {:repeat, failure.expected, n, at_least, at_most}
-          %Paco.Failure{failure|expected: expected} |> Paco.Failure.stack(this)
+          failure |> Paco.Failure.stack(this)
         {0, _, _} ->
           %Paco.Success{from: from, to: from, at: from, tail: from, result: []}
         {_, successes, _} ->

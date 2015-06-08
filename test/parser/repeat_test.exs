@@ -29,41 +29,41 @@ defmodule Paco.Parser.RepeatTest do
 
   test "fail to parse because it fails to match an exact number of times" do
     assert parse(repeat(lit("a"), 2), "ab") == {:error,
-      ~s|expected 1 more "a" at 1:2 but got "b"|
+      ~s|expected "a" at 1:2 but got "b"|
     }
     assert parse(repeat(lit("a"), 2), "a") == {:error,
-      ~s|expected 1 more "a" at 1:2 but got the end of input|
+      ~s|expected "a" at 1:2 but got the end of input|
     }
   end
 
   test "fail to parse because it fails to match a mininum number of times" do
     assert parse(repeat(lit("a"), at_least: 2), "ab") == {:error,
-      ~s|expected at least 1 more "a" at 1:2 but got "b"|
+      ~s|expected "a" at 1:2 but got "b"|
     }
     assert parse(repeat(lit("a"), at_least: 2), "a") == {:error,
-      ~s|expected at least 1 more "a" at 1:2 but got the end of input|
+      ~s|expected "a" at 1:2 but got the end of input|
     }
   end
 
   test "failure with description" do
     parser = repeat(lit("a"), 2) |> as("REPEAT")
     assert parse(parser, "ab") == {:error,
-      ~s|expected 1 more "a" (REPEAT) at 1:2 but got "b"|
+      ~s|expected "a" (REPEAT) at 1:2 but got "b"|
     }
   end
 
   test "sugar combinators failure" do
     assert parse(lit("a") |> exactly(2), "ab") == {:error,
-      ~s|expected 1 more "a" at 1:2 but got "b"|
+      ~s|expected "a" at 1:2 but got "b"|
     }
     assert parse(lit("a") |> at_least(2), "ab") == {:error,
-      ~s|expected at least 1 more "a" at 1:2 but got "b"|
+      ~s|expected "a" at 1:2 but got "b"|
     }
     assert parse(lit("a") |> one_or_more, "bb") == {:error,
-      ~s|expected at least 1 "a" at 1:1 but got "b"|
+      ~s|expected "a" at 1:1 but got "b"|
     }
-    assert parse(lit("a") |> exactly(5), "bbbbbxxx") == {:error,
-      ~s|expected at least 5 "a" at 1:1 but got "bbbbb"|
+    assert parse(lit("a") |> exactly(5), "aaabbb") == {:error,
+      ~s|expected "a" at 1:4 but got "b"|
     }
   end
 end
