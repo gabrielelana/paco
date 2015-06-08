@@ -1,7 +1,7 @@
 defmodule Paco.Parser do
   import Paco.Macro.ParserDefinition
 
-  defstruct id: nil, name: nil, description: nil, combine: nil, parse: nil
+  defstruct id: nil, name: nil, description: nil, parse: nil
 
   def as(%Paco.Parser{} = p, description), do: %Paco.Parser{p|description: description}
 

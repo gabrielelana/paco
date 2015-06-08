@@ -34,7 +34,6 @@ defmodule Paco.Macro.ParserDefinition do
         %Paco.Parser{
           id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
-          combine: unquote(Paco.Macro.ParserDefinition.normalize(args)),
           parse: unquote(block)
         }
       end
@@ -49,7 +48,6 @@ defmodule Paco.Macro.ParserDefinition do
         %Paco.Parser{
           id: Paco.Macro.ParserDefinition.id,
           name: to_string(unquote(name)),
-          combine: unquote(Paco.Macro.ParserDefinition.normalize(args)),
           parse: unquote(block)
         }
       end
