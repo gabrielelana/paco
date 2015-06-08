@@ -26,6 +26,11 @@ defmodule Paco.Parser.LiteralTest do
     assert parse(parser, "") == {:error, ~s|expected "aaa" (A) at 1:1 but got the end of input|}
   end
 
+  test "failure keeps only relevant part of the tail" do
+    parser = lit("aaa")
+    assert parse(parser, "xxxyyy") == {:error, ~s|expected "aaa" at 1:1 but got "xxx"|}
+  end
+
   test "failure has rank" do
     parser = lit("aaa")
 

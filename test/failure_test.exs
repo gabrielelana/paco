@@ -1,6 +1,10 @@
 defmodule Paco.FailureTest do
   use ExUnit.Case, async: true
 
+  setup do
+    {:ok, %{failure: %Paco.Failure{at: {0, 1, 1}, rank: 1}}}
+  end
+
   test "compose expectations" do
     {at, tail, rank} = {{1, 1, 2}, "c", 2}
     composed_failure = Paco.Failure.compose([
@@ -60,28 +64,9 @@ defmodule Paco.FailureTest do
     assert composed_failure.stack == ["COMMON"]
   end
 
-  # test "format without reason" do
-  #   failure = %Paco.Failure{at: {0,1,1}, what: "p"}
-  #   assert Paco.Failure.format(failure, :flat) ==
-  #     """
-  #     Failed to match p at 1:1
-  #     """
-  # end
-
-  # test "format with another failure as reason" do
-  #   reason = %Paco.Failure{at: {0,1,1}, what: "p2"}
-  #   failure = %Paco.Failure{at: {0,1,1}, what: "p1", because: reason}
-  #   assert Paco.Failure.format(failure, :flat) ==
-  #     """
-  #     Failed to match p1 at 1:1, because it failed to match p2 at 1:1
-  #     """
-  # end
-
-  # test "format with a message as reason" do
-  #   failure = %Paco.Failure{at: {0,1,1}, what: "p", because: "is a test"}
-  #   assert Paco.Failure.format(failure, :flat) ==
-  #     """
-  #     Failed to match p at 1:1, because it is a test
-  #     """
-  # end
+  test "format failure on the end of input", %{failure: failure} do
+    failure = %Paco.Failure{failure|tail: "", expected: "a"}
+    assert Paco.Failure.format(failure, :flat) ==
+      ~s|expected "a" at 1:1 but got the end of input|
+  end
 end

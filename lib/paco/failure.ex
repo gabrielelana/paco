@@ -130,8 +130,15 @@ defmodule Paco.Failure do
   defp format_tail(tail, s) when is_binary(s) do
     quoted(String.slice(tail, 0, String.length(s)))
   end
+  defp format_tail(tail, {:while, _, n, _}) do
+    quoted(String.slice(tail, 0, n))
+  end
   defp format_tail(tail, _) do
-    quoted(tail)
+    tail = Paco.String.line_at(tail, 0)
+    case String.length(tail) do
+      n when n > 21 -> quoted(String.slice(tail, 0, 42) <> "...")
+      _             -> quoted(tail)
+    end
   end
 
   defp format_limits({n, n}), do: "exactly #{n}"

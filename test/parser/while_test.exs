@@ -56,6 +56,15 @@ defmodule Paco.Parser.WhileTest do
     }
   end
 
+  test "failure keeps the relevant part of the tail" do
+    assert parse(while("abc", at_least: 2), "xxyy") == {:error,
+      ~s|expected at least 2 characters in alphabet "abc" at 1:1 but got "xx"|
+    }
+    assert parse(while("abc", more_than: 2), "xxxyyy") == {:error,
+      ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "xxx"|
+    }
+  end
+
   test "failure has rank" do
     parser = while(&uppercase?/1, 3)
 

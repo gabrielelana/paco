@@ -45,6 +45,20 @@ defmodule Paco.Parser.UntilTest do
     }
   end
 
+  test "failure truncate tail when is too long" do
+    parser = until("c")
+
+    long_text = String.duplicate("a", 1_000)
+    assert parse(parser, long_text) == {:error,
+      ~s|expected something ended by "c" at 1:1 but got "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..."|
+    }
+
+    long_text = "aaa\n" <> String.duplicate("a", 1_000)
+    assert parse(parser, long_text) == {:error,
+      ~s|expected something ended by "c" at 1:1 but got "aaa"|
+    }
+  end
+
   test "failure has rank" do
     parser = until("c")
 
