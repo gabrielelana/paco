@@ -104,18 +104,14 @@ defmodule Paco.Parser do
   defp do_clauses_to_function(:result, clauses) do
     quote do
       fn(r) ->
-        case r do
-          unquote(clauses)
-        end
+        case r, do: (unquote(clauses))
       end
     end
   end
   defp do_clauses_to_function(:result_and_state, clauses) do
     quote do
       fn(r, s) ->
-        case {r, s} do
-          unquote(clauses)
-        end
+        case {r, s}, do: (unquote(clauses))
       end
     end
   end
