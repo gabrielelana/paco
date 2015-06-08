@@ -13,17 +13,13 @@ defmodule Paco.Parser do
 
 
 
-  defmacro then(p, form, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "then combinator")
-    quote do
-      then_with(unquote(p), unquote(do_clauses_to_function(form, clauses)))
-    end
-  end
-
   defmacro then(p, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "then combinator")
     quote do
-      then_with(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
+      then_with(unquote(p),
+              fn(result, success, state) ->
+                case {result, success, state}, do: (unquote(clauses))
+              end)
     end
   end
 
@@ -35,23 +31,19 @@ defmodule Paco.Parser do
 
   parser then_with(p, f) when is_function(f), as:
     bind_to(p, f)
-    |> bind_to(fn(p, _) -> box(p) end)
-    |> bind_to(fn(p, s) -> p.parse.(s, p) end)
+    |> bind_to(fn(p) -> box(p) end)
+    |> bind_to(fn(p, _, s) -> p.parse.(s, p) end)
 
 
 
-
-  defmacro bind(p, form, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "bind combinator")
-    quote do
-      bind_to(unquote(p), unquote(do_clauses_to_function(form, clauses)))
-    end
-  end
 
   defmacro bind(p, [do: clauses]) do
     ensure_are_all_arrow_clauses(clauses, "bind combinator")
     quote do
-      bind_to(unquote(p), unquote(do_clauses_to_function(:result, clauses)))
+      bind_to(unquote(p),
+              fn(result, success, state) ->
+                case {result, success, state}, do: (unquote(clauses))
+              end)
     end
   end
 
@@ -69,12 +61,16 @@ defmodule Paco.Parser do
           try do
             case arity do
               1 -> f.(result)
-              2 -> f.(result, Paco.State.update(state, success))
+              2 -> f.(result, success)
+              3 -> f.(result, success, Paco.State.update(state, success))
             end
           catch
-            _kind, reason ->
-              exception = Exception.message(reason)
-              message = "exception: #{exception} %STACK% %AT%"
+            :error, reason ->
+              message = if Exception.exception?(reason) do
+                          "exception: #{Exception.message(reason)} %STACK% %AT%"
+                        else
+                          "error: #{inspect(reason)} %STACK% %AT%"
+                        end
               Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             %Paco.Failure{} = failure ->
@@ -101,20 +97,6 @@ defmodule Paco.Parser do
     Enum.all?(clauses, fn {:->, _, _} -> true; _ -> false end)
   end
 
-  defp do_clauses_to_function(:result, clauses) do
-    quote do
-      fn(r) ->
-        case r, do: (unquote(clauses))
-      end
-    end
-  end
-  defp do_clauses_to_function(:result_and_state, clauses) do
-    quote do
-      fn(r, s) ->
-        case {r, s}, do: (unquote(clauses))
-      end
-    end
-  end
 
 
   parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
@@ -144,7 +126,7 @@ defmodule Paco.Parser do
     to: surrounded_by(parser, lex(left), lex(right))
   parser surrounded_by(box(parser), left, right),
     as: sequence_of([skip(left), parser, skip(right)])
-        |> bind do: ([r] -> r; r -> r)
+        |> bind do: ({[r],_,_} -> r; {r,_,_} -> r)
 
   parser many(p), to: repeat(p)
   parser exactly(p, n), to: repeat(p, n)

@@ -9,9 +9,17 @@ defmodule Paco.Parser.ThenTest do
     assert parse(parser, "aa") == {:ok, "a"}
   end
 
-  test "choose next parser with a function with result and state" do
+  test "choose next parser with a function/2" do
     parser = lit("a")
-             |> then(fn(s, %Paco.State{at: {_, ln, _}}) ->
+             |> then(fn(_, %Paco.Success{result: r}) ->
+                       lit(r)
+                     end)
+    assert parse(parser, "aa") == {:ok, "a"}
+  end
+
+  test "choose next parser with a function/3" do
+    parser = lit("a")
+             |> then(fn(s, _, %Paco.State{at: {_, ln, _}}) ->
                        while(s, ln)
                      end)
 
@@ -23,16 +31,21 @@ defmodule Paco.Parser.ThenTest do
   test "choose next parser with a block" do
     parser = one_of([lit("a"), lit("b")])
              |> then do
-                  "a" -> lit("a")
-                  "b" -> lit("bb")
+                  {"a",_,_} -> lit("a")
+                  {"b",_,_} -> lit("bb")
                 end
 
     assert parse(parser, "aa") == {:ok, "a"}
     assert parse(parser, "bbb") == {:ok, "bb"}
   end
 
-  test "boxing: the parameter and the return value are both boxed" do
-    parser = then("a", fn _ -> "b" end)
+  test "boxing: the previous parser is boxed" do
+    parser = then("a", fn _ -> lit("b") end)
+    assert parse(parser, "ab") == {:ok, "b"}
+  end
+
+  test "boxing: the result is boxed" do
+    parser = then(lit("a"), fn _ -> "b" end)
     assert parse(parser, "ab") == {:ok, "b"}
   end
 
