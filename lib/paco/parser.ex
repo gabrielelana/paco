@@ -377,8 +377,9 @@ defmodule Paco.Parser do
   defp one_of_farthest_failure(%Paco.Failure{rank: n} = failure,
                                %Paco.Failure{rank: m})
                                when n > m, do: failure
-  defp one_of_farthest_failure(%Paco.Failure{rank: n} = failure,
-                             %Paco.Failure{rank: n}), do: failure
+  defp one_of_farthest_failure(%Paco.Failure{rank: n} = fl,
+                               %Paco.Failure{rank: n} = fr),
+                               do: Paco.Failure.compose([fl, fr])
   defp one_of_farthest_failure(_, failure), do: failure
 
 

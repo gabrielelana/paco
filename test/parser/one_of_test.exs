@@ -54,11 +54,15 @@ defmodule Paco.Parser.OneOfTest do
     }
   end
 
-  test "keep first failure when ambiguous" do
+  test "compose failures with the same rank" do
     parser = one_of([lit("aa"), lit("ab")])
-
     assert parse(parser, "ac") == {:error,
-      ~s|expected "aa" at 1:1 but got "ac"|
+      ~s|expected one of ["aa", "ab"] at 1:1 but got "ac"|
+    }
+
+    parser = one_of([lit("aa"), lit("ab"), lit("ad"), lit("ae")])
+    assert parse(parser, "ac") == {:error,
+      ~s|expected one of ["aa", "ab", "ad", "ae"] at 1:1 but got "ac"|
     }
   end
 
