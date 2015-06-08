@@ -22,7 +22,7 @@ defmodule Paco.Parser.JoinTest do
     parser = [{"a"}, {"b"}] |> join
 
     assert parse(parser, "ab") == {:error,
-      ~s|error! bind function raised: protocol String.Chars not implemented for {"a"} at 1:1|
+      ~s|exception: protocol String.Chars not implemented for {"a"} at 1:1|
     }
   end
 end

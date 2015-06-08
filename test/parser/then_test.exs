@@ -36,17 +36,17 @@ defmodule Paco.Parser.ThenTest do
     assert parse(parser, "ab") == {:ok, "b"}
   end
 
-  test "fails if choose function raise an exception" do
+  test "fails if function raise an exception" do
     parser = then(lit("a"), fn _  -> raise "boom!" end)
     assert parse(parser, "a") == {:error,
-      ~s|error! choose function raised: boom! at 1:1|
+      ~s|exception: boom! at 1:1|
     }
   end
 
   test "failure with description" do
-    parser = then(lit("a"), fn _  -> raise "boom!" end) |> as("CHOOSE")
+    parser = then(lit("a"), fn _  -> raise "boom!" end) |> as("THEN")
     assert parse(parser, "a") == {:error,
-      ~s|error! choose function (CHOOSE) raised: boom! at 1:1|
+      ~s|exception: boom! (THEN) at 1:1|
     }
   end
 

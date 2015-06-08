@@ -33,31 +33,11 @@ defmodule Paco.Parser do
     end
   end
 
-  parser then_with(box(p), f) when is_function(f) do
-    {:arity, arity} = :erlang.fun_info(f, :arity)
-    fn state, this ->
-      case p.parse.(state, p) do
-        %Paco.Success{result: result} = success ->
-          try do
-            case arity do
-              1 -> f.(result)
-              2 -> f.(result, Paco.State.update(state, success))
-            end
-          catch
-            _kind, reason ->
-              exception = Exception.message(reason)
-              message = "error! choose function %STACK% raised: #{exception} %AT%"
-              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
-          else
-            p ->
-              p = box(p)
-              p.parse.(Paco.State.update(state, success), p)
-          end
-        %Paco.Failure{} = failure ->
-          failure
-      end
-    end
-  end
+  parser then_with(p, f) when is_function(f), as:
+    bind_to(p, f)
+    |> bind_to(fn(p, _) -> box(p) end)
+    |> bind_to(fn(p, s) -> p.parse.(s, p) end)
+
 
 
 
@@ -94,16 +74,17 @@ defmodule Paco.Parser do
           catch
             _kind, reason ->
               exception = Exception.message(reason)
-              message = "error! bind function %STACK% raised: #{exception} %AT%"
+              message = "exception: #{exception} %STACK% %AT%"
               Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
           else
             %Paco.Failure{} = failure ->
               failure |> Paco.Failure.stack(this)
+            %Paco.Success{} = success ->
+              success
             result ->
               %Paco.Success{success|result: result}
           end
         %Paco.Failure{} = failure ->
-          # TODO failure |> Paco.Failure.stack(this)
           failure
       end
     end
