@@ -13,8 +13,6 @@ defmodule Paco.Parser.ReplaceWithTest do
   end
 
   test "it has no effect on failures" do
-    assert parse(lit("a") |> replace_with("b"), "b") == {:error,
-      ~s|expected "a" at 1:1 but got "b"|
-    }
+    assert parse(lit("a") |> replace_with("b"), "b") == parse(lit("a"), "b")
   end
 end

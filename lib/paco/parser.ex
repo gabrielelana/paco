@@ -123,6 +123,17 @@ defmodule Paco.Parser do
     end
   end
 
+  parser peek(box(p)) do
+    fn %Paco.State{at: at, text: text} = state, this ->
+      case p.parse.(state, p) do
+        %Paco.Success{result: result} ->
+          %Paco.Success{from: at, to: at, at: at, tail: text, result: result}
+        %Paco.Failure{} = failure ->
+          failure |> Paco.Failure.stack(this)
+      end
+    end
+  end
+
   parser separated_by(p, s) when is_binary(s), to: separated_by(p, lex(s))
   parser separated_by(box(p), box(s)),
     as: (import Paco.Transform, only: [flatten_first: 1]
