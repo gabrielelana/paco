@@ -114,6 +114,15 @@ defmodule Paco.Parser do
     end
   end
 
+  parser eof do
+    fn
+      %Paco.State{at: at, text: ""}, _ ->
+        %Paco.Success{from: at, to: at, at: at, tail: "", result: "", skip: true}
+      %Paco.State{at: at, text: text}, _ ->
+        %Paco.Failure{at: at, tail: text, rank: at, message: "expected the end of input %AT%"}
+    end
+  end
+
   parser separated_by(p, s) when is_binary(s), to: separated_by(p, lex(s))
   parser separated_by(box(p), box(s)),
     as: (import Paco.Transform, only: [flatten_first: 1]
