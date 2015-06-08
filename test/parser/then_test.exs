@@ -39,8 +39,18 @@ defmodule Paco.Parser.ThenTest do
     assert parse(parser, "bbb") == {:ok, "bb"}
   end
 
+  test "next parser is fixed, use the second parser only if the first succeeded" do
+    parser = lit("a") |> then(lit("b"))
+    assert parse(parser, "ab") == {:ok, "b"}
+  end
+
   test "boxing: the previous parser is boxed" do
     parser = then("a", fn _ -> lit("b") end)
+    assert parse(parser, "ab") == {:ok, "b"}
+  end
+
+  test "boxing: the next parser is boxed" do
+    parser = then(lit("a"), "b")
     assert parse(parser, "ab") == {:ok, "b"}
   end
 

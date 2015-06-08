@@ -34,6 +34,8 @@ defmodule Paco.Parser do
     |> bind_to(fn(p) -> box(p) end)
     |> bind_to(fn(p, _, s) -> p.parse.(s, p) end)
 
+  parser then_with(p1, box(p2)), as:
+    bind_to(p1, fn(_, _, s) -> p2.parse.(s, p2) end)
 
 
 
