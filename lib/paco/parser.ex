@@ -3,7 +3,7 @@ defmodule Paco.Parser do
 
   defstruct id: nil, name: nil, description: nil, parse: nil
 
-  def as(%Paco.Parser{} = p, description), do: %Paco.Parser{p|description: description}
+  def as(p, description), do: %Paco.Parser{box(p)|description: description}
 
   def box(%Paco.Parser{} = p), do: p
   def box(%Regex{} = r), do: re(r)
