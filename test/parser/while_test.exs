@@ -56,15 +56,15 @@ defmodule Paco.Parser.WhileTest do
     }
   end
 
-  test "failure has confidence" do
+  test "failure has rank" do
     parser = while(&uppercase?/1, 3)
 
     f1 = parser.parse.(Paco.State.from("aaa"), parser)
     f2 = parser.parse.(Paco.State.from("Aaa"), parser)
     f3 = parser.parse.(Paco.State.from("AAa"), parser)
 
-    assert f1.confidence < f2.confidence
-    assert f2.confidence < f3.confidence
+    assert f1.rank < f2.rank
+    assert f2.rank < f3.rank
   end
 
   test "stream mode" do

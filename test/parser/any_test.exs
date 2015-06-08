@@ -38,15 +38,15 @@ defmodule Paco.Parser.AnyTest do
     }
   end
 
-  test "failure has confidence" do
+  test "failure has rank" do
     parser = any(3)
 
     f1 = parser.parse.(Paco.State.from(""), parser)
     f2 = parser.parse.(Paco.State.from("a"), parser)
     f3 = parser.parse.(Paco.State.from("aa"), parser)
 
-    assert f1.confidence < f2.confidence
-    assert f2.confidence < f3.confidence
+    assert f1.rank < f2.rank
+    assert f2.rank < f3.rank
   end
 
   test "stream mode success" do

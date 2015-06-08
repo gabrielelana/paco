@@ -1,17 +1,17 @@
 defmodule Paco.Failure do
   @type t :: %__MODULE__{at: Paco.State.position,
                          tail: String.t,
-                         confidence: integer,
                          expected: String.t,
+                         rank: integer,
                          message: String.t | nil,
                          stack: [String.t]}
 
-  defexception at: {0, 0, 0}, tail: "", confidence: 0, expected: "", message: nil, stack: []
+  defexception at: {0, 0, 0}, tail: "", expected: "", rank: 0, message: nil, stack: []
 
   def at(%Paco.State{at: at, text: text}, opts \\ []) do
     %Paco.Failure{at: at, tail: text,
                   expected: Keyword.get(opts, :expected, ""),
-                  confidence: Keyword.get(opts, :confidence, 0),
+                  rank: Keyword.get(opts, :rank, 0),
                   message: Keyword.get(opts, :message, nil),
                   stack: Keyword.get(opts, :stack, [])}
   end

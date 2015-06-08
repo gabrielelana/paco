@@ -374,14 +374,11 @@ defmodule Paco.Parser do
   end
 
   defp one_of_farthest_failure(failure, nil), do: failure
-  defp one_of_farthest_failure(%Paco.Failure{at: {n,_,_}} = failure,
-                             %Paco.Failure{at: {m,_,_}})
-                             when n > m, do: failure
-  defp one_of_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: n} = failure,
-                             %Paco.Failure{at: {x,_,_}, confidence: m})
-                             when n > m, do: failure
-  defp one_of_farthest_failure(%Paco.Failure{at: {x,_,_}, confidence: y} = failure,
-                             %Paco.Failure{at: {x,_,_}, confidence: y}), do: failure
+  defp one_of_farthest_failure(%Paco.Failure{rank: n} = failure,
+                               %Paco.Failure{rank: m})
+                               when n > m, do: failure
+  defp one_of_farthest_failure(%Paco.Failure{rank: n} = failure,
+                             %Paco.Failure{rank: n}), do: failure
   defp one_of_farthest_failure(_, failure), do: failure
 
 
@@ -436,9 +433,8 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {_, _, consumed, _, _} ->
-          %Paco.Failure{at: from, tail: text, expected: s,
-                        confidence: String.length(consumed) + 1,
+        {_, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text, expected: s, rank: n+1,
                         stack: Paco.Failure.stack(this)}
       end
     end
@@ -456,11 +452,9 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {:not_enough, _, consumed, _, _} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:any, at_least, at_most},
-                        confidence: String.length(consumed),
-                        stack: Paco.Failure.stack(this)}
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text, expected: {:any, at_least, at_most},
+                        rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -475,11 +469,9 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {:not_enough, _, consumed, _, _} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:until, p},
-                        confidence: String.length(consumed),
-                        stack: Paco.Failure.stack(this)}
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text, expected: {:until, p},
+                        rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -497,11 +489,9 @@ defmodule Paco.Parser do
           %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
-        {:not_enough, _, consumed, _, _} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:while, p, at_least, at_most},
-                        confidence: String.length(consumed),
-                        stack: Paco.Failure.stack(this)}
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text, expected: {:while, p, at_least, at_most},
+                        rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
