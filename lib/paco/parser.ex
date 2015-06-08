@@ -103,7 +103,8 @@ defmodule Paco.Parser do
               %Paco.Success{success|result: result}
           end
         %Paco.Failure{} = failure ->
-          failure |> Paco.Failure.stack(this)
+          # TODO failure |> Paco.Failure.stack(this)
+          failure
       end
     end
   end
