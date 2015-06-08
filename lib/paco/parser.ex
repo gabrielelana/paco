@@ -54,16 +54,11 @@ defmodule Paco.Parser do
   end
 
   parser bind_to(box(p), f) when is_function(f) do
-    {:arity, arity} = :erlang.fun_info(f, :arity)
     fn state, this ->
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
           try do
-            case arity do
-              1 -> f.(result)
-              2 -> f.(result, success)
-              3 -> f.(result, success, Paco.State.update(state, success))
-            end
+            call_arity_wise(f, result, success, Paco.State.update(state, success))
           catch
             :error, reason ->
               message = if Exception.exception?(reason) do
@@ -242,33 +237,16 @@ defmodule Paco.Parser do
 
 
 
-  parser only_if(box(p), f) do
-    {:arity, arity} = :erlang.fun_info(f, :arity)
-    fn state, this ->
-      case p.parse.(state, p) do
-        %Paco.Success{result: result} = success ->
-          try do
-            case arity do
-              1 -> f.(result)
-              2 -> f.(result, Paco.State.update(state, success))
-            end
-          catch
-            _kind, reason ->
-              exception = Exception.message(reason)
-              message = "error! only_if function %STACK% raised: #{exception} %AT%"
-              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
-          else
-            true ->
-              success
-            false ->
-              message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-              Paco.Failure.at(state, message: message) |> Paco.Failure.stack(this)
-          end
-        %Paco.Failure{} = failure ->
-          failure
-      end
-    end
-  end
+  parser only_if(p, f), to:
+    bind_to(p, fn(result, success, state) ->
+                 if call_arity_wise(f, result, success, state) do
+                   success
+                 else
+                   message = "#{inspect(result)} is not acceptable %STACK% %AT%"
+                   %Paco.Failure{at: success.to, tail: state.text,
+                                 rank: success.to, message: message}
+                 end
+               end)
 
 
 
@@ -479,6 +457,15 @@ defmodule Paco.Parser do
         # The stream is over, switching to a non stream mode is equal to
         # tell the parser to behave knowing that more input will never come
         this.parse.(%Paco.State{state|stream: nil}, this)
+    end
+  end
+
+  defp call_arity_wise(f, result, success, state) do
+    {:arity, arity} = :erlang.fun_info(f, :arity)
+    case arity do
+      1 -> f.(result)
+      2 -> f.(result, success)
+      3 -> f.(result, success, state)
     end
   end
 end
