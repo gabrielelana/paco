@@ -169,7 +169,7 @@ defmodule Paco.Parser do
         {0, _, _} ->
           %Paco.Success{from: from, to: from, at: from, tail: from, result: []}
         {_, successes, _} ->
-          results = successes |> Enum.map(&(&1.result))
+          results = successes |> Enum.reject(&(&1.skip)) |>  Enum.map(&(&1.result))
           %Paco.Success{List.last(successes)|from: from, result: results}
       end
     end
@@ -184,14 +184,11 @@ defmodule Paco.Parser do
   end
   defp unfold_repeat(p, state, n, m, successes) do
     case p.parse.(state, p) do
-      %Paco.Success{skip: true} = success ->
-        state = Paco.State.update(state, success)
-        unfold_repeat(p, state, n+1, m, successes)
       %Paco.Success{} = success ->
         state = Paco.State.update(state, success)
         unfold_repeat(p, state, n+1, m, [success|successes])
       %Paco.Failure{} = failure ->
-        {n, successes, failure}
+        {n, successes |> Enum.reverse, failure}
     end
   end
 

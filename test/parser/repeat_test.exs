@@ -22,6 +22,19 @@ defmodule Paco.Parser.RepeatTest do
     assert parse(repeat(lit("a")), "aaa") == {:ok, ["a", "a", "a"]}
   end
 
+  test "correctly advance the position position" do
+    parser = repeat(lit("ab"))
+    success = parse(parser, "abab", format: :raw)
+    assert success.from == {0, 1, 1}
+    assert success.to == {3, 1, 4}
+    assert success.at == {4, 1, 5}
+    assert success.tail == ""
+  end
+
+  test "repeat and skip" do
+    assert parse(repeat(skip(lit("a"))), "aaa") == parse(skip(repeat(lit("a"))), "aaa")
+  end
+
   test "boxing" do
     assert parse(repeat("a"), "aaa") == {:ok, ["a", "a", "a"]}
     assert parse(repeat({"a"}), "aaa") == {:ok, [{"a"}, {"a"}, {"a"}]}
