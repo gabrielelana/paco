@@ -106,6 +106,12 @@ defmodule Paco.Parser do
 
   parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
 
+  parser recursive(f) do
+    fn state, this ->
+      box(f.(this)).parse.(state, this)
+    end
+  end
+
   parser separated_by(p, s) when is_binary(s), to: separated_by(p, lex(s))
   parser separated_by(box(p), box(s)),
     as: (import Paco.Transform, only: [flatten_first: 1]
