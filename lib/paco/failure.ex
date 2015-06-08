@@ -1,20 +1,22 @@
 defmodule Paco.Failure do
   @type t :: %__MODULE__{at: Paco.State.position,
                          tail: String.t,
-                         expected: String.t,
                          rank: integer,
+                         expected: String.t | nil,
                          message: String.t | nil,
                          stack: [String.t]}
 
-  defexception at: {0, 0, 0}, tail: "", expected: "", rank: 0, message: nil, stack: []
+  defexception at: {0, 0, 0}, tail: "", rank: 0, expected: nil, message: nil, stack: []
+
 
   def at(%Paco.State{at: at, text: text}, opts \\ []) do
     %Paco.Failure{at: at, tail: text,
-                  expected: Keyword.get(opts, :expected, ""),
                   rank: Keyword.get(opts, :rank, 0),
+                  expected: Keyword.get(opts, :expected, nil),
                   message: Keyword.get(opts, :message, nil),
                   stack: Keyword.get(opts, :stack, [])}
   end
+
 
   def stack(%Paco.Parser{description: nil}), do: []
   def stack(%Paco.Parser{description: description}), do: [description]
@@ -24,7 +26,43 @@ defmodule Paco.Failure do
     %Paco.Failure{failure|stack: [description|failure.stack]}
   end
 
+
+  def compose(failures), do: compose(failures, nil)
+
+  defp compose([], composed), do: composed
+  defp compose([failure|failures], nil), do: compose(failures, failure)
+  defp compose([%Paco.Failure{at: at, tail: tail, rank: rank} = failure|failures],
+               %Paco.Failure{at: at, tail: tail, rank: rank} = composed) do
+    compose(failures, %Paco.Failure{at: at, tail: tail, rank: rank,
+                                    expected: compose_expectations(failure, composed),
+                                    stack: compose_stack(failure, composed)})
+  end
+
+  defp compose_expectations(%Paco.Failure{expected: {:composed, f}},
+                            %Paco.Failure{expected: {:composed, c}}),
+                            do: {:composed, Enum.concat(c, f)}
+  defp compose_expectations(%Paco.Failure{expected: f},
+                            %Paco.Failure{expected: {:composed, c}}),
+                            do: {:composed, Enum.concat(c, [f])}
+  defp compose_expectations(%Paco.Failure{expected: {:composed, f}},
+                            %Paco.Failure{expected: c}),
+                            do: {:composed, Enum.concat([c], f)}
+  defp compose_expectations(%Paco.Failure{expected: f},
+                            %Paco.Failure{expected: c}),
+                            do: {:composed, [c, f]}
+
+  defp compose_stack(%Paco.Failure{stack: t},
+                     %Paco.Failure{stack: t}), do: t
+  defp compose_stack(%Paco.Failure{stack: [_|t]},
+                     %Paco.Failure{stack: [_|t]}), do: t
+  defp compose_stack(%Paco.Failure{stack: t},
+                     %Paco.Failure{stack: [_|t]}), do: t
+  defp compose_stack(%Paco.Failure{stack: [_|t]},
+                     %Paco.Failure{stack: t}), do: t
+
+
   def message(%Paco.Failure{} = failure), do: format(failure, :flat)
+
 
   def format(%Paco.Failure{} = failure, :raw), do: failure
   def format(%Paco.Failure{} = failure, :tagged), do: {:error, format(failure, :flat)}
@@ -71,6 +109,10 @@ defmodule Paco.Failure do
   defp format_expected({:any, n, m}) do
     [format_limits({n, m}), "characters"]
     |> Enum.join(" ")
+  end
+  defp format_expected({:composed, expectations}) do
+    ["one of [", Enum.map(expectations, &format_expected/1) |> Enum.join(", "), "]"]
+    |> Enum.join("")
   end
   defp format_expected(s) when is_binary(s) do
     quoted(s)
