@@ -1,10 +1,10 @@
 import Paco
 import Paco.Parser
 
-# The classical example of context sensitive grammar is: a{n}b{n}c{n}
+# The classical example of context sensitive grammars is: a{n}b{n}c{n}
 
-# "a" repeated n times, followed by "b" repeated n times followed by "c"
-# repeated n time, where n is always the same number. So "abc" it's ok,
+# "a" repeated n times, followed by "b" repeated n times, followed by "c"
+# repeated n times, where n is always the same number. So "abc" it's ok,
 # "aaabbbccc" it's ok, "abbc" it's not
 
 # You cannot parse this with classic tools but you can with Paco
@@ -28,7 +28,7 @@ parse(tail, "bbbccc") |> IO.inspect
 # >> {:ok, ["bbb", "ccc"]}
 
 # Time to combine all this together. When you have a situation where you know
-# what comes next only a runting you should use the `then` combinator. Then
+# what comes next only at runtime you should use the `then` combinator. The
 # `then` combinator applies a parser (first argument) and pass the success to a
 # function (second arguemnt) that is supposed to return the next parser that is
 # going to be applied
