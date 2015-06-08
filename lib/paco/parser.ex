@@ -106,6 +106,8 @@ defmodule Paco.Parser do
 
   parser replace_with(box(p), v), as: bind(p, fn _ -> v end)
 
+  parser followed_by(p, t), to: bind([p, skip(t)], &List.first/1)
+
   parser recursive(f) do
     fn state, this ->
       box(f.(this)).parse.(state, this)
