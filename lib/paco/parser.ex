@@ -13,49 +13,18 @@ defmodule Paco.Parser do
 
 
 
-  defmacro then(p, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "then combinator")
-    quote do
-      then_with(unquote(p),
-              fn(result, success, state) ->
-                case {result, success, state}, do: (unquote(clauses))
-              end)
-    end
-  end
 
-  defmacro then(p, f) do
-    quote do
-      then_with(unquote(p), unquote(f))
-    end
-  end
+  parser then(p, f) when is_function(f), as:
+    bind(p, f)
+    |> bind(fn(p) -> box(p) end)
+    |> bind(fn(p, _, s) -> p.parse.(s, p) end)
 
-  parser then_with(p, f) when is_function(f), as:
-    bind_to(p, f)
-    |> bind_to(fn(p) -> box(p) end)
-    |> bind_to(fn(p, _, s) -> p.parse.(s, p) end)
-
-  parser then_with(p1, box(p2)), as:
-    bind_to(p1, fn(_, _, s) -> p2.parse.(s, p2) end)
+  parser then(p1, box(p2)), as:
+    bind(p1, fn(_, _, s) -> p2.parse.(s, p2) end)
 
 
 
-  defmacro bind(p, [do: clauses]) do
-    ensure_are_all_arrow_clauses(clauses, "bind combinator")
-    quote do
-      bind_to(unquote(p),
-              fn(result, success, state) ->
-                case {result, success, state}, do: (unquote(clauses))
-              end)
-    end
-  end
-
-  defmacro bind(p, f) do
-    quote do
-      bind_to(unquote(p), unquote(f))
-    end
-  end
-
-  parser bind_to(box(p), f) when is_function(f) do
+  parser bind(box(p), f) when is_function(f) do
     fn state, this ->
       case p.parse.(state, p) do
         %Paco.Success{result: result} = success ->
@@ -81,17 +50,6 @@ defmodule Paco.Parser do
           failure
       end
     end
-  end
-
-  defp ensure_are_all_arrow_clauses(clauses, where) do
-    unless all_arrow_clauses?(clauses) do
-      raise ArgumentError, "expected -> clauses for do in #{where}"
-    end
-  end
-
-  defp all_arrow_clauses?(clauses) when not is_list(clauses), do: false
-  defp all_arrow_clauses?(clauses) do
-    Enum.all?(clauses, fn {:->, _, _} -> true; _ -> false end)
   end
 
 
@@ -151,7 +109,7 @@ defmodule Paco.Parser do
     to: surrounded_by(parser, lex(left), lex(right))
   parser surrounded_by(box(parser), left, right),
     as: sequence_of([skip(left), parser, skip(right)])
-        |> bind do: ({[r],_,_} -> r; {r,_,_} -> r)
+        |> bind(fn([r]) -> r; (r) -> r end)
 
   parser many(p), to: repeat(p)
   parser exactly(p, n), to: repeat(p, n)
@@ -265,15 +223,15 @@ defmodule Paco.Parser do
 
 
   parser only_if(p, f), to:
-    bind_to(p, fn(result, success, state) ->
-                 if call_arity_wise(f, result, success, state) do
-                   success
-                 else
-                   message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-                   %Paco.Failure{at: success.to, tail: state.text,
-                                 rank: success.to, message: message}
-                 end
-               end)
+    bind(p, fn(result, success, state) ->
+              if call_arity_wise(f, result, success, state) do
+                success
+              else
+                message = "#{inspect(result)} is not acceptable %STACK% %AT%"
+                %Paco.Failure{at: success.to, tail: state.text,
+                              rank: success.to, message: message}
+              end
+            end)
 
 
 

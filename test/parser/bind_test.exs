@@ -35,35 +35,6 @@ defmodule Paco.Parser.BindTest do
     assert parse(parser, "a") == {:ok, "a"}
   end
 
-  test "bind to a block" do
-    parser = one_of([lit("a"), lit("b")])
-             |> bind do
-                 {"a", _, _} -> 1
-                 {"b", _, _} -> 2
-                end
-
-    assert parse(parser, "a") == {:ok, 1}
-    assert parse(parser, "b") == {:ok, 2}
-  end
-
-  test "bind to a block using the state" do
-    parser = one_of([lit("a"), lit("bb")])
-             |> bind do
-                  {_, _, %Paco.State{at: at}} -> at
-                end
-
-    assert parse(parser, "a") == {:ok, {1, 1, 2}}
-    assert parse(parser, "bb") == {:ok, {2, 1, 3}}
-  end
-
-  test "bind to an inline block" do
-    parser = one_of([lit("a"), lit("b")])
-             |> (bind do: ({"a",_,_} -> 1; {"b",_,_} -> 2))
-
-    assert parse(parser, "a") == {:ok, 1}
-    assert parse(parser, "b") == {:ok, 2}
-  end
-
   test "boxing" do
     parser = bind("a", &String.duplicate(&1, 2))
     assert parse(parser, "a") == {:ok, "aa"}

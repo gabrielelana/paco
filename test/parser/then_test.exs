@@ -28,17 +28,6 @@ defmodule Paco.Parser.ThenTest do
     assert parse(parser, "aa\naaa") == {:ok, ["a", "aa"]}
   end
 
-  test "choose next parser with a block" do
-    parser = one_of([lit("a"), lit("b")])
-             |> then do
-                  {"a",_,_} -> lit("a")
-                  {"b",_,_} -> lit("bb")
-                end
-
-    assert parse(parser, "aa") == {:ok, "a"}
-    assert parse(parser, "bbb") == {:ok, "bb"}
-  end
-
   test "next parser is fixed, use the second parser only if the first succeeded" do
     parser = lit("a") |> then(lit("b"))
     assert parse(parser, "ab") == {:ok, "b"}
