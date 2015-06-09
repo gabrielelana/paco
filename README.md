@@ -1,7 +1,7 @@
 # Paco
 [![Build Status](https://travis-ci.org/gabrielelana/paco.svg?branch=master)](https://travis-ci.org/gabrielelana/paco)
 
-##### Parse everything with Elixir
+#### Parse everything with Elixir
 
 Paco is a monadic parser combinator library written in Elixir. Goals:
 
