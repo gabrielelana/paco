@@ -11,10 +11,34 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "a,a") == {:ok, ["a", "a"]}
     assert parse(parser, "a,a,a") == {:ok, ["a", "a", "a"]}
     assert parse(parser, "a, a, a") == {:ok, ["a", "a", "a"]}
+  end
 
-    # that's a good case for using the cut combinator
-    # when you find "," then the following element is
-    # mandatory, for now this is the best we can do
+  test "keep the separator" do
+    parser = lit("a") |> separated_by(keep(lex(",")))
+
+    assert parse(parser, "a") == {:ok, ["a"]}
+    assert parse(parser, "a,a") == {:ok, ["a", ",", "a"]}
+    assert parse(parser, "a,a,a") == {:ok, ["a", ",", "a", ",", "a"]}
+  end
+
+  test "keep the structure of the parsed elements" do
+    parser = sequence_of([lit("a"), lit("b")])
+             |> separated_by(lex(","))
+
+    assert parse(parser, "ab,ab") == {:ok, [["a", "b"], ["a", "b"]]}
+
+    parser = one_of([sequence_of([lit("a"), lit("b")]), lit("c")])
+             |> separated_by(lex(","))
+
+    assert parse(parser, "ab,c,ab,c") == {:ok, [["a", "b"], "c", ["a", "b"], "c"]}
+  end
+
+  test "TODO: uses cut on separator" do
+    parser = lit("a") |> separated_by(lex(","))
+
+    # that's a good case for using the cut combinator when you find "," then
+    # the following element is mandatory, for now this is the best we can do,
+    # but this assertion must fail with a meaningful message
     assert parse(parser, "a,b") == {:ok, ["a"]}
   end
 
