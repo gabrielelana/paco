@@ -13,6 +13,19 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "a, a, a") == {:ok, ["a", "a", "a"]}
   end
 
+  test "takes same options as repeat/while" do
+    parser = lit("a") |> separated_by(lex(","), at_least: 1)
+    assert parse(parser, "a") == {:error,
+      ~s|expected "," at 1:2 but got the end of input|
+    }
+
+    parser = lit("a") |> separated_by(lex(","), at_most: 2)
+    assert parse(parser, "a") == {:ok, ["a"]}
+    assert parse(parser, "a,a") == {:ok, ["a", "a"]}
+    assert parse(parser, "a,a,a") == {:ok, ["a", "a", "a"]}
+    assert parse(parser, "a,a,a,a") == {:ok, ["a", "a", "a"]}
+  end
+
   test "keep the separator" do
     parser = lit("a") |> separated_by(keep(lex(",")))
 
@@ -33,13 +46,13 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "ab,c,ab,c") == {:ok, [["a", "b"], "c", ["a", "b"], "c"]}
   end
 
-  test "TODO: uses cut on separator" do
-    parser = lit("a") |> separated_by(lex(","))
+  test "uses the cut on separator" do
+    # parser = lit("a") |> separated_by(lex(","))
 
     # that's a good case for using the cut combinator when you find "," then
     # the following element is mandatory, for now this is the best we can do,
     # but this assertion must fail with a meaningful message
-    assert parse(parser, "a,b") == {:ok, ["a"]}
+    # assert parse(parser, "a,b") == {:ok, ["a"]}
   end
 
   test "boxing: delimiter is boxes with lex instead of lit" do
