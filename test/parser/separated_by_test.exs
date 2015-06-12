@@ -46,6 +46,21 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "ab,c,ab,c") == {:ok, [["a", "b"], "c", ["a", "b"], "c"]}
   end
 
+  test "helper to reduce the result when you keep the separator" do
+    reduce = fn "+", n, m -> n + m
+                "-", n, m -> n - m
+             end
+
+    parser = lit("1") |> replace_with(1)
+             |> separated_by(keep(one_of([lex("+"), lex("-")])))
+             |> bind(&Paco.Transform.separated_by(&1, reduce))
+
+    assert parse(parser, "1+1") == {:ok, 2}
+    assert parse(parser, "1+1+1+1") == {:ok, 4}
+    assert parse(parser, "1-1") == {:ok, 0}
+    assert parse(parser, "1+1-1-1") == {:ok, 0}
+  end
+
   test "uses the cut on separator" do
     # parser = lit("a") |> separated_by(lex(","))
 

@@ -10,4 +10,10 @@ defmodule Paco.Transform do
   def flatten_first([h|t], 0, acc) do
     flatten_first(t, 0, [h|acc])
   end
+
+
+  def separated_by([h], _), do: h
+  def separated_by([left, separator, right|t], f) do
+    separated_by([f.(separator, left, right)|t], f)
+  end
 end
