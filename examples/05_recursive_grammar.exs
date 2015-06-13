@@ -98,7 +98,7 @@ parse(expression, "42 / 2") |> IO.inspect
 # We have a problem
 
 parse(expression, "42") |> IO.inspect
-# >> {:error, "expected one of ["*", "/"] at 1:3 but got the end of input"}
+# >> {:error, "expected one of [\"*\", \"/\"] at 1:3 but got the end of input"}
 
 # We have lost the power to match single numbers because the only parser we
 # have requires at least one operator, we need to provide a parser for plain
@@ -144,7 +144,7 @@ expression =
   |> followed_by(eof)
 
 parse(expression, "42 * 2 / 2") |> IO.inspect
-# >> {:error, expected the end of input at 1:8"}
+# >> {:error, "expected the end of input at 1:8"}
 
 # Now it's clear, the `/` is not recognized... the problem is that once the
 # multiplication alternative matched thanks to the first `*` what follows could
@@ -166,14 +166,14 @@ expression =
     end)
   |> followed_by(eof)
 
-parse(expression, "42") |> IO.inspect
-# >> {:ok, 42}
-parse(expression, "42 * 2") |> IO.inspect
-# >> {:ok, [42, 2]}
-parse(expression, "42 / 2") |> IO.inspect
-# >> {:ok, [42, 2]}
-parse(expression, "42 * 2 / 2") |> IO.inspect
-# >> {:ok, [42, 2, 2]}
+parse(expression, "16") |> IO.inspect
+# >> {:ok, [16]}
+parse(expression, "16 * 2") |> IO.inspect
+# >> {:ok, [16, 2]}
+parse(expression, "16 / 2") |> IO.inspect
+# >> {:ok, [16, 2]}
+parse(expression, "16 * 2 / 2") |> IO.inspect
+# >> {:ok, [16, 2, 2]}
 
 # The only downside is that we need to keep the separator because now we can't
 # discern between multiplication and division, to do this we will use the
