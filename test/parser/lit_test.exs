@@ -42,6 +42,18 @@ defmodule Paco.Parser.LiteralTest do
     assert f2.rank < f3.rank
   end
 
+  test "cut creates fatal failure" do
+    parser = lit("a")
+    state = %Paco.State{Paco.State.from("b")|cut: true}
+    assert %Paco.Failure{fatal: true} = parser.parse.(state, parser)
+  end
+
+  test "cut must be reported in success" do
+    parser = lit("a")
+    state = %Paco.State{Paco.State.from("a")|cut: true}
+    assert %Paco.Success{cut: true} = parser.parse.(state, parser)
+  end
+
   test "skipped parsers should be removed from result" do
     assert parse(skip(lit("a")), "a") == {:ok, []}
   end

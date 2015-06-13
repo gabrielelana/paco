@@ -358,15 +358,17 @@ defmodule Paco.Parser do
   end
 
   parser lit(s) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, _, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+          %Paco.Success{from: from, to: to, at: at,
+                        tail: tail, result: s, cut: cut}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, expected: s, rank: n+1,
-                        stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: text, expected: s,
+                        stack: Paco.Failure.stack(this),
+                        rank: n+1, fatal: cut}
       end
     end
   end
