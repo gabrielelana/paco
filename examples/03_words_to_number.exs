@@ -87,7 +87,7 @@ parse(number, "one thousand") |> IO.inspect
 parse(number, "twenty thousand") |> IO.inspect
 # >> {:ok, 20000}
 parse(number, "twenty-two thousand") |> IO.inspect
-# >> {:ok, 20000}
+# >> {:ok, 22000}
 parse(number, "one hundred thousand") |> IO.inspect
 # >> {:ok, 100000}
 parse(number, "twelve hundred and twenty-two thousand") |> IO.inspect
@@ -99,4 +99,4 @@ parse(number, "one hundred and twenty three million and three") |> IO.inspect
 parse(number, "seventy-seven thousand eight hundred and nineteen") |> IO.inspect
 # >> {:ok, 77819}
 parse(number, "seven hundred seventy-seven thousand seven hundred and seventy-seven") |> IO.inspect
-# >> {:ok, 77777}
+# >> {:ok, 777777}
