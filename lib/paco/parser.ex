@@ -134,6 +134,8 @@ defmodule Paco.Parser do
   parser repeat(box(p), {at_least, at_most}) do
     fn %Paco.State{at: from} = state, this ->
       case unfold_repeat(p, state, at_most) do
+        {_, _, %Paco.Failure{fatal: true} = failure} ->
+          failure |> Paco.Failure.stack(this)
         {n, _, failure} when n < at_least ->
           failure |> Paco.Failure.stack(this)
         {0, _, _} ->

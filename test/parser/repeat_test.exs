@@ -79,4 +79,26 @@ defmodule Paco.Parser.RepeatTest do
       ~s|expected "a" at 1:4 but got "b"|
     }
   end
+
+  test "cut creates fatal failures" do
+    without_cut = repeat(sequence_of([lit("a"), lit("b")]))
+    assert parse(without_cut, "ab") == {:ok, [["a", "b"]]}
+    assert parse(without_cut, "aba") == {:ok, [["a", "b"]]}
+
+    with_cut = repeat(sequence_of([lit("a"), cut, lit("b")]))
+    assert parse(with_cut, "ab") == {:ok, [["a", "b"]]}
+    assert parse(with_cut, "aba") == {:error,
+      ~s|expected "b" at 1:4 but got the end of input|
+    }
+  end
+
+  test "cut is not propagated to the next repetition" do
+    before_cut = repeat(sequence_of([lit("a"), lit("b"), cut, lit("c")]))
+
+    assert parse(before_cut, "abc") == {:ok, [["a", "b", "c"]]}
+    assert parse(before_cut, "abca") == {:ok, [["a", "b", "c"]]}
+    assert parse(before_cut, "abcab") == {:error,
+      ~s|expected "c" at 1:6 but got the end of input|
+    }
+  end
 end
