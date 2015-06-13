@@ -5,6 +5,12 @@ defmodule Paco.FailureTest do
     {:ok, %{failure: %Paco.Failure{at: {0, 1, 1}, rank: 1}}}
   end
 
+  test "format failure on the end of input", %{failure: failure} do
+    failure = %Paco.Failure{failure|tail: "", expected: "a"}
+    assert Paco.Failure.format(failure, :flat) ==
+      ~s|expected "a" at 1:1 but got the end of input|
+  end
+
   test "compose expectations" do
     {at, tail, rank} = {{1, 1, 2}, "c", 2}
 
@@ -101,9 +107,41 @@ defmodule Paco.FailureTest do
     assert composed_failure.expected == {:composed, ["b", "a"]}
   end
 
-  test "format failure on the end of input", %{failure: failure} do
-    failure = %Paco.Failure{failure|tail: "", expected: "a"}
-    assert Paco.Failure.format(failure, :flat) ==
-      ~s|expected "a" at 1:1 but got the end of input|
+  test "stack parsers", %{failure: failure} do
+    import Paco.Parser
+
+    failure = Paco.Failure.stack(failure, lit("a") |> as("a"))
+    assert failure.stack == ["a"]
+
+    failure = Paco.Failure.stack(failure, lit("b") |> as("b"))
+    assert failure.stack == ["b", "a"]
+  end
+
+  test "do not stack a parser without a description", %{failure: failure} do
+    import Paco.Parser
+
+    failure = Paco.Failure.stack(failure, lit("a"))
+    assert failure.stack == []
+  end
+
+  test "do not stack a parser twice in a row", %{failure: failure} do
+    import Paco.Parser
+
+    failure = failure
+              |> Paco.Failure.stack(lit("a") |> as("a"))
+              |> Paco.Failure.stack(lit("a") |> as("a"))
+
+    assert failure.stack == ["a"]
+  end
+
+  test "stack same parser when interleaved", %{failure: failure} do
+    import Paco.Parser
+
+    failure = failure
+              |> Paco.Failure.stack(lit("a") |> as("a"))
+              |> Paco.Failure.stack(lit("b") |> as("b"))
+              |> Paco.Failure.stack(lit("a") |> as("a"))
+
+    assert failure.stack == ["a", "b", "a"]
   end
 end

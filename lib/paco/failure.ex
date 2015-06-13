@@ -22,6 +22,9 @@ defmodule Paco.Failure do
   def stack(%Paco.Parser{description: description}), do: [description]
 
   def stack(failure, %Paco.Parser{description: nil}), do: failure
+  def stack(%Paco.Failure{stack: [description|_]} = failure,
+            %Paco.Parser{description: description}),
+            do: failure
   def stack(failure, %Paco.Parser{description: description}) do
     %Paco.Failure{failure|stack: [description|failure.stack]}
   end
