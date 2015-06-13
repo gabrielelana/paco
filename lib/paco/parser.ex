@@ -407,17 +407,18 @@ defmodule Paco.Parser do
   parser any(n) when is_integer(n), to: any({n, n})
   parser any(opts) when is_list(opts), to: any(extract_limits(opts))
   parser any({at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
       case Paco.String.consume_any(text, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at,
+                        tail: tail, result: consumed, cut: cut}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
           %Paco.Failure{at: from, tail: text, expected: {:any, at_least, at_most},
-                        rank: n, stack: Paco.Failure.stack(this)}
+                        fatal: cut, rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end

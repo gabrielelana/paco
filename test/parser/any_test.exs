@@ -49,6 +49,18 @@ defmodule Paco.Parser.AnyTest do
     assert f2.rank < f3.rank
   end
 
+  test "cut creates fatal failure" do
+    parser = any(at_least: 2)
+    state = %Paco.State{Paco.State.from("a")|cut: true}
+    assert %Paco.Failure{fatal: true} = parser.parse.(state, parser)
+  end
+
+  test "cut must be reported in success" do
+    parser = any(at_least: 1)
+    state = %Paco.State{Paco.State.from("a")|cut: true}
+    assert %Paco.Success{cut: true} = parser.parse.(state, parser)
+  end
+
   test "stream mode success" do
     for stream <- Helper.streams_of("abc") do
       result = stream
