@@ -44,6 +44,20 @@ defmodule Paco.FailureTest do
 
     assert Paco.Failure.format(composed_failure, :flat) ==
            ~s|expected one of ["a", "b"] at 1:2 but got "c"|
+
+    composed_failure = Paco.Failure.compose([
+      %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
+      %Paco.Failure{at: at, tail: tail, rank: rank, expected: {:re, ~r/a+/}}])
+
+    assert Paco.Failure.format(composed_failure, :flat) ==
+           ~s|expected one of ["a", ~r/a+/] at 1:2 but got "c"|
+
+    composed_failure = Paco.Failure.compose([
+      %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
+      %Paco.Failure{at: at, tail: tail, rank: rank, expected: {:until, "p"}}])
+
+    assert Paco.Failure.format(composed_failure, :flat) ==
+           ~s|expected one of ["a", something ended by "p"] at 1:2 but got "c"|
   end
 
   test "compose keep the common stack" do
