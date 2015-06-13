@@ -14,13 +14,13 @@ defmodule Paco.Parser do
 
 
 
-  parser then(p, f) when is_function(f), as:
+  parser next(p, f) when is_function(f), as:
     bind(p, f)
     |> bind(fn(p) -> box(p) end)
     |> bind(fn(p, _, s) -> p.parse.(s, p) end)
 
-  parser then(p1, box(p2)), as:
-    bind(p1, fn(_, _, s) -> p2.parse.(s, p2) end)
+  parser next(p, box(next)), as:
+    bind(p, fn(_, _, s) -> next.parse.(s, next) end)
 
 
 
