@@ -54,7 +54,7 @@ defmodule Paco.ParserModuleTest do
 
   test "failures keeps the parsers name" do
     assert UsePacoReferenceOtherParsers.parse("aaaccc") == {:error,
-      ~s|expected "bbb" at 1:4 but got "ccc"|
+      ~s|expected "bbb" (bbb < all) at 1:4 but got "ccc"|
     }
   end
 end

@@ -97,13 +97,14 @@ defmodule Paco.Macro.ParserModuleDefinition do
       @paco_parsers unquote(name)
       Paco.Macro.ParserDefinition.parser unquote(definition) do
         fn %Paco.State{} = state, this ->
-          case (unquote(block)) do
+          case (Paco.Parser.box(unquote(block))) do
             %Paco.Parser{} = parser ->
+              parser = %Paco.Parser{parser|description: unquote(name)}
               case parser.parse.(state, parser) do
                 %Paco.Success{} = success ->
                   success
                 %Paco.Failure{} = failure ->
-                  failure |> Paco.Failure.stack(this)
+                  failure |> Paco.Failure.stack(parser)
               end
             _ ->
               raise RuntimeError, message: "Expected a %Paco.Parser"
