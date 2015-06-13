@@ -40,16 +40,21 @@ defmodule Paco.Failure do
 
   defp compose_expectations(%Paco.Failure{expected: {:composed, f}},
                             %Paco.Failure{expected: {:composed, c}}),
-                            do: {:composed, Enum.concat(c, f)}
+                            do: {:composed, concat_expectations(c, f)}
   defp compose_expectations(%Paco.Failure{expected: f},
                             %Paco.Failure{expected: {:composed, c}}),
-                            do: {:composed, Enum.concat(c, [f])}
+                            do: {:composed, concat_expectations(c, [f])}
   defp compose_expectations(%Paco.Failure{expected: {:composed, f}},
                             %Paco.Failure{expected: c}),
-                            do: {:composed, Enum.concat([c], f)}
+                            do: {:composed, concat_expectations([c], f)}
+  defp compose_expectations(%Paco.Failure{expected: f},
+                            %Paco.Failure{expected: f}),
+                            do: f
   defp compose_expectations(%Paco.Failure{expected: f},
                             %Paco.Failure{expected: c}),
                             do: {:composed, [c, f]}
+
+  defp concat_expectations(c, f), do: Enum.concat(c, f) |> Enum.uniq
 
   defp compose_stack(%Paco.Failure{stack: t},
                      %Paco.Failure{stack: t}), do: t
