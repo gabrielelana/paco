@@ -13,9 +13,27 @@ defmodule Paco.Parser do
 
 
 
+  parser cut(box(p)) do
+    fn state, _ ->
+      p.parse.(%Paco.State{state|cut: true}, p)
+    end
+  end
+
   parser cut do
     fn %Paco.State{at: at, text: text}, _ ->
       %Paco.Success{from: at, to: at, at: at, tail: text, cut: true, skip: true}
+    end
+  end
+
+  parser sew(box(p)) do
+    fn state, _ ->
+      p.parse.(%Paco.State{state|cut: false}, p)
+    end
+  end
+
+  parser sew do
+    fn %Paco.State{at: at, text: text}, _ ->
+      %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
     end
   end
 

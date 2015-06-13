@@ -108,4 +108,12 @@ defmodule Paco.Parser.SequenceOfTest do
     assert %Paco.Failure{fatal: false} = parse(parser, "bb", format: :raw)
     assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
   end
+
+  test "sew the cut" do
+    parser = sequence_of([lit("a"), cut, lit("b"), sew, lit("c")])
+
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
+    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse(parser, "ab", format: :raw)
+  end
 end
