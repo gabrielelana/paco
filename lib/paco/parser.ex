@@ -256,10 +256,10 @@ defmodule Paco.Parser do
   defp reduce_sequence_of(_, %Paco.Failure{} = failure), do: failure
   defp reduce_sequence_of(p, {state, to, results}) do
     case p.parse.(state, p) do
-      %Paco.Success{from: at, to: at, at: at, skip: true} ->
-        {state, to, results}
-      %Paco.Success{from: at, to: at, at: at, result: result} ->
-        {state, to, [result|results]}
+      %Paco.Success{from: at, to: at, at: at, cut: cut, skip: true} ->
+        {%Paco.State{state|cut: cut}, to, results}
+      %Paco.Success{from: at, to: at, at: at, cut: cut, result: result} ->
+        {%Paco.State{state|cut: cut}, to, [result|results]}
       %Paco.Success{to: to, skip: true} = success ->
         {Paco.State.update(state, success), to, results}
       %Paco.Success{to: to, result: result} = success ->
