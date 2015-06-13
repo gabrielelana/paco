@@ -76,6 +76,18 @@ defmodule Paco.Parser.WhileTest do
     assert f2.rank < f3.rank
   end
 
+  test "cut creates fatal failure" do
+    parser = while("a", at_least: 1)
+    state = %Paco.State{Paco.State.from("b")|cut: true}
+    assert %Paco.Failure{fatal: true} = parser.parse.(state, parser)
+  end
+
+  test "cut must be reported in success" do
+    parser = while("a")
+    state = %Paco.State{Paco.State.from("a")|cut: true}
+    assert %Paco.Success{cut: true} = parser.parse.(state, parser)
+  end
+
   test "stream mode" do
     for stream <- Helper.streams_of("aab") do
       result = stream

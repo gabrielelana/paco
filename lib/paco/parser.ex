@@ -444,16 +444,18 @@ defmodule Paco.Parser do
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
   parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
   parser while(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at,
+                        tail: tail, result: consumed, cut: cut}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, expected: {:while, p, at_least, at_most},
+          %Paco.Failure{at: from, tail: text, fatal: cut,
+                        expected: {:while, p, at_least, at_most},
                         rank: n, stack: Paco.Failure.stack(this)}
       end
     end
