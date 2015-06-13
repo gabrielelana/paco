@@ -17,6 +17,7 @@ defmodule Paco.ExamplesTest do
 
       output = capture_io(fn -> Code.eval_file(example_path) end)
                |> String.split("\n")
+               |> Enum.map(&String.strip/1)
 
       for {{expected, ln}, output} <- Enum.zip(expected, output) do
         assert output == expected,
