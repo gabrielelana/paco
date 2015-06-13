@@ -15,6 +15,7 @@ defmodule Paco.Parser.LiteralTest do
   test "failure" do
     assert parse(lit("aaa"), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
     assert parse(lit("aaa"), "aa") == {:error, ~s|expected "aaa" at 1:1 but got "aa"|}
+    assert parse(lit("a"), "bbb") == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 
   test "failure for end of input" do
