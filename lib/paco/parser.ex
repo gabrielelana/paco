@@ -123,7 +123,7 @@ defmodule Paco.Parser do
   parser separated_by(p, s, opts) when is_binary(s), to: separated_by(p, lex(s), opts)
   parser separated_by(box(p), box(s), opts),
     as: (import Paco.Transform, only: [flatten_first: 1]
-         tail = repeat(sequence_of([skip(s), p]), opts)
+         tail = repeat(sequence_of([skip(s), cut, p]), opts)
                 |> bind(&flatten_first/1)
          sequence_of([p, tail])
          |> bind(fn([h, []]) -> [h]; ([h, t]) -> [h|t] end))

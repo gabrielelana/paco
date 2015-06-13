@@ -62,12 +62,11 @@ defmodule Paco.Parser.SeparatedByTest do
   end
 
   test "uses the cut on separator" do
-    # parser = lit("a") |> separated_by(lex(","))
+    parser = lit("a") |> separated_by(lex(","))
 
-    # that's a good case for using the cut combinator when you find "," then
-    # the following element is mandatory, for now this is the best we can do,
-    # but this assertion must fail with a meaningful message
-    # assert parse(parser, "a,b") == {:ok, ["a"]}
+    assert parse(parser, "a,") == {:error,
+      ~s|expected "a" at 1:3 but got the end of input|
+    }
   end
 
   test "boxing: delimiter is boxes with lex instead of lit" do
