@@ -99,4 +99,13 @@ defmodule Paco.Parser.OneOfTest do
     assert failure.at == {1, 1, 2}
     assert failure.tail == "c"
   end
+
+  test "do not backtrack with cut" do
+    parser = one_of([sequence_of([lit("("), cut, lit("a"), lit(")")]),
+                     sequence_of([lit("("), lit("b"), lit(")")])])
+
+    assert parse(parser, "(b)") == {:error,
+      ~s|expected "a" at 1:2 but got "b"|
+    }
+  end
 end

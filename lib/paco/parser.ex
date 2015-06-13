@@ -13,6 +13,13 @@ defmodule Paco.Parser do
 
 
 
+  parser cut do
+    fn %Paco.State{at: at, text: text}, _ ->
+      %Paco.Success{from: at, to: at, at: at, tail: text, cut: true, skip: true}
+    end
+  end
+
+
 
   parser next(p, f) when is_function(f), as:
     bind(p, f)
@@ -242,7 +249,8 @@ defmodule Paco.Parser do
     fn %Paco.State{at: from} = state, this ->
       case reduce_sequence_of(ps, state, from) do
         {%Paco.State{at: at, text: text}, to, results} ->
-          %Paco.Success{from: from, to: to, at: at, tail: text, result: Enum.reverse(results)}
+          %Paco.Success{from: from, to: to, at: at,
+                        tail: text, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
           failure |> Paco.Failure.stack(this)
       end
@@ -288,10 +296,12 @@ defmodule Paco.Parser do
     Enum.reduce(ps, {state, []}, &reduce_one_of_each/2) |> elem(1)
   end
 
+  defp reduce_one_of_each(_, {_, [%Paco.Failure{fatal: true}]} = failure), do: failure
   defp reduce_one_of_each(_, {_, %Paco.Success{}} = success), do: success
   defp reduce_one_of_each(p, {state, failures}) do
     case p.parse.(state, p) do
       %Paco.Success{} = success -> {state, success}
+      %Paco.Failure{fatal: true} = failure -> {state, [failure]}
       %Paco.Failure{} = failure -> {state, [failure|failures]}
     end
   end
