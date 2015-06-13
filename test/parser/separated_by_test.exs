@@ -69,6 +69,12 @@ defmodule Paco.Parser.SeparatedByTest do
     }
   end
 
+  test "can sew the cut" do
+    parser = sew(lit("a")) |> separated_by(lex(","))
+
+    assert parse(parser, "a,") == {:ok, ["a"]}
+  end
+
   test "boxing: delimiter is boxes with lex instead of lit" do
     parser = separated_by("a", ",")
     assert parse(parser, "a,a") == {:ok, ["a", "a"]}
