@@ -345,14 +345,15 @@ defmodule Paco.Parser do
 
 
   parser re(r) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
         [{_, n}] ->
           case Paco.String.seek(text, n, from) do
             {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
             {tail, s, to, at} ->
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+              %Paco.Success{from: from, to: to, at: at,
+                            tail: tail, result: s, cut: cut}
           end
         [{_, n}|captures] ->
           case Paco.String.seek(text, n, from) do
@@ -366,13 +367,14 @@ defmodule Paco.Parser do
                 _ ->
                   Regex.named_captures(r, text)
               end
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: {s, captures}}
+              %Paco.Success{from: from, to: to, at: at,
+                            tail: tail, result: {s, captures}, cut: cut}
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
           %Paco.Failure{at: from, tail: text, expected: {:re, r},
-                        stack: Paco.Failure.stack(this)}
+                        fatal: cut, stack: Paco.Failure.stack(this)}
       end
     end
   end

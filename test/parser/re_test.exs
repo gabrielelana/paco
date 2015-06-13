@@ -49,6 +49,18 @@ defmodule Paco.Parser.RegexTest do
     assert parse(parser, "b") == {:error, ~s|expected ~r/a+/ (TOKEN) at 1:1 but got "b"|}
   end
 
+  test "cut creates fatal failure" do
+    parser = re(~r/a+/)
+    state = %Paco.State{Paco.State.from("b")|cut: true}
+    assert %Paco.Failure{fatal: true} = parser.parse.(state, parser)
+  end
+
+  test "cut must be reported in success" do
+    parser = re(~r/a+/)
+    state = %Paco.State{Paco.State.from("a")|cut: true}
+    assert %Paco.Success{cut: true} = parser.parse.(state, parser)
+  end
+
   test "increment indexes for a match" do
     parser = re(~r/a+/)
     success = parser.parse.(Paco.State.from("aaabbb"), parser)
