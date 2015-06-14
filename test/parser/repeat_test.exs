@@ -91,4 +91,29 @@ defmodule Paco.Parser.RepeatTest do
       ~s|expected "b" at 1:4 but got the end of input|
     }
   end
+
+  test "consumes input on success" do
+    parser = repeat(lit("a"))
+    success = parser.parse.(Paco.State.from("aab"), parser)
+    assert success.from == {0, 1, 1}
+    assert success.to == {1, 1, 2}
+    assert success.at == {2, 1, 3}
+    assert success.tail == "b"
+  end
+
+  test "doesn't consume input on empty success" do
+    parser = repeat(lit("a"))
+    success = parser.parse.(Paco.State.from("bbb"), parser)
+    assert success.from == {0, 1, 1}
+    assert success.to == {0, 1, 1}
+    assert success.at == {0, 1, 1}
+    assert success.tail == "bbb"
+  end
+
+  test "doesn't consume input on failure" do
+    parser = repeat(lit("a"), at_least: 1)
+    failure = parser.parse.(Paco.State.from("bbb"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "bbb"
+  end
 end
