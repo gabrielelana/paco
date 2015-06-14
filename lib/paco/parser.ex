@@ -122,7 +122,7 @@ defmodule Paco.Parser do
   parser eof do
     fn
       %Paco.State{at: at, text: ""}, _ ->
-        %Paco.Success{from: at, to: at, at: at, tail: "", result: "", skip: true}
+        %Paco.Success{from: at, to: at, at: at, skip: true}
       %Paco.State{at: at, text: text}, _ ->
         %Paco.Failure{at: at, tail: text, rank: at, message: "expected the end of input %AT%"}
     end
