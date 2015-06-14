@@ -374,8 +374,6 @@ defmodule Paco.Parser do
 
 
 
-  parser re!(r), to: cut(re(r))
-
   parser re(r) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
@@ -422,8 +420,6 @@ defmodule Paco.Parser do
 
 
 
-  parser lit!(s), to: cut(lit(s))
-
   parser lit(s) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
@@ -439,9 +435,6 @@ defmodule Paco.Parser do
   end
 
 
-
-  parser any!, to: cut(any)
-  parser any!(t), to: cut(any(t))
 
   parser any, to: any({1, 1})
   parser any(n) when is_integer(n), to: any({n, n})
@@ -466,9 +459,6 @@ defmodule Paco.Parser do
 
 
 
-  parser until!(p), to: cut(until(p))
-  parser until!(p, opts), to: cut(until(p, opts))
-
   parser until(p, [escaped_with: escape]), to: until({p, escape})
   parser until(p) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
@@ -487,9 +477,6 @@ defmodule Paco.Parser do
   end
 
 
-
-  parser while!(p), to: cut(while(p))
-  parser while!(p, opts), to: cut(while(p, opts))
 
   parser while(p), to: while(p, {0, :infinity})
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
