@@ -9,7 +9,6 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "b") == {:ok, "b"}
     assert parse(one_of([lit("a"), lit("b"), lit("c")]), "c") == {:ok, "c"}
     assert parse(one_of([lit("a")]), "a") == {:ok, "a"}
-    assert parse(one_of([]), "a") == {:ok, ""}
   end
 
   test "boxing" do
@@ -18,9 +17,12 @@ defmodule Paco.Parser.OneOfTest do
     assert parse(one_of([{"a", "b"}, "c"]), "c") == {:ok, "c"}
   end
 
-  test "skipped parsers should be removed from result" do
-    assert parse(one_of([lit("a"), skip(lit("b"))]), "a") == {:ok, "a"}
-    assert parse(one_of([lit("a"), skip(lit("b"))]), "b") == {:ok, []}
+  test "skipped alternative returns skipped result" do
+    assert %Paco.Success{skip: true} = parse(one_of([skip(lit("a"))]), "a", format: :raw)
+  end
+
+  test "no alternatives returns skipped result" do
+    assert %Paco.Success{skip: true, tail: "a"} = parse(one_of([]), "a", format: :raw)
   end
 
   test "keep farthest failure" do
