@@ -7,6 +7,10 @@ defmodule PacoTest do
     assert Paco.parse("a", "a") == {:ok, "a"}
   end
 
+  test "skipped parsers returns empty result" do
+    assert Paco.parse(skip(lit("a")), "a") == {:ok, ""}
+  end
+
   test "parse_all" do
     parser = one_of([lit("a"), lit("b"), lit("c")])
 

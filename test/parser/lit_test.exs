@@ -43,14 +43,6 @@ defmodule Paco.Parser.LiteralTest do
     assert f2.rank < f3.rank
   end
 
-  test "skipped parsers should be removed from result" do
-    assert parse(skip(lit("a")), "a") == {:ok, []}
-  end
-
-  test "skip doesn't influece failures" do
-    assert parse(skip(lit("aaa")), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
-  end
-
   test "increment indexes for a match" do
     parser = lit("aaa")
     success = parser.parse.(Paco.State.from("aaa"), parser)

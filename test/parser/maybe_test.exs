@@ -4,12 +4,15 @@ defmodule Paco.Parser.MaybeTest do
   import Paco
   import Paco.Parser
 
-  test "parse never fails" do
+  test "successes are kept" do
     assert parse(maybe(lit("a")), "a") == {:ok, "a"}
-    assert parse(maybe(lit("a")), "b") == {:ok, []}
   end
 
-  test "parse with default" do
+  test "failures returns skipped empty results" do
+    assert %Paco.Success{skip: true} = parse(maybe(lit("a")), "b", format: :raw)
+  end
+
+  test "returns default value on failures" do
     assert parse(maybe(lit("a"), default: "a"), "a") == {:ok, "a"}
     assert parse(maybe(lit("a"), default: "a"), "b") == {:ok, "a"}
   end
@@ -23,6 +26,6 @@ defmodule Paco.Parser.MaybeTest do
   end
 
   test "fatal failures are skipped" do
-    assert parse(sequence_of([maybe(cut(lit("a"))), lit("b")]), "b") == {:ok, ["b"]}
+    assert parse(sequence_of([cut, maybe(lit("a")), lit("b")]), "b") == {:ok, ["b"]}
   end
 end
