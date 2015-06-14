@@ -120,4 +120,20 @@ defmodule Paco.Parser.SequenceOfTest do
     assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
     assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
   end
+
+  test "consumes input on success" do
+    parser = sequence_of([lit("a"), lit("b")])
+    success = parser.parse.(Paco.State.from("abc"), parser)
+    assert success.from == {0, 1, 1}
+    assert success.to == {1, 1, 2}
+    assert success.at == {2, 1, 3}
+    assert success.tail == "c"
+  end
+
+  test "doesn't consume input on failure" do
+    parser = sequence_of([lit("a"), lit("b")])
+    failure = parser.parse.(Paco.State.from("bbb"), parser)
+    assert failure.at == {0, 1, 1}
+    assert failure.tail == "bbb"
+  end
 end
