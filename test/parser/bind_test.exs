@@ -60,4 +60,11 @@ defmodule Paco.Parser.BindTest do
 
     assert Process.get(:called, false) == false
   end
+
+  test "doesn't call bind function on skipped success" do
+    parser = bind(skip(lit("a")), fn(r) -> Process.put(:called, true); r end)
+    parse(parser, "a")
+
+    assert Process.get(:called, false) == false
+  end
 end
