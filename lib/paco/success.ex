@@ -13,8 +13,7 @@ defmodule Paco.Success do
             cut: false, sew: false, skip: false, keep: false
 
   def format(%Paco.Success{} = success, :raw), do: success
-  def format(%Paco.Success{skip: true}, :flat), do: []
-  def format(%Paco.Success{skip: true}, :raw), do: []
+  def format(%Paco.Success{skip: true}, :flat), do: ""
   def format(%Paco.Success{result: result}, :flat), do: result
   def format(%Paco.Success{} = success, :tagged), do: {:ok, Paco.Success.format(success, :flat)}
 end
