@@ -18,7 +18,11 @@ defmodule Paco.Parser.MaybeTest do
     assert parse(maybe("a"), "a") == {:ok, "a"}
   end
 
-  test "on failure it's skipped" do
+  test "failures are skipped" do
     assert parse(sequence_of([maybe(lit("a")), lit("b")]), "b") == {:ok, ["b"]}
+  end
+
+  test "fatal failures are skipped" do
+    assert parse(sequence_of([maybe(cut(lit("a"))), lit("b")]), "b") == {:ok, ["b"]}
   end
 end

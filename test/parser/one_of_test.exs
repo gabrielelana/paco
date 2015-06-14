@@ -100,20 +100,8 @@ defmodule Paco.Parser.OneOfTest do
     assert failure.tail == "c"
   end
 
-  test "desn't backtrack with cut" do
-    parser = one_of([sequence_of([lit("("), cut, lit("a"), lit(")")]),
-                     sequence_of([lit("("), lit("b"), lit(")")])])
-
-    assert parse(parser, "(b)") == {:error,
-      ~s|expected "a" at 1:2 but got "b"|
-    }
+  test "doesn't backtrack with fatal failures" do
+    parser = one_of([sequence_of([cut, lit("a")]), lit("b")])
+    assert parse(parser, "b") == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
-
-  test "desn't inherit the cut" do
-    parser = one_of([lit("a"), lit("b")])
-    state = %Paco.State{Paco.State.from("b")|cut: true}
-
-    assert %Paco.Success{result: "b"} = parser.parse.(state, parser)
-  end
-
 end

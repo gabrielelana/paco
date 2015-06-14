@@ -5,11 +5,12 @@ defmodule Paco.Success do
                          tail: String.t,
                          result: any,
                          cut: boolean,
+                         sew: boolean,
                          skip: boolean,
                          keep: boolean}
 
-  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0},
-            tail: "", result: "", cut: false, skip: false, keep: false
+  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0}, tail: "", result: "",
+            cut: false, sew: false, skip: false, keep: false
 
   def format(%Paco.Success{} = success, :raw), do: success
   def format(%Paco.Success{skip: true}, :flat), do: []

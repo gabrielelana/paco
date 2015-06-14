@@ -14,8 +14,17 @@ defmodule Paco.Parser do
 
 
   parser cut(box(p)) do
-    fn state, _ ->
-      p.parse.(%Paco.State{state|cut: true}, p)
+    fn %Paco.State{at: at} = state, _ ->
+      case p.parse.(state, p) do
+        %Paco.Success{at: ^at} = success ->
+          success
+        %Paco.Success{sew: true} = success ->
+          %Paco.Success{success|sew: false}
+        %Paco.Success{} = success ->
+          %Paco.Success{success|cut: true}
+        %Paco.Failure{} = failure ->
+          failure
+      end
     end
   end
 
@@ -26,14 +35,23 @@ defmodule Paco.Parser do
   end
 
   parser sew(box(p)) do
-    fn state, _ ->
-      p.parse.(%Paco.State{state|cut: false}, p)
+    fn %Paco.State{at: at} = state, _ ->
+      case p.parse.(state, p) do
+        %Paco.Success{at: ^at} = success ->
+          success
+        %Paco.Success{cut: true} = success ->
+          %Paco.Success{success|cut: false}
+        %Paco.Success{} = success ->
+          %Paco.Success{success|sew: true}
+        %Paco.Failure{} = failure ->
+          failure
+      end
     end
   end
 
   parser sew do
     fn %Paco.State{at: at, text: text}, _ ->
-      %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
+      %Paco.Success{from: at, to: at, at: at, tail: text, sew: true, skip: true}
     end
   end
 
@@ -123,7 +141,7 @@ defmodule Paco.Parser do
   parser separated_by(p, s, opts) when is_binary(s), to: separated_by(p, lex(s), opts)
   parser separated_by(box(p), box(s), opts),
     as: (import Paco.Transform, only: [flatten_first: 1]
-         tail = repeat(sequence_of([skip(s), cut, p]), opts)
+         tail = repeat(sequence_of([cut(skip(s)), p]), opts)
                 |> bind(&flatten_first/1)
          sequence_of([p, tail])
          |> bind(fn([h, []]) -> [h]; ([h, t]) -> [h|t] end))
@@ -150,14 +168,14 @@ defmodule Paco.Parser do
   parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
   parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
   parser repeat(box(p), {at_least, at_most}) do
-    fn %Paco.State{at: from} = state, this ->
+    fn %Paco.State{at: from, text: text} = state, this ->
       case unfold_repeat(p, state, at_most) do
         {_, _, %Paco.Failure{fatal: true} = failure} ->
           failure |> Paco.Failure.stack(this)
         {n, _, failure} when n < at_least ->
           failure |> Paco.Failure.stack(this)
         {0, _, _} ->
-          %Paco.Success{from: from, to: from, at: from, tail: from, result: []}
+          %Paco.Success{from: from, to: from, at: from, tail: text, result: []}
         {_, successes, _} ->
           results = successes |> Enum.reject(&(&1.skip)) |>  Enum.map(&(&1.result))
           %Paco.Success{List.last(successes)|from: from, result: results}
@@ -268,9 +286,9 @@ defmodule Paco.Parser do
   parser sequence_of(box_each(ps)) do
     fn %Paco.State{at: from} = state, this ->
       case reduce_sequence_of(ps, state, from) do
-        {%Paco.State{at: at, text: text}, to, results} ->
-          %Paco.Success{from: from, to: to, at: at,
-                        tail: text, result: Enum.reverse(results)}
+        {%Paco.State{at: at, text: text}, to, results, _} ->
+          %Paco.Success{from: from, to: to, at: at, tail: text,
+                        result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
           failure |> Paco.Failure.stack(this)
       end
@@ -278,30 +296,42 @@ defmodule Paco.Parser do
   end
 
   defp reduce_sequence_of(ps, state, from) do
-    Enum.reduce(ps, {state, from, []}, &reduce_sequence_of/2)
+    Enum.reduce(ps, {state, from, [], {false, false}}, &reduce_sequence_of/2)
   end
 
   defp reduce_sequence_of(_, %Paco.Failure{} = failure), do: failure
-  defp reduce_sequence_of(p, {state, to, results}) do
+  defp reduce_sequence_of(p, {state, at, results, {cut, sew}}) do
     case p.parse.(state, p) do
-      %Paco.Success{from: at, to: at, at: at, cut: cut, skip: true} ->
-        {%Paco.State{state|cut: cut}, to, results}
-      %Paco.Success{from: at, to: at, at: at, cut: cut, result: result} ->
-        {%Paco.State{state|cut: cut}, to, [result|results]}
+      %Paco.Success{from: ^at, to: ^at, at: ^at, skip: true} = success ->
+        {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
+        {state, at, results, {cut, sew}}
+      %Paco.Success{from: ^at, to: ^at, at: ^at, result: result} = success ->
+        {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
+        {state, at, [result|results], {cut, sew}}
       %Paco.Success{to: to, skip: true} = success ->
-        {Paco.State.update(state, success), to, results}
+        {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
+        {Paco.State.update(state, success), to, results, {cut, sew}}
       %Paco.Success{to: to, result: result} = success ->
-        {Paco.State.update(state, success), to, [result|results]}
+        {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
+        {Paco.State.update(state, success), to, [result|results], {cut, sew}}
+      %Paco.Failure{} = failure when cut ->
+        %Paco.Failure{failure|fatal: true}
       %Paco.Failure{} = failure ->
         failure
     end
   end
 
+  defp cut_and_sew(true, _, _, true),  do: {false, false}
+  defp cut_and_sew(true, _, _, false), do: {true, false}
+  defp cut_and_sew(_, true, true, _),  do: {false, false}
+  defp cut_and_sew(_, true, false, _), do: {false, true}
+  defp cut_and_sew(_, _, cut, sew),    do: {cut, sew}
+
 
 
   parser one_of(box_each(ps)) do
     fn %Paco.State{at: at, text: text} = state, this ->
-      case reduce_one_of(ps, %Paco.State{state|cut: false}) do
+      case reduce_one_of(ps, state) do
         [] ->
           %Paco.Success{from: at, to: at, at: at, tail: text, result: ""}
         %Paco.Success{} = success ->
@@ -347,15 +377,14 @@ defmodule Paco.Parser do
   parser re!(r), to: cut(re(r))
 
   parser re(r) do
-    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Regex.run(anchor(r), text, return: :index) do
         [{_, n}] ->
           case Paco.String.seek(text, n, from) do
             {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
             {tail, s, to, at} ->
-              %Paco.Success{from: from, to: to, at: at,
-                            tail: tail, result: s, cut: cut}
+              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
           end
         [{_, n}|captures] ->
           case Paco.String.seek(text, n, from) do
@@ -370,13 +399,13 @@ defmodule Paco.Parser do
                   Regex.named_captures(r, text)
               end
               %Paco.Success{from: from, to: to, at: at,
-                            tail: tail, result: {s, captures}, cut: cut}
+                            tail: tail, result: {s, captures}}
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
           %Paco.Failure{at: from, tail: text, expected: {:re, r},
-                        fatal: cut, stack: Paco.Failure.stack(this)}
+                        stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -396,17 +425,15 @@ defmodule Paco.Parser do
   parser lit!(s), to: cut(lit(s))
 
   parser lit(s) do
-    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, _, to, at} ->
-          %Paco.Success{from: from, to: to, at: at,
-                        tail: tail, result: s, cut: cut}
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, {n, _, _}} ->
           %Paco.Failure{at: from, tail: text, expected: s,
-                        stack: Paco.Failure.stack(this),
-                        rank: n+1, fatal: cut}
+                        stack: Paco.Failure.stack(this), rank: n+1}
       end
     end
   end
@@ -420,18 +447,19 @@ defmodule Paco.Parser do
   parser any(n) when is_integer(n), to: any({n, n})
   parser any(opts) when is_list(opts), to: any(extract_limits(opts))
   parser any({at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_any(text, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
           %Paco.Success{from: from, to: to, at: at,
-                        tail: tail, result: consumed, cut: cut}
+                        tail: tail, result: consumed}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, expected: {:any, at_least, at_most},
-                        fatal: cut, rank: n, stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: text,
+                        expected: {:any, at_least, at_most},
+                        rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -443,18 +471,17 @@ defmodule Paco.Parser do
 
   parser until(p, [escaped_with: escape]), to: until({p, escape})
   parser until(p) do
-    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_until(text, p, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at,
-                        tail: tail, result: consumed, cut: cut}
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
           %Paco.Failure{at: from, tail: text, expected: {:until, p},
-                        fatal: cut, rank: n, stack: Paco.Failure.stack(this)}
+                        rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -468,17 +495,16 @@ defmodule Paco.Parser do
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
   parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
   parser while(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, cut: cut, stream: stream} = state, this ->
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at,
-                        tail: tail, result: consumed, cut: cut}
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, fatal: cut,
+          %Paco.Failure{at: from, tail: text,
                         expected: {:while, p, at_least, at_most},
                         rank: n, stack: Paco.Failure.stack(this)}
       end

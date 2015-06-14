@@ -84,36 +84,35 @@ defmodule Paco.Parser.SequenceOfTest do
     assert result == [{:error, ~s|failure! parser didn't consume any input|}]
   end
 
-  test "propagate cut in the sequence" do
+  test "cut in the sequence" do
     parser = sequence_of([lit("a"), cut, lit("b")])
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
+    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
 
-    assert %Paco.Failure{fatal: false} = parse(parser, "bb", format: :raw)
+    parser = sequence_of([cut(lit("a")), lit("b")])
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
     assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
   end
 
-  test "reset cut at the end of the sequence" do
-    with_cut = sequence_of([cut, lit("a")])
-    without_cut = sequence_of([lit("b")])
-    parser = sequence_of([with_cut, without_cut])
-
-    assert %Paco.Failure{fatal: true} = parse(parser, "bb", format: :raw)
-    assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
-    assert %Paco.Success{cut: false} = parse(parser, "ab", format: :raw)
-  end
-
-  test "inherit cut in nested sequences" do
-    with_inherited_cut = sequence_of([lit("b")])
-    parser = sequence_of([lit("a"), cut, with_inherited_cut])
-
-    assert %Paco.Failure{fatal: false} = parse(parser, "bb", format: :raw)
-    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
-  end
-
-  test "sew the cut" do
+  test "sew the cut in the sequence" do
     parser = sequence_of([lit("a"), cut, lit("b"), sew, lit("c")])
-
     assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
     assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
     assert %Paco.Failure{fatal: false} = parse(parser, "ab", format: :raw)
+
+    parser = sequence_of([cut(lit("a")), sew(lit("b")), lit("c")])
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
+    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse(parser, "ab", format: :raw)
+  end
+
+  test "cut the sew in the sequence" do
+    parser = sequence_of([sew, lit("a"), cut, lit("b")])
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
+
+    parser = sequence_of([sew(lit("a")), cut(lit("b"))])
+    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
   end
 end

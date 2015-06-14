@@ -63,15 +63,13 @@ defmodule Paco.Parser.SeparatedByTest do
 
   test "uses the cut on separator" do
     parser = lit("a") |> separated_by(lex(","))
-
     assert parse(parser, "a,") == {:error,
       ~s|expected "a" at 1:3 but got the end of input|
     }
   end
 
   test "can sew the cut" do
-    parser = sew(lit("a")) |> separated_by(lex(","))
-
+    parser = lit("a") |> separated_by(sew(lex(",")))
     assert parse(parser, "a,") == {:ok, ["a"]}
   end
 

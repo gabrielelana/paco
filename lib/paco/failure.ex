@@ -8,8 +8,8 @@ defmodule Paco.Failure do
                          fatal: boolean}
 
   defexception at: {0, 0, 0}, tail: "", rank: 0,
-               fatal: false, expected: nil, message: nil,
-               stack: []
+               expected: nil, message: nil, stack: [],
+               fatal: false
 
 
   def at(%Paco.State{at: at, text: text}, opts \\ []) do
