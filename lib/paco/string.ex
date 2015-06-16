@@ -120,7 +120,6 @@ defmodule Paco.String do
 
 
 
-
   @spec consume_while(text::String.t, what, limits::limit, at::State.position)
     :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
      | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}

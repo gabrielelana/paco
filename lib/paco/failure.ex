@@ -117,6 +117,10 @@ defmodule Paco.Failure do
     [format_limits({n, m}), "characters", format_description({:while, p})]
     |> Enum.join(" ")
   end
+  defp format_expected({:while_not, p, n, m}) do
+    [format_limits({n, m}), "characters", format_description({:while_not, p})]
+    |> Enum.join(" ")
+  end
   defp format_expected({:any, n, m}) do
     [format_limits({n, m}), "characters"]
     |> Enum.join(" ")
@@ -144,6 +148,9 @@ defmodule Paco.Failure do
   defp format_tail(tail, {:while, _, n, _}) do
     quoted(String.slice(tail, 0, n))
   end
+  defp format_tail(tail, {:while_not, _, n, _}) do
+    quoted(String.slice(tail, 0, n))
+  end
   defp format_tail(tail, _) do
     tail = Paco.String.line_at(tail, 0)
     case String.length(tail) do
@@ -169,6 +176,12 @@ defmodule Paco.Failure do
   end
   defp format_description({:while, p}) when is_function(p) do
     "which satisfy #{format_function(p)}"
+  end
+  defp format_description({:while_not, p}) when is_binary(p) do
+    "not in alphabet #{quoted(p)}"
+  end
+  defp format_description({:while_not, p}) when is_function(p) do
+    "which doesn't satisfy #{format_function(p)}"
   end
 
   defp format_function(f) do

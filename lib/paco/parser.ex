@@ -480,6 +480,35 @@ defmodule Paco.Parser do
 
 
 
+  parser while_not(p), to: while_not(p, {0, :infinity})
+  parser while_not(p, n) when is_integer(n), to: while_not(p, {n, n})
+  parser while_not(p, opts) when is_list(opts), to: while_not(p, extract_limits(opts))
+  parser while_not(p, {at_least, at_most}) do
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+      f = case p do
+            chrs when is_binary(p) ->
+              expected = Stream.unfold(chrs, &String.next_grapheme/1) |> Enum.to_list
+              fn(h) -> not Enum.member?(expected, h) end
+            f when is_function(f) ->
+              fn(h) -> not f.(h) end
+          end
+      case Paco.String.consume_while(text, f, {at_least, at_most}, from) do
+        {"", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {tail, consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        {:not_enough, "", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text,
+                        expected: {:while_not, p, at_least, at_most},
+                        rank: n, stack: Paco.Failure.stack(this)}
+      end
+    end
+  end
+
+
+
   parser while(p), to: while(p, {0, :infinity})
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
   parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
