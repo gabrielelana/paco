@@ -58,7 +58,7 @@ defmodule Paco.FailureTest do
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
-      %Paco.Failure{at: at, tail: tail, rank: rank, expected: {:until, "p"}}])
+      %Paco.Failure{at: at, tail: tail, rank: rank, expected: {:until, ["p"]}}])
     assert Paco.Failure.format(composed_failure, :flat) ==
            ~s|expected one of ["a", something ended by "p"] at 1:2 but got "c"|
   end

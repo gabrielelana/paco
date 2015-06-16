@@ -461,7 +461,10 @@ defmodule Paco.Parser do
 
 
 
-  parser until(p, [escaped_with: escape]), to: until({p, escape})
+  parser until(p, [escaped_with: escape]) when not is_list(p), to: until([{p, escape}])
+  parser until(p, [escaped_with: escape]), to: until(Enum.map(p, &escape_boundary(&1, escape)))
+  parser until({p, escape}), to: until([{p, escape}])
+  parser until(p) when not is_list(p), to: until([p])
   parser until(p) do
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume_until(text, p, from) do
@@ -473,6 +476,31 @@ defmodule Paco.Parser do
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
           %Paco.Failure{at: from, tail: text, expected: {:until, p},
+                        rank: n, stack: Paco.Failure.stack(this)}
+      end
+    end
+  end
+
+  defp escape_boundary({_, _} = escaped, _), do: escaped
+  defp escape_boundary(boundary, escape), do: {boundary, escape}
+
+
+
+  parser while(p), to: while(p, {0, :infinity})
+  parser while(p, n) when is_integer(n), to: while(p, {n, n})
+  parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
+  parser while(p, {at_least, at_most}) do
+    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+      case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
+        {"", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {tail, consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        {:not_enough, "", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Paco.Failure{at: from, tail: text,
+                        expected: {:while, p, at_least, at_most},
                         rank: n, stack: Paco.Failure.stack(this)}
       end
     end
@@ -502,28 +530,6 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, {n, _, _}} ->
           %Paco.Failure{at: from, tail: text,
                         expected: {:while_not, p, at_least, at_most},
-                        rank: n, stack: Paco.Failure.stack(this)}
-      end
-    end
-  end
-
-
-
-  parser while(p), to: while(p, {0, :infinity})
-  parser while(p, n) when is_integer(n), to: while(p, {n, n})
-  parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
-  parser while(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
-      case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
-        {"", _, _, _} when is_pid(stream) ->
-          wait_for_more_and_continue(state, this)
-        {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
-        {:not_enough, "", _, _, _} when is_pid(stream) ->
-          wait_for_more_and_continue(state, this)
-        {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:while, p, at_least, at_most},
                         rank: n, stack: Paco.Failure.stack(this)}
       end
     end

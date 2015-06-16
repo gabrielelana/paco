@@ -97,6 +97,17 @@ defmodule Paco.StringTest do
     assert consume_until("aaa", "[", {0, 1, 1}) == {:not_enough, "", "aaa", {2, 1, 3}, {3, 1, 4}}
   end
 
+  test "consume_until multiple boundaries" do
+    boundaries = ["[", ";"]
+
+    assert consume_until("a[b]", boundaries, {0, 1, 1}) == {"[b]", "a", {0, 1, 1}, {1, 1, 2}}
+    assert consume_until("a;b", boundaries, {0, 1, 1}) == {";b", "a", {0, 1, 1}, {1, 1, 2}}
+    assert consume_until("a;[b]", boundaries, {0, 1, 1}) == {";[b]", "a", {0, 1, 1}, {1, 1, 2}}
+
+    assert consume_until("", boundaries, {0, 1, 1}) == {:not_enough, "", "", {0, 1, 1}, {0, 1, 1}}
+    assert consume_until("aaa", boundaries, {0, 1, 1}) == {:not_enough, "", "aaa", {2, 1, 3}, {3, 1, 4}}
+  end
+
   test "consume_until a boundary with more than one character" do
     assert consume_until("aaabbb", "bbb", {0, 1, 1}) == {"bbb", "aaa", {2, 1, 3}, {3, 1, 4}}
     assert consume_until("aaa", "bbb", {0, 1, 1}) == {:not_enough, "", "aaa", {2, 1, 3}, {3, 1, 4}}
@@ -113,6 +124,10 @@ defmodule Paco.StringTest do
   test "consume_until a boundary with escape with more than one character" do
     assert consume_until("a<ESCAPE>[b[c]", {"[", "<ESCAPE>"}, {0, 1, 1}) ==
            {"[c]", "a<ESCAPE>[b", {10, 1, 11}, {11, 1, 12}}
+  end
+
+  test "consume_until a boundary with escape same as boundary" do
+    assert consume_until("a##b#c", {"#", "#"}, {0, 1, 1}) == {"#c", "a##b", {3, 1, 4}, {4, 1, 5}}
   end
 
   test "seek" do

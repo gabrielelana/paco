@@ -6,24 +6,53 @@ defmodule Paco.Parser.UntilTest do
 
   alias Paco.Test.Helper
 
-  test "parse until string boundary" do
+  test "parse until boundary" do
     assert parse(until("c"), "abc") == {:ok, "ab"}
     assert parse(until("c"), "abcb") == {:ok, "ab"}
   end
 
-  test "parse until string boundary with escape" do
+  test "parse until boundary with escape" do
     assert parse(until("c", escaped_with: "\\"), "ab\\cdce") == {:ok, "ab\\cd"}
   end
 
-  test "failure when missing string boundary" do
+  test "parse until multiple boundaries" do
+    assert parse(until(["c"]), "abc") == {:ok, "ab"}
+    assert parse(until(["c", "d"]), "abdcb") == {:ok, "ab"}
+    assert parse(until(["c", "d", "b"]), "abdcb") == {:ok, "a"}
+  end
+
+  test "parse until multiple boundaries with escape" do
+    assert parse(until([{"c", "\\"}]), "a\\cbcde") == {:ok, "a\\cb"}
+    assert parse(until(["c"], escaped_with: "\\"), "a\\cbcde") == {:ok, "a\\cb"}
+
+    assert parse(until([{"c", "\\"}, {"d", "\\"}]), "a\\c\\dc") == {:ok, "a\\c\\d"}
+    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\c\\dc") == {:ok, "a\\c\\d"}
+
+    assert parse(until([{"c", "\\"}, {"d", "#"}]), "a\\c#dc") == {:ok, "a\\c#d"}
+    assert parse(until(["c", {"d", "#"}], escaped_with: "\\"), "a\\c#dd") == {:ok, "a\\c#d"}
+  end
+
+  test "failure when missing boundary" do
     assert parse(until("c"), "aaa") == {:error,
       ~s|expected something ended by "c" at 1:1 but got "aaa"|
     }
   end
 
-  test "failure when missing string boundary with escape" do
+  test "failure when missing boundary with escape" do
     assert parse(until("c", escaped_with: "\\"), "a\\ca") == {:error,
       ~S|expected something ended by "c" at 1:1 but got "a\ca"|
+    }
+  end
+
+  test "failure when missing boundaries" do
+    assert parse(until(["c", "d"]), "aaa") == {:error,
+      ~s|expected something ended by one of ["c", "d"] at 1:1 but got "aaa"|
+    }
+  end
+
+  test "failure when missing boundaries with escape" do
+    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\ca") == {:error,
+      ~S|expected something ended by one of ["c", "d"] at 1:1 but got "a\ca"|
     }
   end
 
@@ -34,7 +63,7 @@ defmodule Paco.Parser.UntilTest do
     }
   end
 
-  test "failure truncate tail when is too long" do
+  test "failure truncate tail when it's too long" do
     parser = until("c")
 
     long_text = String.duplicate("a", 1_000)

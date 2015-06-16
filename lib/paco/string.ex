@@ -167,15 +167,27 @@ defmodule Paco.String do
      | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
     when what: {boundary::String.t, escape::String.t}
 
-  def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
+  def consume_until(text, boundary, at) when is_binary(boundary),
+    do: consume_until(text, "", [boundary], at, at)
+  def consume_until(text, {boundary, escape}, at) when is_binary(boundary) and is_binary(escape),
+    do: consume_until(text, "", [{boundary, escape}], at, at)
+  def consume_until(text, boundaries, at) when is_list(boundaries),
+    do: consume_until(text, "", boundaries, at, at)
 
-  defp consume_until(text, consumed, {boundary, escape}, to, at) do
-    next = &consume_until_boundary_with_escape(&1, &2, boundary, escape, &3, &4, &5)
-    consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next)
+  defp consume_until(text, consumed, boundaries, to, at) do
+    Enum.map(boundaries, &map_consume_until_boundary(text, consumed, &1, to, at))
+    |> Enum.reduce(nil, &reduce_consume_until_boundary/2)
   end
-  defp consume_until(text, consumed, boundary, to, at) do
-    next = &consume_until_boundary(&1, &2, boundary, &3, &4, &5)
-    consume_until_boundary(text, consumed, boundary, to, at, next)
+
+  defp consume_until_boundary(text, consumed, {boundary, escape}, to, at, next) do
+    case consume(text, "", escape <> boundary, to, at) do
+      {tail, escaped_boundary, to, at} ->
+        consume_until_boundary(tail, consumed <> escaped_boundary, {boundary, escape}, to, at, next)
+      {:not_expected, _, _, _, _} ->
+        consume_until_boundary(text, consumed, boundary, to, at, next)
+      {:not_enough, _, _, _, _} ->
+        consume_until_boundary(text, consumed, boundary, to, at, next)
+    end
   end
 
   defp consume_until_boundary(text, consumed, boundary, to, at, next) do
@@ -190,14 +202,25 @@ defmodule Paco.String do
     end
   end
 
-  defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
-    case consume(text, "", escape <> boundary, to, at) do
-      {tail, _, to, at} ->
-        consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
-      _ ->
-        consume_until_boundary(text, consumed, boundary, to, at, next)
-    end
+  # defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
+  #   case consume(text, "", escape <> boundary, to, at) do
+  #     {tail, _, to, at} ->
+  #       consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
+  #     _ ->
+  #       consume_until_boundary(text, consumed, boundary, to, at, next)
+  #   end
+  # end
+
+  defp map_consume_until_boundary(text, consumed, boundary, to, at) do
+    next = &consume_until_boundary(&1, &2, boundary, &3, &4, &5)
+    consume_until_boundary(text, consumed, boundary, to, at, next)
   end
+
+  defp reduce_consume_until_boundary(cur, nil), do: cur
+  defp reduce_consume_until_boundary({_, _, _, n} = cur, {_, _, _, m}) when n < m, do: cur
+  defp reduce_consume_until_boundary({_, _, _, _}, {_, _, _, _} = acc), do: acc
+  defp reduce_consume_until_boundary({_, _, _, _} = cur, {:not_enough, _, _, _, _}), do: cur
+  defp reduce_consume_until_boundary({:not_enough, _, _, _, _}, acc), do: acc
 
 
 

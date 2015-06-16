@@ -162,14 +162,15 @@ defmodule Paco.Failure do
   defp format_limits({n, n}), do: "exactly #{n}"
   defp format_limits({n, _}), do: "at least #{n}"
 
-  defp format_description({:until, p}) when is_function(p) do
-    "a character which satisfy #{format_function(p)}"
+  defp format_description({:until, [{boundary, _}]}) do
+    quoted(boundary)
   end
-  defp format_description({:until, {p, _}}) do
-    quoted(p)
+  defp format_description({:until, [boundary]}) do
+    quoted(boundary)
   end
-  defp format_description({:until, p}) do
-    quoted(p)
+  defp format_description({:until, boundaries}) do
+    format = fn({boundary, _}) -> quoted(boundary); (boundary) -> quoted(boundary) end
+    "one of [#{Enum.map(boundaries, format) |> Enum.join(", ")}]"
   end
   defp format_description({:while, p}) when is_binary(p) do
     "in alphabet #{quoted(p)}"
