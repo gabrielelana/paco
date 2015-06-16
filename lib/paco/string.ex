@@ -166,22 +166,10 @@ defmodule Paco.String do
   @spec consume_until(text::String.t, what, at::State.position)
     :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
      | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
-    when what: (String.t -> boolean) | {boundary::String.t, escape::String.t}
+    when what: {boundary::String.t, escape::String.t}
 
   def consume_until(text, what, at), do: consume_until(text, "", what, at, at)
 
-  defp consume_until(text, consumed, f, to, at) when is_function(f) do
-    case next_grapheme(text) do
-      {h, tail} ->
-        if (f.(h)) do
-          {text, consumed, to, at}
-        else
-          consume_until(tail, consumed <> h, f, at, position_after(at, h))
-        end
-      nil ->
-        {:not_enough, text, consumed, to, at}
-    end
-  end
   defp consume_until(text, consumed, {boundary, escape}, to, at) do
     next = &consume_until_boundary_with_escape(&1, &2, boundary, escape, &3, &4, &5)
     consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next)

@@ -88,15 +88,6 @@ defmodule Paco.StringTest do
     assert consume_while("abcabc", &letter?/1, {1, 3}, {0, 1, 1}) == {"abc", "abc", {2, 1, 3}, {3, 1, 4}}
   end
 
-  test "consume_until given function returns true" do
-    assert consume_until("abc   ", &whitespace?/1, {0, 1, 1}) == {"   ", "abc", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until("abc ", &whitespace?/1, {0, 1, 1}) == {" ", "abc", {2, 1, 3}, {3, 1, 4}}
-    assert consume_until(" ", &whitespace?/1, {0, 1, 1}) == {" ", "", {0, 1, 1}, {0, 1, 1}}
-
-    assert consume_until("", &whitespace?/1, {0, 1, 1}) == {:not_enough, "", "", {0, 1, 1}, {0, 1, 1}}
-    assert consume_until("abc", &whitespace?/1, {0, 1, 1}) == {:not_enough, "", "abc", {2, 1, 3}, {3, 1, 4}}
-  end
-
   test "consume_until a boundary" do
     assert consume_until("a[b]", "[", {0, 1, 1}) == {"[b]", "a", {0, 1, 1}, {1, 1, 2}}
     assert consume_until("aaa[b]", "[", {0, 1, 1}) == {"[b]", "aaa", {2, 1, 3}, {3, 1, 4}}
