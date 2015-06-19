@@ -177,33 +177,35 @@ defmodule Paco.String do
     do: consume_until(text, "", boundaries, at, at, opts)
 
   defp consume_until(text, consumed, boundaries, to, at, opts) do
-    keep_escape = Keyword.get(opts, :keep_escape, false)
+    opts = {Keyword.get(opts, :keep_escape, false), Keyword.get(opts, :eof, false)}
     boundaries = Enum.concat(boundaries, boundaries_escaped_without_escape(boundaries))
-    consume_until_boundaries(text, consumed, boundaries, boundaries, to, at, keep_escape)
+    consume_until_boundaries(text, consumed, boundaries, boundaries, to, at, opts)
   end
 
-  defp consume_until_boundaries(text, consumed, [], boundaries, _to, at, keep_escape) do
+  defp consume_until_boundaries(text, consumed, [], boundaries, _to, at, opts) do
     {h, tail} = next_grapheme(text)
-    consume_until_boundaries(tail, consumed <> h, boundaries, boundaries, at, position_after(at, h), keep_escape)
+    consume_until_boundaries(tail, consumed <> h, boundaries, boundaries, at, position_after(at, h), opts)
   end
-  defp consume_until_boundaries(text, consumed, [{boundary, escape}|rest_of_boundaries], boundaries, to, at, keep_escape) do
+  defp consume_until_boundaries(text, consumed, [{boundary, escape}|rest_of_boundaries], boundaries, to, at, {keep_escape, _} = opts) do
     case consume(text, "", escape <> boundary, to, at) do
       {tail, escaped_boundary, to, at} when keep_escape ->
-        consume_until_boundaries(tail, consumed <> escaped_boundary, boundaries, boundaries, to, at, keep_escape)
+        consume_until_boundaries(tail, consumed <> escaped_boundary, boundaries, boundaries, to, at, opts)
       {tail, _, to, at} ->
-        consume_until_boundaries(tail, consumed <> boundary, boundaries, boundaries, to, at, keep_escape)
+        consume_until_boundaries(tail, consumed <> boundary, boundaries, boundaries, to, at, opts)
       {:not_expected, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, opts)
       {:not_enough, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, opts)
     end
   end
-  defp consume_until_boundaries(text, consumed, [boundary|rest_of_boundaries], boundaries, to, at, keep_escape) do
+  defp consume_until_boundaries(text, consumed, [boundary|rest_of_boundaries], boundaries, to, at, {_, eof_is_boundary} = opts) do
     case consume(text, "", boundary, to, at) do
       {_, _, _, _} ->
         {text, consumed, to, at}
       {:not_expected, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, opts)
+      {:not_enough, _, _, _, _} when eof_is_boundary ->
+        {text, consumed, to, at}
       {:not_enough, _, _, _, _} ->
         {:not_enough, text, consumed, to, at}
     end

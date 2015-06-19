@@ -20,6 +20,10 @@ defmodule Paco.Parser.UntilTest do
     assert parse(parser, "ab\\cdce") == {:ok, "ab\\cd"}
   end
 
+  test "parse until eof" do
+    assert parse(until("b", eof: true), "aaa") == {:ok, "aaa"}
+  end
+
   test "parse until multiple boundaries" do
     assert parse(until(["c"]), "abc") == {:ok, "ab"}
     assert parse(until(["c", "d"]), "abdcb") == {:ok, "ab"}

@@ -149,6 +149,10 @@ defmodule Paco.StringTest do
     assert consume_until("a\\;\\[", boundaries, {0, 1, 1}) == {:not_enough, "", "a;[", {4, 1, 5}, {5, 1, 6}}
   end
 
+  test "consume_until end of input is a valid boundary" do
+    assert consume_until("aaa", "b" , {0, 1, 1}, eof: true) == {"", "aaa", {2, 1, 3}, {3, 1, 4}}
+  end
+
   test "seek" do
     assert seek("aaa", 3, {0, 1, 1}) == {"", "aaa", {2, 1, 3}, {3, 1, 4}}
     assert seek("aaab", 3, {0, 1, 1}) == {"b", "aaa", {2, 1, 3}, {3, 1, 4}}
