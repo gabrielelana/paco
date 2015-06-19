@@ -461,13 +461,12 @@ defmodule Paco.Parser do
 
 
 
-  parser until(p, [escaped_with: escape]) when not is_list(p), to: until([{p, escape}])
-  parser until(p, [escaped_with: escape]), to: until(Enum.map(p, &escape_boundary(&1, escape)))
-  parser until({p, escape}), to: until([{p, escape}])
-  parser until(p) when not is_list(p), to: until([p])
-  parser until(p) do
+  parser until(p), to: until(p, [])
+  parser until(p, opts) when not is_list(p), to: until([p], opts)
+  parser until(p, opts) do
+    {p, opts} = escape_boundaries(p, opts)
     fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
-      case Paco.String.consume_until(text, p, from) do
+      case Paco.String.consume_until(text, p, from, opts) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {tail, consumed, to, at} ->
@@ -481,8 +480,16 @@ defmodule Paco.Parser do
     end
   end
 
-  defp escape_boundary({_, _} = escaped, _), do: escaped
-  defp escape_boundary(boundary, escape), do: {boundary, escape}
+  defp escape_boundaries(boundaries, opts) do
+    if Keyword.has_key?(opts, :escaped_with) do
+      escape = Keyword.get(opts, :escaped_with)
+      boundaries = Enum.map(boundaries, fn({_, _} = escaped) -> escaped
+                                          (boundary) -> {boundary, escape}
+                                        end)
+      opts = Keyword.delete(opts, :escaped_with)
+    end
+    {boundaries, opts}
+  end
 
 
 

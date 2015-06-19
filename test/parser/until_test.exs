@@ -12,7 +12,12 @@ defmodule Paco.Parser.UntilTest do
   end
 
   test "parse until boundary with escape" do
-    assert parse(until("c", escaped_with: "\\"), "ab\\cdce") == {:ok, "ab\\cd"}
+    assert parse(until("c", escaped_with: "\\"), "ab\\cdce") == {:ok, "abcd"}
+  end
+
+  test "parse until boundary with escape keeping escpe" do
+    parser = until("c", escaped_with: "\\", keep_escape: true)
+    assert parse(parser, "ab\\cdce") == {:ok, "ab\\cd"}
   end
 
   test "parse until multiple boundaries" do
@@ -22,14 +27,28 @@ defmodule Paco.Parser.UntilTest do
   end
 
   test "parse until multiple boundaries with escape" do
-    assert parse(until([{"c", "\\"}]), "a\\cbcde") == {:ok, "a\\cb"}
-    assert parse(until(["c"], escaped_with: "\\"), "a\\cbcde") == {:ok, "a\\cb"}
+    assert parse(until([{"c", "\\"}]), "a\\cbcde") == {:ok, "acb"}
+    assert parse(until(["c"], escaped_with: "\\"), "a\\cbcde") == {:ok, "acb"}
 
-    assert parse(until([{"c", "\\"}, {"d", "\\"}]), "a\\c\\dc") == {:ok, "a\\c\\d"}
-    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\c\\dc") == {:ok, "a\\c\\d"}
+    assert parse(until([{"c", "\\"}, {"d", "\\"}]), "a\\c\\dc") == {:ok, "acd"}
+    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\c\\dc") == {:ok, "acd"}
 
-    assert parse(until([{"c", "\\"}, {"d", "#"}]), "a\\c#dc") == {:ok, "a\\c#d"}
-    assert parse(until(["c", {"d", "#"}], escaped_with: "\\"), "a\\c#dd") == {:ok, "a\\c#d"}
+    assert parse(until([{"c", "\\"}, {"d", "#"}]), "a\\c#dc") == {:ok, "acd"}
+    assert parse(until(["c", {"d", "#"}], escaped_with: "\\"), "a\\c#dd") == {:ok, "acd"}
+  end
+
+  test "parse until multiple boundaries with escape keeping escape" do
+    ke = [keep_escape: true]
+    eke = [escaped_with: "\\", keep_escape: true]
+
+    assert parse(until([{"c", "\\"}], ke), "a\\cbcde") == {:ok, "a\\cb"}
+    assert parse(until(["c"], eke), "a\\cbcde") == {:ok, "a\\cb"}
+
+    assert parse(until([{"c", "\\"}, {"d", "\\"}], ke), "a\\c\\dc") == {:ok, "a\\c\\d"}
+    assert parse(until(["c", "d"], eke), "a\\c\\dc") == {:ok, "a\\c\\d"}
+
+    assert parse(until([{"c", "\\"}, {"d", "#"}], ke), "a\\c#dc") == {:ok, "a\\c#d"}
+    assert parse(until(["c", {"d", "#"}], eke), "a\\c#dd") == {:ok, "a\\c#d"}
   end
 
   test "failure when missing boundary" do
@@ -104,7 +123,7 @@ defmodule Paco.Parser.UntilTest do
                |> Paco.Stream.parse(until("b", escaped_with: "\\"))
                |> Enum.to_list
 
-      assert result == ["a\\ba"]
+      assert result == ["aba"]
     end
   end
 

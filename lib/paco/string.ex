@@ -162,43 +162,48 @@ defmodule Paco.String do
 
 
 
-  @spec consume_until(text::String.t, what, at::State.position)
+  @spec consume_until(text::String.t, what, at::State.position, opts::Keyword.t)
     :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
      | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
     when what: {boundary::String.t, escape::String.t}
 
-  def consume_until(text, boundary, at) when is_binary(boundary),
-    do: consume_until(text, "", [boundary], at, at)
-  def consume_until(text, {boundary, escape}, at) when is_binary(boundary) and is_binary(escape),
-    do: consume_until(text, "", [{boundary, escape}], at, at)
-  def consume_until(text, boundaries, at) when is_list(boundaries),
-    do: consume_until(text, "", boundaries, at, at)
+  def consume_until(text, boundary, at, opts \\ [])
 
-  defp consume_until(text, consumed, boundaries, to, at) do
+  def consume_until(text, boundary, at, opts) when is_binary(boundary),
+    do: consume_until(text, "", [boundary], at, at, opts)
+  def consume_until(text, {boundary, escape}, at, opts) when is_binary(boundary) and is_binary(escape),
+    do: consume_until(text, "", [{boundary, escape}], at, at, opts)
+  def consume_until(text, boundaries, at, opts) when is_list(boundaries),
+    do: consume_until(text, "", boundaries, at, at, opts)
+
+  defp consume_until(text, consumed, boundaries, to, at, opts) do
+    keep_escape = Keyword.get(opts, :keep_escape, false)
     boundaries = Enum.concat(boundaries, boundaries_escaped_without_escape(boundaries))
-    consume_until_boundaries(text, consumed, boundaries, boundaries, to, at)
+    consume_until_boundaries(text, consumed, boundaries, boundaries, to, at, keep_escape)
   end
 
-  defp consume_until_boundaries(text, consumed, [], boundaries, _to, at) do
+  defp consume_until_boundaries(text, consumed, [], boundaries, _to, at, keep_escape) do
     {h, tail} = next_grapheme(text)
-    consume_until_boundaries(tail, consumed <> h, boundaries, boundaries, at, position_after(at, h))
+    consume_until_boundaries(tail, consumed <> h, boundaries, boundaries, at, position_after(at, h), keep_escape)
   end
-  defp consume_until_boundaries(text, consumed, [{boundary, escape}|rest_of_boundaries], boundaries, to, at) do
+  defp consume_until_boundaries(text, consumed, [{boundary, escape}|rest_of_boundaries], boundaries, to, at, keep_escape) do
     case consume(text, "", escape <> boundary, to, at) do
-      {tail, escaped_boundary, to, at} ->
-        consume_until_boundaries(tail, consumed <> escaped_boundary, boundaries, boundaries, to, at)
+      {tail, escaped_boundary, to, at} when keep_escape ->
+        consume_until_boundaries(tail, consumed <> escaped_boundary, boundaries, boundaries, to, at, keep_escape)
+      {tail, _, to, at} ->
+        consume_until_boundaries(tail, consumed <> boundary, boundaries, boundaries, to, at, keep_escape)
       {:not_expected, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
       {:not_enough, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
     end
   end
-  defp consume_until_boundaries(text, consumed, [boundary|rest_of_boundaries], boundaries, to, at) do
+  defp consume_until_boundaries(text, consumed, [boundary|rest_of_boundaries], boundaries, to, at, keep_escape) do
     case consume(text, "", boundary, to, at) do
       {_, _, _, _} ->
         {text, consumed, to, at}
       {:not_expected, _, _, _, _} ->
-        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at, keep_escape)
       {:not_enough, _, _, _, _} ->
         {:not_enough, text, consumed, to, at}
     end
