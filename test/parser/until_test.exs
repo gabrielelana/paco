@@ -24,13 +24,13 @@ defmodule Paco.Parser.UntilTest do
     assert parse(until("b", eof: true), "aaa") == {:ok, "aaa"}
   end
 
-  test "parse until multiple boundaries" do
+  test "parse until boundaries" do
     assert parse(until(["c"]), "abc") == {:ok, "ab"}
     assert parse(until(["c", "d"]), "abdcb") == {:ok, "ab"}
     assert parse(until(["c", "d", "b"]), "abdcb") == {:ok, "a"}
   end
 
-  test "parse until multiple boundaries with escape" do
+  test "parse until boundaries with escape" do
     assert parse(until([{"c", "\\"}]), "a\\cbcde") == {:ok, "acb"}
     assert parse(until(["c"], escaped_with: "\\"), "a\\cbcde") == {:ok, "acb"}
 
@@ -41,7 +41,7 @@ defmodule Paco.Parser.UntilTest do
     assert parse(until(["c", {"d", "#"}], escaped_with: "\\"), "a\\c#dd") == {:ok, "acd"}
   end
 
-  test "parse until multiple boundaries with escape keeping escape" do
+  test "parse until boundaries with escape keeping escape" do
     ke = [keep_escape: true]
     eke = [escaped_with: "\\", keep_escape: true]
 
@@ -53,6 +53,16 @@ defmodule Paco.Parser.UntilTest do
 
     assert parse(until([{"c", "\\"}, {"d", "#"}], ke), "a\\c#dc") == {:ok, "a\\c#d"}
     assert parse(until(["c", {"d", "#"}], eke), "a\\c#dd") == {:ok, "a\\c#d"}
+  end
+
+  test "boundaries are flattened" do
+    assert parse(until(["c", ["d", "e"]]), "aaae") == {:ok, "aaa"}
+    assert parse(until([{"c", "\\"}, ["d", "e"]]), "a\\cae") == {:ok, "aca"}
+    assert parse(until(["c", [{"d", "\\"}, "e"]]), "a\\dae") == {:ok, "ada"}
+    assert parse(until(["c", ["d", {"e", "\\"}]]), "a\\eae") == {:ok, "aea"}
+    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\cae") == {:ok, "aca"}
+    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\dae") == {:ok, "ada"}
+    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\eae") == {:ok, "aea"}
   end
 
   test "failure when missing boundary" do

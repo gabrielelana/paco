@@ -483,11 +483,13 @@ defmodule Paco.Parser do
   end
 
   defp escape_boundaries(boundaries, opts) do
+    boundaries = List.flatten(boundaries)
     if Keyword.has_key?(opts, :escaped_with) do
       escape = Keyword.get(opts, :escaped_with)
-      boundaries = Enum.map(boundaries, fn({_, _} = escaped) -> escaped
-                                          (boundary) -> {boundary, escape}
-                                        end)
+      boundaries = boundaries
+                   |> Enum.map(fn({_, _} = escaped) -> escaped
+                                 (boundary) -> {boundary, escape}
+                               end)
       opts = Keyword.delete(opts, :escaped_with)
     end
     {boundaries, opts}
