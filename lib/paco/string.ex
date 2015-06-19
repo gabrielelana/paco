@@ -202,15 +202,6 @@ defmodule Paco.String do
     end
   end
 
-  # defp consume_until_boundary_with_escape(text, consumed, boundary, escape, to, at, next) do
-  #   case consume(text, "", escape <> boundary, to, at) do
-  #     {tail, _, to, at} ->
-  #       consume_until_boundary_with_escape(tail, consumed <> escape <> boundary, boundary, escape, to, at, next)
-  #     _ ->
-  #       consume_until_boundary(text, consumed, boundary, to, at, next)
-  #   end
-  # end
-
   defp map_consume_until_boundary(text, consumed, boundary, to, at) do
     next = &consume_until_boundary(&1, &2, boundary, &3, &4, &5)
     consume_until_boundary(text, consumed, boundary, to, at, next)
