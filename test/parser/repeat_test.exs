@@ -32,7 +32,9 @@ defmodule Paco.Parser.RepeatTest do
   end
 
   test "repeat and skip" do
-    assert parse(repeat(skip(lit("a"))), "aaa") == parse(skip(repeat(lit("a"))), "aaa")
+    assert parse(repeat(skip(lit("a"))), "aaa") == {:ok, []}
+    assert parse(repeat(one_of([skip(lit("a")), lit("b")])), "abab") == {:ok, ["b", "b"]}
+    assert parse(repeat(one_of([skip(lit("a")), lit("b")])), "ababa") == {:ok, ["b", "b"]}
   end
 
   test "boxing" do
