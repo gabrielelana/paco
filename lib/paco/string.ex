@@ -175,44 +175,42 @@ defmodule Paco.String do
     do: consume_until(text, "", boundaries, at, at)
 
   defp consume_until(text, consumed, boundaries, to, at) do
-    Enum.map(boundaries, &map_consume_until_boundary(text, consumed, &1, to, at))
-    |> Enum.reduce(nil, &reduce_consume_until_boundary/2)
+    boundaries = Enum.concat(boundaries, boundaries_escaped_without_escape(boundaries))
+    consume_until_boundaries(text, consumed, boundaries, boundaries, to, at)
   end
 
-  defp consume_until_boundary(text, consumed, {boundary, escape}, to, at, next) do
+  defp consume_until_boundaries(text, consumed, [], boundaries, _to, at) do
+    {h, tail} = next_grapheme(text)
+    consume_until_boundaries(tail, consumed <> h, boundaries, boundaries, at, position_after(at, h))
+  end
+  defp consume_until_boundaries(text, consumed, [{boundary, escape}|rest_of_boundaries], boundaries, to, at) do
     case consume(text, "", escape <> boundary, to, at) do
       {tail, escaped_boundary, to, at} ->
-        consume_until_boundary(tail, consumed <> escaped_boundary, {boundary, escape}, to, at, next)
+        consume_until_boundaries(tail, consumed <> escaped_boundary, boundaries, boundaries, to, at)
       {:not_expected, _, _, _, _} ->
-        consume_until_boundary(text, consumed, boundary, to, at, next)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
       {:not_enough, _, _, _, _} ->
-        consume_until_boundary(text, consumed, boundary, to, at, next)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
     end
   end
-
-  defp consume_until_boundary(text, consumed, boundary, to, at, next) do
+  defp consume_until_boundaries(text, consumed, [boundary|rest_of_boundaries], boundaries, to, at) do
     case consume(text, "", boundary, to, at) do
       {_, _, _, _} ->
         {text, consumed, to, at}
       {:not_expected, _, _, _, _} ->
-        {h, tail} = next_grapheme(text)
-        next.(tail, consumed <> h, at, position_after(at, h), next)
+        consume_until_boundaries(text, consumed, rest_of_boundaries, boundaries, to, at)
       {:not_enough, _, _, _, _} ->
         {:not_enough, text, consumed, to, at}
     end
   end
 
-  defp map_consume_until_boundary(text, consumed, boundary, to, at) do
-    next = &consume_until_boundary(&1, &2, boundary, &3, &4, &5)
-    consume_until_boundary(text, consumed, boundary, to, at, next)
+  defp boundaries_escaped_without_escape(boundaries) do
+    Enum.reduce(boundaries, [],
+                fn({boundary, _}, acc) -> [boundary|acc]
+                  (_, acc) -> acc
+                end)
+    |> Enum.reverse
   end
-
-  defp reduce_consume_until_boundary(cur, nil), do: cur
-  defp reduce_consume_until_boundary({_, _, _, n} = cur, {_, _, _, m}) when n < m, do: cur
-  defp reduce_consume_until_boundary({_, _, _, _}, {_, _, _, _} = acc), do: acc
-  defp reduce_consume_until_boundary({_, _, _, _} = cur, {:not_enough, _, _, _, _}), do: cur
-  defp reduce_consume_until_boundary({:not_enough, _, _, _, _}, acc), do: acc
-
 
 
   @spec seek(text::String.t, n::non_neg_integer, at::State.position)
