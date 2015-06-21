@@ -58,14 +58,14 @@ defmodule Paco.Parser do
   end
 
 
-  parser within(box(p), box(n)) do
+  parser within(box(inner), box(outer)) do
     fn state, _ ->
-      case p.parse.(state, p) do
+      case outer.parse.(state, outer) do
         %Success{skip: true} = success ->
           success
         %Success{from: from, result: result, tail: tail} when is_binary(result) ->
           state = %State{state|at: from, chunks: [{from, result}]}
-          case n.parse.(state, n) do
+          case inner.parse.(state, inner) do
             %Success{} = success ->
               %Success{success|tail: tail}
             %Failure{} = failure ->

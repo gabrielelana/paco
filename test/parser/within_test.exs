@@ -5,7 +5,7 @@ defmodule Paco.Parser.WithinTest do
   import Paco.Parser
 
   test "parse within a region" do
-    parser = lit("aaa") |> within(lit("a"))
+    parser = lit("a") |> within(lit("aaa"))
     success = parse(parser, "aaabbb", format: :raw)
 
     assert success.from == {0, 1, 1}
@@ -16,7 +16,7 @@ defmodule Paco.Parser.WithinTest do
   end
 
   test "doesn't apply the inner parser when outer parser is skipped" do
-    parser = skip(lit("aaa")) |> within(lit("a"))
+    parser = lit("a") |> within(skip("aaa"))
     success = parse(parser, "aaa", format: :raw)
 
     assert success.result == "aaa"
@@ -24,12 +24,12 @@ defmodule Paco.Parser.WithinTest do
   end
 
   test "doesn't apply the inner parser when outer parser fails" do
-    parser = lit("aaa") |> within(lit("a"))
+    parser = lit("a") |> within(lit("aaa"))
     assert parse(parser, "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
   end
 
   test "keeps the skip of the inner parser" do
-    parser = lit("aaa") |> within(skip(lit("a")))
+    parser = skip(lit("a")) |> within(lit("aaa"))
     success = parse(parser, "aaa", format: :raw)
 
     assert success.result == "a"
@@ -37,7 +37,7 @@ defmodule Paco.Parser.WithinTest do
   end
 
   test "failure of the inner parser has the right position" do
-    parser = [lit("aaa"), lit("bbb") |> within(lit("a"))]
+    parser = [lit("aaa"), lit("a") |> within(lit("bbb"))]
     assert parse(parser, "aaabbb") == {:error, ~s|expected "a" at 1:4 but got "b"|}
   end
 end
