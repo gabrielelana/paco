@@ -36,6 +36,21 @@ defmodule Paco.Parser do
 
 
 
+  parser line(opts \\ []), to: (
+    p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
+    p = if Keyword.get(opts, :skip_empty, false) do
+          p |> followed_by(many(one_of(Paco.ASCII.nl)))
+            |> preceded_by(many(one_of(Paco.ASCII.nl)))
+            |> bind(fn("", success) -> %Success{success|skip: true}
+                      (_ , success) -> success
+                    end)
+        else
+          p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
+        end
+    p |> only_if(&consumed_any_input?(&1, &2, "an empty string is not a line %AT%")))
+
+
+
   parser otherwise(p, f) when is_function(f), to: otherwise(p, f.(p))
   parser otherwise(box(p), box(n)) do
     fn state, this ->
@@ -693,5 +708,9 @@ defmodule Paco.Parser do
       2 -> f.(result, success)
       3 -> f.(result, success, state)
     end
+  end
+
+  defp consumed_any_input?(_, %Success{from: {n, _, _}, at: {m, _, _}}, message) do
+    if m > n, do: true, else: {false, message}
   end
 end

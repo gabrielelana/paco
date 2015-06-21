@@ -15,6 +15,10 @@ defmodule Paco.Parser.LineTest do
     assert parse(line, "aaa") == {:ok, "aaa"}
   end
 
+  test "an empty string is not a line" do
+    assert parse(line, "") == {:error, "an empty string is not a line at 1:1"}
+  end
+
   test "escape new lines" do
     assert parse(line(escaped_with: "\\"), "aaa\\\na\n") == {:ok, "aaa\na"}
   end
