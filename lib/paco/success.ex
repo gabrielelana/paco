@@ -1,10 +1,11 @@
 defmodule Paco.Success do
   alias Paco.Success
+  alias Paco.State
 
-  @type t :: %Success{from: Paco.State.position,
-                      to: Paco.State.position,
-                      at: Paco.State.position,
-                      tail: [Paco.State.chunk],
+  @type t :: %Success{from: State.position,
+                      to: State.position,
+                      at: State.position,
+                      tail: [State.chunk],
                       result: any,
                       cut: boolean,
                       sew: boolean,

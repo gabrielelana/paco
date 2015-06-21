@@ -1,8 +1,10 @@
 defmodule Paco.Failure do
   alias Paco.Failure
+  alias Paco.Parser
+  alias Paco.State
 
-  @type t :: %Failure{at: Paco.State.position,
-                      tail: [Paco.State.chunk],
+  @type t :: %Failure{at: State.position,
+                      tail: [State.chunk],
                       expected: String.t | nil,
                       message: String.t | nil,
                       stack: [String.t],
@@ -14,7 +16,7 @@ defmodule Paco.Failure do
                fatal: false
 
 
-  def at(%Paco.State{at: at, chunks: chunks}, opts \\ []) do
+  def at(%State{at: at, chunks: chunks}, opts \\ []) do
     %Failure{at: at, tail: chunks,
              rank: Keyword.get(opts, :rank, 0),
              expected: Keyword.get(opts, :expected, nil),
@@ -23,14 +25,14 @@ defmodule Paco.Failure do
   end
 
 
-  def stack(%Paco.Parser{description: nil}), do: []
-  def stack(%Paco.Parser{description: description}), do: [description]
+  def stack(%Parser{description: nil}), do: []
+  def stack(%Parser{description: description}), do: [description]
 
-  def stack(failure, %Paco.Parser{description: nil}), do: failure
+  def stack(failure, %Parser{description: nil}), do: failure
   def stack(%Failure{stack: [description|_]} = failure,
-            %Paco.Parser{description: description}),
+            %Parser{description: description}),
             do: failure
-  def stack(failure, %Paco.Parser{description: description}) do
+  def stack(failure, %Parser{description: description}) do
     %Failure{failure|stack: [description|failure.stack]}
   end
 

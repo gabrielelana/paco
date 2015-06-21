@@ -1,5 +1,6 @@
 defmodule Paco.State do
   alias Paco.State
+  alias Paco.Success
 
   @type position :: {non_neg_integer, non_neg_integer, non_neg_integer}
   @type chunk :: {position, chunk::String.t} |
@@ -34,8 +35,8 @@ defmodule Paco.State do
   defp chunks_from(chunks, _), do: chunks
 
 
-  def update(state, %Paco.Success{at: at, tail: [{_, _, :drop}|tail]}),
+  def update(state, %Success{at: at, tail: [{_, _, :drop}|tail]}),
     do: %State{state|at: at, chunks: tail}
-  def update(state, %Paco.Success{at: at, tail: tail}),
+  def update(state, %Success{at: at, tail: tail}),
     do: %State{state|at: at, chunks: tail}
 end
