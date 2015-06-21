@@ -33,6 +33,7 @@ defmodule Paco.Parser do
 
 
 
+
   parser otherwise(p, f) when is_function(f), to: otherwise(p, f.(p))
   parser otherwise(box(p), box(n)) do
     fn state, this ->
@@ -262,7 +263,7 @@ defmodule Paco.Parser do
           %Success{from: from, to: from, at: from, tail: chunks, result: []}
         {_, successes, _} ->
           last = List.last(successes)
-          results = successes |> Enum.reject(&(&1.skip)) |>  Enum.map(&(&1.result))
+          results = successes |> Enum.reject(&(&1.skip)) |> Enum.map(&(&1.result))
           %Success{from: from, to: last.to, at: last.at,
                    tail: last.tail, result: results}
       end
