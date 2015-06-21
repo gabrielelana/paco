@@ -11,11 +11,11 @@ defmodule Paco.Parser.LineTest do
     assert parse(line, "\n") == {:ok, ""}
   end
 
-  test "end of input is a valid line terminator" do
+  test "the end of input is a valid line terminator" do
     assert parse(line, "aaa") == {:ok, "aaa"}
   end
 
-  test "escape" do
+  test "escape new lines" do
     assert parse(line(escaped_with: "\\"), "aaa\\\na\n") == {:ok, "aaa\na"}
   end
 
