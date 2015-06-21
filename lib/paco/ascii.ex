@@ -3,15 +3,15 @@ defmodule Paco.ASCII do
   @newline ["\x{000A}",         # LINE FEED
             "\x{000B}",         # LINE TABULATION
             "\x{000C}",         # FORM FEED
-            "\x{000D}",         # CARRIAGE RETURN
-            "\x{000D}\x{000A}"] # CARRIAGE RETURN + LINE FEED
+            "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
+            "\x{000D}"]         # CARRIAGE RETURN
 
   @space ["\x{0009}",         # CHARACTER TABULATION
           "\x{000A}",         # LINE FEED
           "\x{000B}",         # LINE TABULATION
           "\x{000C}",         # FORM FEED
-          "\x{000D}",         # CARRIAGE RETURN
           "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
+          "\x{000D}",         # CARRIAGE RETURN
           "\x{0020}"]         # SPACE
 
   @upper ["A","B","C","D","E","F",
