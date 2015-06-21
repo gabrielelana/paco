@@ -4,7 +4,11 @@ defmodule Paco.Parser.WithinTest do
   import Paco
   import Paco.Parser
 
-  test "parse within a region" do
+  test "parse within a string" do
+    assert parse(lit("a") |> within(lit("aaa")), "aaabbb") == {:ok, "a"}
+  end
+
+  test "keeps the result of the inner parser" do
     parser = lit("a") |> within(lit("aaa"))
     success = parse(parser, "aaabbb", format: :raw)
 
@@ -12,6 +16,12 @@ defmodule Paco.Parser.WithinTest do
     assert success.to == {0, 1, 1}
     assert success.at == {1, 1, 2}
     assert success.result == "a"
+  end
+
+  test "keeps the tail of the outer parser" do
+    parser = lit("a") |> within(lit("aaa"))
+    success = parse(parser, "aaabbb", format: :raw)
+
     assert success.tail == [{{3, 1, 4}, "bbb"}]
   end
 
