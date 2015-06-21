@@ -367,10 +367,10 @@ defmodule Paco.Parser do
                   success
                 false ->
                   message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-                  Failure.at(state, message: message)
+                  %Failure{at: success.from, tail: success.tail, message: message}
                 {false, message} ->
                   message = String.replace(message, "%RESULT%", inspect(result))
-                  Failure.at(state, message: message)
+                  %Failure{at: success.from, tail: success.tail, message: message}
               end
             end)
 
