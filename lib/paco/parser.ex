@@ -63,8 +63,8 @@ defmodule Paco.Parser do
       case outer.parse.(state, outer) do
         %Success{skip: true} = success ->
           success
-        %Success{from: from, result: result, tail: tail} when is_binary(result) ->
-          state = %State{state|at: from, chunks: [{from, result}]}
+        %Success{tail: tail} = success ->
+          state = State.update_with_result(state, success)
           case inner.parse.(state, inner) do
             %Success{} = success ->
               %Success{success|tail: tail}
