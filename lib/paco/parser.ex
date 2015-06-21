@@ -17,6 +17,22 @@ defmodule Paco.Parser do
   def box(t), do: Paco.Parsable.to_parser(t)
 
 
+  parser line(opts \\ []) do
+    fn state, _ ->
+      opts = Keyword.put(opts, :eof, true)
+      p = until(Paco.ASCII.nl, opts)
+      p = if Keyword.get(opts, :skip_empty, false) do
+            p |> followed_by(many(one_of(Paco.ASCII.nl)))
+              |> preceded_by(many(one_of(Paco.ASCII.nl)))
+              |> bind(fn("", success) -> %Success{success|skip: true}
+                        (_ , success) -> success
+                      end)
+          else
+            p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
+          end
+      p.parse.(state, p)
+    end
+  end
 
 
 
