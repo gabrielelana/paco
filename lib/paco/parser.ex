@@ -18,6 +18,27 @@ defmodule Paco.Parser do
 
 
 
+  parser within(box(p), box(n)) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{skip: true} = success ->
+          success
+        %Success{from: from, result: result, tail: tail} when is_binary(result) ->
+          state = %State{state|at: from, chunks: [{from, result}]}
+          case n.parse.(state, n) do
+            %Success{} = success ->
+              %Success{success|tail: tail}
+            %Failure{} = failure ->
+              failure
+          end
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
+
+
+
   parser cut(box(p)) do
     fn %State{at: at} = state, _ ->
       case p.parse.(state, p) do
@@ -312,26 +333,20 @@ defmodule Paco.Parser do
   defp reduce_sequence_of(_, %Failure{} = failure), do: failure
   defp reduce_sequence_of(p, {state, at, results, {cut, sew}}) do
     case p.parse.(state, p) do
-
       %Success{from: ^at, to: ^at, at: ^at, skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {state, at, results, {cut, sew}}
-
       %Success{from: ^at, to: ^at, at: ^at, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {state, at, [result|results], {cut, sew}}
-
       %Success{to: to, skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {State.update(state, success), to, results, {cut, sew}}
-
       %Success{to: to, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {State.update(state, success), to, [result|results], {cut, sew}}
-
       %Failure{} = failure when cut ->
         %Failure{failure|fatal: true}
-
       %Failure{} = failure ->
         failure
     end
