@@ -14,7 +14,7 @@ defmodule Paco.Parser.PeekTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
-    assert success.tail == "a"
+    assert success.tail == [{success.at, "a"}]
   end
 
   test "it has no effect on failures" do

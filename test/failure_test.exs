@@ -5,14 +5,43 @@ defmodule Paco.FailureTest do
     {:ok, %{failure: %Paco.Failure{at: {0, 1, 1}, rank: 1}}}
   end
 
-  test "format failure on the end of input", %{failure: failure} do
-    failure = %Paco.Failure{failure|tail: "", expected: "a"}
+  test "format failure at the end of input", %{failure: failure} do
+    tail = [{failure.at, ""}]
+    failure = %Paco.Failure{failure|tail: tail, expected: "a"}
     assert Paco.Failure.format(failure, :flat) ==
       ~s|expected "a" at 1:1 but got the end of input|
   end
 
+  test "format failure with no input", %{failure: failure} do
+    tail = []
+    failure = %Paco.Failure{failure|tail: tail, expected: "a"}
+    assert Paco.Failure.format(failure, :flat) ==
+      ~s|expected "a" at 1:1 but got the end of input|
+  end
+
+  test "format failure at the end of a chunk", %{failure: failure} do
+    tail = [{failure.at, ""}, {failure.at, "bbb"}]
+    failure = %Paco.Failure{failure|tail: tail, expected: "a"}
+    assert Paco.Failure.format(failure, :flat) ==
+      ~s|expected "a" at 1:1 but got "b"|
+  end
+
+  test "format failure between chunks", %{failure: failure} do
+    tail = [{failure.at, "b"}, {failure.at, "bb"}]
+    failure = %Paco.Failure{failure|tail: tail, expected: "aaa"}
+    assert Paco.Failure.format(failure, :flat) ==
+      ~s|expected "aaa" at 1:1 but got "bbb"|
+  end
+
+
+
+
+
+
+
+
   test "compose expectations" do
-    {at, tail, rank} = {{1, 1, 2}, "c", 2}
+    {at, tail, rank} = {{1, 1, 2}, [{{1, 1, 2}, "c"}], 2}
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
@@ -25,7 +54,7 @@ defmodule Paco.FailureTest do
   end
 
   test "compose can compose composed failures" do
-    {at, tail, rank} = {{1, 1, 2}, "z", 2}
+    {at, tail, rank} = {{1, 1, 2}, [{{1, 1, 2}, "z"}], 2}
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
@@ -42,7 +71,7 @@ defmodule Paco.FailureTest do
   end
 
   test "format composed expectations" do
-    {at, tail, rank} = {{1, 1, 2}, "c", 2}
+    {at, tail, rank} = {{1, 1, 2}, [{{1, 1, 2}, "c"}], 2}
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},
@@ -64,7 +93,7 @@ defmodule Paco.FailureTest do
   end
 
   test "compose keep the common stack" do
-    {at, tail, rank} = {{1, 1, 2}, "c", 2}
+    {at, tail, rank} = {{1, 1, 2}, [{{1, 1, 2}, "c"}], 2}
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a", stack: ["A", "COMMON"]},
@@ -83,7 +112,7 @@ defmodule Paco.FailureTest do
   end
 
   test "compose failures with same expectation" do
-    {at, tail, rank} = {{1, 1, 2}, "z", 2}
+    {at, tail, rank} = {{1, 1, 2}, [{{1, 1, 2}, "z"}], 2}
 
     composed_failure = Paco.Failure.compose([
       %Paco.Failure{at: at, tail: tail, rank: rank, expected: "a"},

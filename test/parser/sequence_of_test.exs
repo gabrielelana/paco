@@ -65,13 +65,6 @@ defmodule Paco.Parser.SequenceOfTest do
     }
   end
 
-  test "report position of the farthest failure" do
-    parser = sequence_of([lit("a"), lit("b")])
-    failure = parser.parse.(Paco.State.from("aa"), parser)
-    assert failure.at == {1, 1, 2}
-    assert failure.tail == "a"
-  end
-
   test "fails in stream mode when don't consume any input" do
     result = [""]
              |> Paco.Stream.parse(sequence_of([]))
@@ -127,13 +120,20 @@ defmodule Paco.Parser.SequenceOfTest do
     assert success.from == {0, 1, 1}
     assert success.to == {1, 1, 2}
     assert success.at == {2, 1, 3}
-    assert success.tail == "c"
+    assert success.tail == [{success.at, "c"}]
   end
 
   test "doesn't consume input on failure" do
     parser = sequence_of([lit("a"), lit("b")])
     failure = parser.parse.(Paco.State.from("bbb"), parser)
     assert failure.at == {0, 1, 1}
-    assert failure.tail == "bbb"
+    assert failure.tail == [{failure.at, "bbb"}]
+  end
+
+  test "report position of the farthest failure" do
+    parser = sequence_of([lit("a"), lit("b")])
+    failure = parser.parse.(Paco.State.from("aa"), parser)
+    assert failure.at == {1, 1, 2}
+    assert failure.tail == [{failure.at, "a"}]
   end
 end

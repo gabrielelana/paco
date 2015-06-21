@@ -115,10 +115,10 @@ defmodule Paco.Stream do
                          # IO.puts("[PARSER] GOING TO PARSE #{inspect(text)}")
                          opts = Keyword.put(opts, :at, at)
                          case Paco.parse(parser, text, opts) do
-                           %Paco.Success{from: at, to: at, at: at} ->
+                           %Paco.Success{from: at, to: at, at: at, tail: tail} ->
                              # IO.puts("[PARSER] FAILURE! DIDN'T CONSUME ANY INPUT")
                              message = "failure! parser didn't consume any input"
-                             failure = %Paco.Failure{at: at, tail: text, message: message}
+                             failure = %Paco.Failure{at: at, tail: tail, message: message}
                              {failure, {at, "", :halt}}
                            %Paco.Success{at: at, tail: tail} = success ->
                              # IO.puts("[PARSER] SUCCESS! #{inspect(success)}")
@@ -237,5 +237,4 @@ defmodule Paco.Stream do
   defp do_transform_step(x, acc) do
     {:suspend, [x|acc]}
   end
-
 end

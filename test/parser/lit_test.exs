@@ -12,6 +12,10 @@ defmodule Paco.Parser.LiteralTest do
     assert parse(lit(""), "") == {:ok, ""}
   end
 
+  test "boxing" do
+    assert parse("aaa", "aaa") == {:ok, "aaa"}
+  end
+
   test "failure" do
     assert parse(lit("aaa"), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
     assert parse(lit("aaa"), "aa") == {:error, ~s|expected "aaa" at 1:1 but got "aa"|}
@@ -49,7 +53,7 @@ defmodule Paco.Parser.LiteralTest do
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
     assert success.at == {3, 1, 4}
-    assert success.tail == ""
+    assert success.tail == []
   end
 
   test "increment indexes for a match with newlines" do
@@ -58,7 +62,7 @@ defmodule Paco.Parser.LiteralTest do
     assert success.from == {0, 1, 1}
     assert success.to == {5, 3, 2}
     assert success.at == {6, 4, 1}
-    assert success.tail == "bbb"
+    assert success.tail == [{{6, 4, 1},"bbb"}]
   end
 
   test "increment indexes for a single character match" do
@@ -67,7 +71,7 @@ defmodule Paco.Parser.LiteralTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {1, 1, 2}
-    assert success.tail == "aa"
+    assert success.tail == [{{1, 1, 2}, "aa"}]
   end
 
   test "indexes for an empty match" do
@@ -76,14 +80,14 @@ defmodule Paco.Parser.LiteralTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
-    assert success.tail == "aaa"
+    assert success.tail == [{{0, 1, 1}, "aaa"}]
   end
 
   test "indexes for a failure" do
     parser = lit("a")
     failure = parser.parse.(Paco.State.from("bbb"), parser)
     assert failure.at == {0, 1, 1}
-    assert failure.tail == "bbb"
+    assert failure.tail == [{failure.at, "bbb"}]
   end
 
   test "stream mode success" do

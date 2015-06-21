@@ -21,8 +21,8 @@ defmodule Paco.Parser.OneOfTest do
     assert %Paco.Success{skip: true} = parse(one_of([skip(lit("a"))]), "a", format: :raw)
   end
 
-  test "no alternatives returns skipped result" do
-    assert %Paco.Success{skip: true, tail: "a"} = parse(one_of([]), "a", format: :raw)
+  test "with no alternatives returns skipped result" do
+    assert %Paco.Success{skip: true} = parse(one_of([]), "a", format: :raw)
   end
 
   test "keep farthest failure" do
@@ -99,7 +99,7 @@ defmodule Paco.Parser.OneOfTest do
                      sequence_of([lit("b"), lit("c")])])
     failure = parser.parse.(Paco.State.from("ac"), parser)
     assert failure.at == {1, 1, 2}
-    assert failure.tail == "c"
+    assert failure.tail == [{failure.at, "c"}]
   end
 
   test "doesn't backtrack with fatal failures" do

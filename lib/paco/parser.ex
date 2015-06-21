@@ -29,8 +29,8 @@ defmodule Paco.Parser do
   end
 
   parser cut do
-    fn %Paco.State{at: at, text: text}, _ ->
-      %Paco.Success{from: at, to: at, at: at, tail: text, cut: true, skip: true}
+    fn %Paco.State{at: at, chunks: chunks}, _ ->
+      %Paco.Success{from: at, to: at, at: at, tail: chunks, cut: true, skip: true}
     end
   end
 
@@ -50,8 +50,8 @@ defmodule Paco.Parser do
   end
 
   parser sew do
-    fn %Paco.State{at: at, text: text}, _ ->
-      %Paco.Success{from: at, to: at, at: at, tail: text, sew: true, skip: true}
+    fn %Paco.State{at: at, chunks: chunks}, _ ->
+      %Paco.Success{from: at, to: at, at: at, tail: chunks, sew: true, skip: true}
     end
   end
 
@@ -121,18 +121,21 @@ defmodule Paco.Parser do
 
   parser eof do
     fn
-      %Paco.State{at: at, text: ""}, _ ->
+      %Paco.State{at: at, chunks: []}, _ ->
         %Paco.Success{from: at, to: at, at: at, skip: true}
-      %Paco.State{at: at, text: text}, _ ->
-        %Paco.Failure{at: at, tail: text, rank: at, message: "expected the end of input %AT%"}
+      %Paco.State{at: at, chunks: [{_, ""}]}, _ ->
+        %Paco.Success{from: at, to: at, at: at, skip: true}
+      %Paco.State{at: at, chunks: chunks}, _ ->
+        %Paco.Failure{at: at, tail: chunks, rank: at,
+                 message: "expected the end of input %AT%"}
     end
   end
 
   parser peek(box(p)) do
-    fn %Paco.State{at: at, text: text} = state, this ->
+    fn %Paco.State{at: at, chunks: chunks} = state, this ->
       case p.parse.(state, p) do
         %Paco.Success{result: result} ->
-          %Paco.Success{from: at, to: at, at: at, tail: text, result: result}
+          %Paco.Success{from: at, to: at, at: at, tail: chunks, result: result}
         %Paco.Failure{} = failure ->
           failure |> Paco.Failure.stack(this)
       end
@@ -170,19 +173,19 @@ defmodule Paco.Parser do
   parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
   parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
   parser repeat(box(p), {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text} = state, this ->
+    fn %Paco.State{at: from, chunks: chunks} = state, this ->
       case unfold_repeat(p, state, at_most) do
         {_, _, %Paco.Failure{fatal: true} = failure} ->
           failure |> Paco.Failure.stack(this)
         {n, _, failure} when n < at_least ->
           failure |> Paco.Failure.stack(this)
         {0, _, _} ->
-          %Paco.Success{from: from, to: from, at: from, tail: text, result: []}
+          %Paco.Success{from: from, to: from, at: from, tail: chunks, result: []}
         {_, successes, _} ->
           last = List.last(successes)
           results = successes |> Enum.reject(&(&1.skip)) |>  Enum.map(&(&1.result))
           %Paco.Success{from: from, to: last.to, at: last.at,
-                        tail: last.tail, result: results}
+                   tail: last.tail, result: results}
       end
     end
   end
@@ -207,8 +210,8 @@ defmodule Paco.Parser do
 
 
   parser always(t) do
-    fn %Paco.State{at: at, text: text}, _ ->
-      %Paco.Success{from: at, to: at, at: at, tail: text, result: t}
+    fn %Paco.State{at: at, chunks: chunks}, _ ->
+      %Paco.Success{from: at, to: at, at: at, tail: chunks, result: t}
     end
   end
 
@@ -280,8 +283,7 @@ defmodule Paco.Parser do
                 success
               else
                 message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-                %Paco.Failure{at: success.to, tail: state.text,
-                              rank: success.to, message: message}
+                Paco.Failure.at(state, message: message)
               end
             end)
 
@@ -290,9 +292,8 @@ defmodule Paco.Parser do
   parser sequence_of(box_each(ps)) do
     fn %Paco.State{at: from} = state, this ->
       case reduce_sequence_of(ps, state, from) do
-        {%Paco.State{at: at, text: text}, to, results, _} ->
-          %Paco.Success{from: from, to: to, at: at, tail: text,
-                        result: Enum.reverse(results)}
+        {%Paco.State{at: at, chunks: chunks}, to, results, _} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: Enum.reverse(results)}
         %Paco.Failure{} = failure ->
           failure |> Paco.Failure.stack(this)
       end
@@ -306,20 +307,26 @@ defmodule Paco.Parser do
   defp reduce_sequence_of(_, %Paco.Failure{} = failure), do: failure
   defp reduce_sequence_of(p, {state, at, results, {cut, sew}}) do
     case p.parse.(state, p) do
+
       %Paco.Success{from: ^at, to: ^at, at: ^at, skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {state, at, results, {cut, sew}}
+
       %Paco.Success{from: ^at, to: ^at, at: ^at, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {state, at, [result|results], {cut, sew}}
+
       %Paco.Success{to: to, skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {Paco.State.update(state, success), to, results, {cut, sew}}
+
       %Paco.Success{to: to, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
         {Paco.State.update(state, success), to, [result|results], {cut, sew}}
+
       %Paco.Failure{} = failure when cut ->
         %Paco.Failure{failure|fatal: true}
+
       %Paco.Failure{} = failure ->
         failure
     end
@@ -334,10 +341,10 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn %Paco.State{at: at, text: text} = state, this ->
+    fn %Paco.State{at: at, chunks: chunks} = state, this ->
       case reduce_one_of(ps, state) do
         [] ->
-          %Paco.Success{from: at, to: at, at: at, tail: text, skip: true}
+          %Paco.Success{from: at, to: at, at: at, tail: chunks, skip: true}
         %Paco.Success{} = success ->
           success
         failures ->
@@ -379,36 +386,50 @@ defmodule Paco.Parser do
 
 
   parser re(r) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       case Regex.run(anchor(r), text, return: :index) do
         [{_, n}] ->
           case Paco.String.seek(text, n, from) do
             {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
-            {tail, s, to, at} ->
-              %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+            {"", consumed, to, at} ->
+              %Paco.Success{from: from, to: to, at: at,
+                       tail: chunks, result: consumed}
+            {tail, consumed, to, at} ->
+              %Paco.Success{from: from, to: to, at: at,
+                       tail: [{at, tail}|chunks], result: consumed}
           end
         [{_, n}|captures] ->
           case Paco.String.seek(text, n, from) do
             {"", _, _, _} when is_pid(stream) ->
               wait_for_more_and_continue(state, this)
-            {tail, s, to, at} ->
-              captures = case Regex.names(r) do
-                [] ->
-                  captures
-                  |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
-                _ ->
-                  Regex.named_captures(r, text)
-              end
+            {"", consumed, to, at} ->
+              captures = extract_captures(r, captures, text)
               %Paco.Success{from: from, to: to, at: at,
-                            tail: tail, result: {s, captures}}
+                       tail: chunks,
+                       result: {consumed, captures}}
+            {tail, consumed, to, at} ->
+              captures = extract_captures(r, captures, text)
+              %Paco.Success{from: from, to: to, at: at,
+                       tail: [{at, tail}|chunks],
+                       result: {consumed, captures}}
           end
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          %Paco.Failure{at: from, tail: text, expected: {:re, r},
-                        stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks],
+                   expected: {:re, r}, stack: Paco.Failure.stack(this)}
       end
+    end
+  end
+
+  defp extract_captures(r, captures, text) do
+    case Regex.names(r) do
+      [] ->
+        captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+      _ ->
+        Regex.named_captures(r, text)
     end
   end
 
@@ -425,15 +446,18 @@ defmodule Paco.Parser do
 
 
   parser lit(s) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       case Paco.String.consume(text, s, from) do
+        {"", _, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: s}
         {tail, _, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: s}
+          %Paco.Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: s}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, expected: s,
-                        stack: Paco.Failure.stack(this), rank: n+1}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks], expected: s,
+                   stack: Paco.Failure.stack(this), rank: n+1}
       end
     end
   end
@@ -444,19 +468,21 @@ defmodule Paco.Parser do
   parser any(n) when is_integer(n), to: any({n, n})
   parser any(opts) when is_list(opts), to: any(extract_limits(opts))
   parser any({at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       case Paco.String.consume_any(text, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
+        {"", consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: consumed}
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at,
-                        tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: consumed}
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:any, at_least, at_most},
-                        rank: n, stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks],
+                   expected: {:any, at_least, at_most},
+                   rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -467,17 +493,21 @@ defmodule Paco.Parser do
   parser until(p, opts) when not is_list(p), to: until([p], opts)
   parser until(p, opts) do
     {p, opts} = escape_boundaries(p, opts)
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       case Paco.String.consume_until(text, p, from, opts) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
+        {"", consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: consumed}
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text, expected: {:until, p},
-                        rank: n, stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks],
+                   expected: {:until, p}, rank: n,
+                   stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -501,18 +531,21 @@ defmodule Paco.Parser do
   parser while(p, n) when is_integer(n), to: while(p, {n, n})
   parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
   parser while(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
+        {"", consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: consumed}
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:while, p, at_least, at_most},
-                        rank: n, stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks],
+                   expected: {:while, p, at_least, at_most},
+                   rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -523,7 +556,8 @@ defmodule Paco.Parser do
   parser while_not(p, n) when is_integer(n), to: while_not(p, {n, n})
   parser while_not(p, opts) when is_list(opts), to: while_not(p, extract_limits(opts))
   parser while_not(p, {at_least, at_most}) do
-    fn %Paco.State{at: from, text: text, stream: stream} = state, this ->
+    fn %Paco.State{stream: stream} = state, this ->
+      [{from, text}|chunks] = Paco.State.chunks_from(state)
       f = case p do
             chrs when is_binary(p) ->
               expected = Stream.unfold(chrs, &String.next_grapheme/1) |> Enum.to_list
@@ -534,14 +568,16 @@ defmodule Paco.Parser do
       case Paco.String.consume_while(text, f, {at_least, at_most}, from) do
         {"", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
+        {"", consumed, to, at} ->
+          %Paco.Success{from: from, to: to, at: at, tail: chunks, result: consumed}
         {tail, consumed, to, at} ->
-          %Paco.Success{from: from, to: to, at: at, tail: tail, result: consumed}
+          %Paco.Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: consumed}
         {:not_enough, "", _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
-          %Paco.Failure{at: from, tail: text,
-                        expected: {:while_not, p, at_least, at_most},
-                        rank: n, stack: Paco.Failure.stack(this)}
+          %Paco.Failure{at: from, tail: [{from, text}|chunks],
+                   expected: {:while_not, p, at_least, at_most},
+                   rank: n, stack: Paco.Failure.stack(this)}
       end
     end
   end
@@ -556,12 +592,12 @@ defmodule Paco.Parser do
   defp extract_limits([at_most: n]), do: {0, n}
   defp extract_limits([at_least: n, at_most: m]) when n <= m, do: {n, m}
 
-  defp wait_for_more_and_continue(state, this) do
-    %Paco.State{text: text, stream: stream} = state
+  defp wait_for_more_and_continue(%Paco.State{stream: stream} = state, this) do
     send(stream, {self, :more})
     receive do
       {:load, more_text} ->
-        this.parse.(%Paco.State{state|text: text <> more_text}, this)
+        [{at, text}] = Paco.State.chunks_from(state)
+        this.parse.(%Paco.State{state|chunks: [{at, text <> more_text}]}, this)
       :halted ->
         # The stream is over, switching to a non stream mode is equal to
         # tell the parser to behave knowing that more input will never come
