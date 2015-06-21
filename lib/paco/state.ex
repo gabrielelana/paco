@@ -35,13 +35,15 @@ defmodule Paco.State do
   defp chunks_from(chunks, _), do: chunks
 
 
-  def update_with_result(state, %Success{from: from, result: text}) when is_binary(text),
-    do: %State{state|at: from, chunks: [{from, text}]}
-  def update_with_result(state, %Success{from: from, result: []}),
-    do: %State{state|at: from, chunks: [{from, ""}]}
-  def update_with_result(state, %Success{result: [{at, _}] = chunk}),
-    do: %State{state|at: at, chunks: chunk}
+  def chunks_from_result_of(%Success{from: from, result: text}) when is_binary(text),
+    do: [{from, text}]
+  def chunks_from_result_of(%Success{from: from, result: []}),
+    do: [{from, ""}]
+  def chunks_from_result_of(%Success{result: [{_, _}|_] = chunks}),
+    do: chunks
 
+  def update_with_chunk(state, {at, _} = chunk),
+    do: %State{state|at: at, chunks: [chunk]}
 
   def update(state, %Success{at: at, tail: [{_, _, :drop}|tail]}),
     do: %State{state|at: at, chunks: tail}

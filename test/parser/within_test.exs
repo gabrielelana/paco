@@ -8,29 +8,24 @@ defmodule Paco.Parser.WithinTest do
     assert parse(lit("a") |> within(lit("aaa")), "aaabbb") == {:ok, "a"}
   end
 
-  test "parse within a string keeps the position" do
+  test "parse within a chunk" do
+    chunk = [{{0, 1, 1}, "aaa"}]
+    assert parse(lit("a") |> within(always(chunk)), "") == {:ok, "a"}
+  end
+
+  test "parse within chunks" do
+    chunks = [{{0, 1, 1}, "aaa"}, {{3, 1, 4}, "aaa"}]
+    assert parse(lit("a") |> within(always(chunks)), "") == {:ok, ["a", "a"]}
+  end
+
+  test "keeps the outer region as matching coordinates" do
     parser = lit("a") |> within(lit("aaa"))
     success = parse(parser, "aaabbb", format: :raw)
 
     assert success.from == {0, 1, 1}
-    assert success.to == {0, 1, 1}
-    assert success.at == {1, 1, 2}
+    assert success.to == {2, 1, 3}
+    assert success.at == {3, 1, 4}
   end
-
-  test "parse within a chunk" do
-    chunk = [{{0, 1, 1}, "aaa"}]
-    assert parse(lit("a") |> within(always(chunk)), "aaabbb") == {:ok, "a"}
-  end
-
-  test "parse within a chunk keeps the position" do
-    chunk = [{{4, 2, 5}, "aaa"}]
-    success = parse(lit("a") |> within(always(chunk)), "", format: :raw)
-
-    assert success.from == {4, 2, 5}
-    assert success.to == {4, 2, 5}
-    assert success.at == {5, 2, 6}
-  end
-
 
   test "keeps the tail of the outer parser" do
     parser = lit("a") |> within(lit("aaa"))

@@ -63,17 +63,32 @@ defmodule Paco.Parser do
       case outer.parse.(state, outer) do
         %Success{skip: true} = success ->
           success
-        %Success{tail: tail} = success ->
-          state = State.update_with_result(state, success)
-          case inner.parse.(state, inner) do
-            %Success{} = success ->
-              %Success{success|tail: tail}
+        %Success{from: from, to: to, at: at, tail: tail} = success ->
+          chunks = State.chunks_from_result_of(success)
+          case reduce_within(inner, state, chunks, []) do
             %Failure{} = failure ->
               failure
+            %Success{} = success ->
+              %Success{success|from: from, to: to, at: at, tail: tail}
+            successes ->
+              results = Enum.map(successes, fn(%Success{result: result}) -> result end)
+              %Success{from: from, to: to, at: at, tail: tail, result: results}
           end
         %Failure{} = failure ->
           failure
       end
+    end
+  end
+
+  defp reduce_within(_, _, [], [success]), do: success
+  defp reduce_within(_, _, [], successes), do: Enum.reverse(successes)
+  defp reduce_within(inner, state, [chunk|chunks], successes) do
+    state = State.update_with_chunk(state, chunk)
+    case inner.parse.(state, inner) do
+      %Success{} = success ->
+        reduce_within(inner, state, chunks, [success|successes])
+      %Failure{} = failure ->
+        failure
     end
   end
 
