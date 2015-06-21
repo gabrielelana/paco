@@ -362,11 +362,15 @@ defmodule Paco.Parser do
 
   parser only_if(p, f), to:
     bind(p, fn(result, success, state) ->
-              if call_arity_wise(f, result, success, state) do
-                success
-              else
-                message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-                Failure.at(state, message: message)
+              case call_arity_wise(f, result, success, state) do
+                true ->
+                  success
+                false ->
+                  message = "#{inspect(result)} is not acceptable %STACK% %AT%"
+                  Failure.at(state, message: message)
+                {false, message} ->
+                  message = String.replace(message, "%RESULT%", inspect(result))
+                  Failure.at(state, message: message)
               end
             end)
 

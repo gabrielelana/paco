@@ -11,12 +11,20 @@ defmodule Paco.Parser.OnlyIfTest do
 
   test "failure" do
     parser = integer |> only_if(&(&1 > 0))
-    assert parse(parser, "0") == {:error, ~s|0 is not acceptable at 1:2|}
+    assert parse(parser, "0") == {:error, "0 is not acceptable at 1:2"}
   end
 
   test "failure with description" do
     parser = integer |> only_if(&(&1 > 0)) |> as("ONLY IF")
-    assert parse(parser, "0") == {:error, ~s|0 is not acceptable (ONLY IF) at 1:2|}
+    assert parse(parser, "0") == {:error, "0 is not acceptable (ONLY IF) at 1:2"}
+  end
+
+  test "failure with message" do
+    message = "expected a number greater than 0 %AT% but got %RESULT%"
+    parser = integer |> only_if(fn n -> {n > 0, message} end)
+    assert parse(parser, "0") == {:error,
+      "expected a number greater than 0 at 1:2 but got 0"
+    }
   end
 
   defp integer do
