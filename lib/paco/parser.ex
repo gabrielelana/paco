@@ -149,8 +149,6 @@ defmodule Paco.Parser do
   parser bind(box(p), f) when is_function(f) do
     fn state, this ->
       case p.parse.(state, p) do
-        %Success{skip: true} = success ->
-          success
         %Success{result: result} = success ->
           try do
             call_arity_wise(f, result, success, State.update(state, success))
