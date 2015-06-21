@@ -33,7 +33,8 @@ defmodule Paco.Parser do
             %Success{} = success ->
               success
             %Failure{} = alternative_failure ->
-              compose_failures([failure, alternative_failure])
+              [failure, alternative_failure]
+              |> compose_failures
               |> Failure.stack(this)
           end
       end
