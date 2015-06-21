@@ -139,6 +139,8 @@ defmodule Paco.Parser do
 
   parser followed_by(p, t), as: bind([p, skip(t)], &List.first/1)
 
+  parser preceded_by(p, t), as: bind([skip(t), p], &List.first/1)
+
   parser recursive(f) do
     fn state, this ->
       box(f.(this)).parse.(state, this)
