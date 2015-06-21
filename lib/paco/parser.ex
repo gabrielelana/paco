@@ -33,7 +33,7 @@ defmodule Paco.Parser do
             %Success{} = success ->
               success
             %Failure{} = alternative_failure ->
-              farthest_failure([failure, alternative_failure])
+              compose_failures([failure, alternative_failure])
               |> Failure.stack(this)
           end
       end
@@ -393,7 +393,7 @@ defmodule Paco.Parser do
         %Success{} = success ->
           success
         failures ->
-          farthest_failure(failures) |> Failure.stack(this)
+          compose_failures(failures) |> Failure.stack(this)
       end
     end
   end
@@ -412,20 +412,20 @@ defmodule Paco.Parser do
     end
   end
 
-  defp farthest_failure(failures) do
-    Enum.reduce(failures, nil, &farthest_failure/2)
+  defp compose_failures(failures) do
+    Enum.reduce(failures, nil, &compose_failures/2)
   end
 
-  defp farthest_failure(failure, nil),
+  defp compose_failures(failure, nil),
                         do: failure
-  defp farthest_failure(%Failure{rank: n} = failure,
+  defp compose_failures(%Failure{rank: n} = failure,
                         %Failure{rank: m})
                         when n > m,
                         do: failure
-  defp farthest_failure(%Failure{rank: n} = fl,
+  defp compose_failures(%Failure{rank: n} = fl,
                         %Failure{rank: n} = fr),
                         do: Failure.compose([fl, fr])
-  defp farthest_failure(_, failure),
+  defp compose_failures(_, failure),
                         do: failure
 
 
