@@ -18,7 +18,8 @@ defmodule Paco.Parser do
 
 
 
-  parser line(opts \\ []), to: (
+  parser line, to: line([])
+  parser line(opts) when is_list(opts), to: (
     p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
     p = if Keyword.get(opts, :skip_empty, false) do
           p |> followed_by(many(one_of(Paco.ASCII.nl)))
@@ -30,6 +31,8 @@ defmodule Paco.Parser do
           p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
         end
     p |> only_if(&consumed_any_input?(&1, &2, "an empty string is not a line %AT%")))
+  parser line(p), to: within(p, line([]))
+  parser line(p, opts), to: within(p, line(opts))
 
 
 
