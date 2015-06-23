@@ -23,7 +23,7 @@ defmodule Paco.Parser do
       case p.parse.(state, p) do
         %Success{from: from, result: text} = success when is_binary(text) ->
           %Success{success|result: [{from, text}]}
-        %Success{from: from, result: [{_, text}|_]} = success when is_binary(text) ->
+        %Success{result: [{_, text}|_]} = success when is_binary(text) ->
           success
         %Success{from: from, result: result} ->
           message = "#{inspect(result)} cannot be turned into a region %AT"
@@ -39,11 +39,12 @@ defmodule Paco.Parser do
   parser line, to: line([])
   parser line(opts) when is_list(opts), to: (
     p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
+        |> region
     p = if Keyword.get(opts, :skip_empty, false) do
           p |> followed_by(many(one_of(Paco.ASCII.nl)))
             |> preceded_by(many(one_of(Paco.ASCII.nl)))
-            |> bind(fn("", success) -> %Success{success|skip: true}
-                      (_ , success) -> success
+            |> bind(fn([{_, ""}], success) -> %Success{success|skip: true}
+                      (_        , success) -> success
                     end)
         else
           p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
