@@ -18,13 +18,13 @@ defmodule Paco.Parser.WithinTest do
     assert parse(lit("a") |> within(always(chunks)), "") == {:ok, ["a", "a"]}
   end
 
-  test "keeps the outer region as matching coordinates" do
+  test "keeps the coordinates of the inner parser" do
     parser = lit("a") |> within(lit("aaa"))
     success = parse(parser, "aaabbb", format: :raw)
 
     assert success.from == {0, 1, 1}
-    assert success.to == {2, 1, 3}
-    assert success.at == {3, 1, 4}
+    assert success.to == {0, 1, 1}
+    assert success.at == {1, 1, 2}
   end
 
   test "keeps the tail of the outer parser" do

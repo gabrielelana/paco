@@ -16,6 +16,35 @@ defmodule Paco.Parser do
   def box(nil), do: always(nil)
   def box(t), do: Paco.Parsable.to_parser(t)
 
+  parser with_block(box(p), box(b)) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{from: {_, _, from}} = header_success ->
+          state = State.update(state, header_success)
+          # IO.inspect(state)
+          nl = while(&Paco.ASCII.ws?/1) |> within(line(skip_empty: true))
+          case nl.parse.(state, nl) do
+            %Success{to: {_, _, to}, result: indentation} = success when to > from ->
+              # IO.inspect(success)
+              # IO.inspect({to, from})
+              sl = line(skip_empty: true)
+                   |> only_if(&String.starts_with?(&1, indentation))
+                   |> many
+              case sl.parse.(state, sl) do
+                %Success{} = success ->
+                  # IO.inspect(success)
+                  success
+                %Failure{} = failure ->
+                  failure
+              end
+            %Success{} ->
+              header_success
+            %Failure{} = failure ->
+              failure
+          end
+      end
+    end
+  end
 
 
   parser region(box(p)) do
@@ -84,16 +113,18 @@ defmodule Paco.Parser do
       case outer.parse.(state, outer) do
         %Success{skip: true} = success ->
           success
-        %Success{from: from, to: to, at: at, tail: tail} = success ->
+        %Success{tail: tail} = success ->
           chunks = State.chunks_from_result_of(success)
           case reduce_within(inner, state, chunks, []) do
             %Failure{} = failure ->
               failure
             %Success{} = success ->
-              %Success{success|from: from, to: to, at: at, tail: tail}
+              %Success{success|tail: tail}
             successes ->
+              {first, last} = {List.first(successes), List.last(successes)}
               results = Enum.map(successes, fn(%Success{result: result}) -> result end)
-              %Success{from: from, to: to, at: at, tail: tail, result: results}
+              %Success{from: first.from, to: last.to, at: last.at,
+                       tail: tail, result: results}
           end
         %Failure{} = failure ->
           failure
