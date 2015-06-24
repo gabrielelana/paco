@@ -3,6 +3,7 @@ defmodule Paco.Parser do
   alias Paco.State
   alias Paco.Success
   alias Paco.Failure
+  alias Paco.Predicate
 
   import Paco.Macro.ParserDefinition
 
@@ -78,7 +79,7 @@ defmodule Paco.Parser do
         else
           p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
         end
-    p |> only_if(&consumed_any_input?(&1, &2, "an empty string is not a line %AT%")))
+    p |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
   parser line(p), to: within(p, line([]))
   parser line(p, opts), to: within(p, line(opts))
 
@@ -743,9 +744,5 @@ defmodule Paco.Parser do
       2 -> f.(result, success)
       3 -> f.(result, success, state)
     end
-  end
-
-  defp consumed_any_input?(_, %Success{from: {n, _, _}, at: {m, _, _}}, message) do
-    if m > n, do: true, else: {false, message}
   end
 end
