@@ -8,7 +8,7 @@ defmodule Paco.Parser.WithBlockTest do
     parser = lit("a") |> with_block(lit("b"))
     text = """
            a
-           b
+             b
              c
              d
            e
