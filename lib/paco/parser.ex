@@ -17,35 +17,6 @@ defmodule Paco.Parser do
   def box(nil), do: always(nil)
   def box(t), do: Paco.Parsable.to_parser(t)
 
-  parser with_block(box(p), box(b)) do
-    fn state, _ ->
-      case p.parse.(state, p) do
-        %Success{from: {_, _, from}} = header_success ->
-          state = State.update(state, header_success)
-          # IO.inspect(state)
-          nl = while(&Paco.ASCII.ws?/1) |> within(line(skip_empty: true))
-          case nl.parse.(state, nl) do
-            %Success{to: {_, _, to}, result: indentation} = success when to > from ->
-              # IO.inspect(success)
-              # IO.inspect({to, from})
-              sl = line(skip_empty: true)
-                   |> only_if(&String.starts_with?(&1, indentation))
-                   |> many
-              case sl.parse.(state, sl) do
-                %Success{} = success ->
-                  # IO.inspect(success)
-                  success
-                %Failure{} = failure ->
-                  failure
-              end
-            %Success{} ->
-              header_success
-            %Failure{} = failure ->
-              failure
-          end
-      end
-    end
-  end
 
 
   parser hold(box(p)) do
