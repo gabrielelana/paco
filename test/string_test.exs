@@ -54,6 +54,12 @@ defmodule Paco.StringTest do
     assert consume_while("xxxxx", "abc", {0, 1, 1}) == {"xxxxx", "", {0, 1, 1}, {0, 1, 1}}
   end
 
+  test "consume_while one of the allowed graphemes in list are matched" do
+    assert consume_while("acbc", ["a", "b", "c"], {0, 1, 1}) == {"", "acbc", {3, 1, 4}, {4, 1, 5}}
+    assert consume_while("acbcd", ["a", "b", "c"], {0, 1, 1}) == {"d", "acbc", {3, 1, 4}, {4, 1, 5}}
+    assert consume_while("xxxxx", ["a", "b", "c"], {0, 1, 1}) == {"xxxxx", "", {0, 1, 1}, {0, 1, 1}}
+  end
+
   test "consume_while a given function returns true" do
     assert consume_while("    ab", &whitespace?/1, {0, 1, 1}) == {"ab", "    ", {3, 1, 4}, {4, 1, 5}}
     assert consume_while("    ", &whitespace?/1, {0, 1, 1}) == {"", "    ", {3, 1, 4}, {4, 1, 5}}

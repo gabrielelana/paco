@@ -678,8 +678,10 @@ defmodule Paco.Parser do
     fn %State{stream: stream} = state, this ->
       [{from, text}|chunks] = State.chunks_from(state)
       f = case p do
-            chrs when is_binary(p) ->
-              expected = Stream.unfold(chrs, &String.next_grapheme/1) |> Enum.to_list
+            what when is_list(what) ->
+              fn(h) -> not Enum.member?(what, h) end
+            what when is_binary(what) ->
+              expected = Stream.unfold(what, &String.next_grapheme/1) |> Enum.to_list
               fn(h) -> not Enum.member?(expected, h) end
             f when is_function(f) ->
               fn(h) -> not f.(h) end

@@ -5,10 +5,16 @@ defmodule Paco.Parser.WhileNotTest do
   import Paco.Parser
   import Paco.String, only: [uppercase?: 1]
 
-  test "parse characters not in alphabet" do
+  test "parse characters not in alphabet as string" do
     assert parse(while_not("abc"), "dda") == {:ok, "dd"}
     assert parse(while_not("abc"), "abc") == {:ok, ""}
     assert parse(while_not("abc"), "") == {:ok, ""}
+  end
+
+  test "parse characters not in alphabet as list" do
+    assert parse(while_not(["a", "b", "c"]), "dda") == {:ok, "dd"}
+    assert parse(while_not(["a", "b", "c"]), "abc") == {:ok, ""}
+    assert parse(while_not(["a", "b", "c"]), "") == {:ok, ""}
   end
 
   test "parse characters for which a given function returns false" do

@@ -123,7 +123,7 @@ defmodule Paco.String do
   @spec consume_while(text::String.t, what, limits::limit, at::State.position)
     :: {tail::String.t, consumed::String.t, to::State.position, at::State.position}
      | {:not_enough, tail::String.t, consumed::String.t, to::State.position, at::State.position}
-    when what: String.t | (String.t -> boolean)
+    when what: String.t | [String.t] | (String.t -> boolean)
 
   def consume_while(text, what, {at_least, at_most}, at),
       do: consume_while(text, "", what, {at_least, at_most, 0}, at, at)
@@ -132,6 +132,11 @@ defmodule Paco.String do
 
   def consume_while(text, what, at),
       do: consume_while(text, "", what, {0, :infinity, 0}, at, at)
+
+  defp consume_while(text, consumed, what, limits, at, at) when is_list(what) do
+    f = fn(h) -> Enum.any?(what, &(&1 == h)) end
+    consume_while(text, consumed, f, limits, at, at)
+  end
 
   defp consume_while(text, consumed, what, limits, at, at) when is_binary(what) do
     expected = Stream.unfold(what, &next_grapheme/1) |> Enum.to_list

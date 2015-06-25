@@ -7,10 +7,16 @@ defmodule Paco.Parser.WhileTest do
 
   alias Paco.Test.Helper
 
-  test "parse characters in alphabet" do
+  test "parse characters in alphabet as string" do
     assert parse(while("abc"), "bbacbcd") == {:ok, "bbacbc"}
     assert parse(while("abc"), "xxx") == {:ok, ""}
     assert parse(while("abc"), "") == {:ok, ""}
+  end
+
+  test "parse characters in alphabet as list" do
+    assert parse(while(["a", "b", "c"]), "bbacbcd") == {:ok, "bbacbc"}
+    assert parse(while(["a", "b", "c"]), "xxx") == {:ok, ""}
+    assert parse(while(["a", "b", "c"]), "") == {:ok, ""}
   end
 
   test "parse characters for which a given function returns true" do
