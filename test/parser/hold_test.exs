@@ -19,6 +19,18 @@ defmodule Paco.Parser.HoldTest do
     assert parse(hold(parser), text) == parse(hold(hold(parser)), text)
   end
 
+  test "release an hold" do
+    text = "a"
+    parser = lit("a")
+    assert parse(release(hold(parser)), text) == parse(parser, text)
+  end
+
+  test "release is idempotent" do
+    text = "a"
+    parser = lit("a")
+    assert parse(release(parser), text) == parse(release(release(parser)), text)
+  end
+
   test "fails when result cannot be hold as a region" do
     assert parse(hold(always({})), "") == {:error,
       "{} cannot be hold as a region at 1:1"

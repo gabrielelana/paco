@@ -66,6 +66,22 @@ defmodule Paco.Parser do
 
 
 
+  parser release(box(p)) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{result: [{_, _}|_] = chunks} = success ->
+          text = chunks |> Enum.reduce("", fn({_, chunk}, text) -> text <> chunk end)
+          %Success{success|result: text}
+        %Success{} = success ->
+          success
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
+
+
+
   parser line, to: line([])
   parser line(opts) when is_list(opts), to: (
     p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
