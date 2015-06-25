@@ -48,7 +48,7 @@ defmodule Paco.Parser do
   end
 
 
-  parser region(box(p)) do
+  parser hold(box(p)) do
     fn state, _ ->
       case p.parse.(state, p) do
         %Success{from: from, result: text} = success when is_binary(text) ->
@@ -56,7 +56,7 @@ defmodule Paco.Parser do
         %Success{result: [{_, text}|_]} = success when is_binary(text) ->
           success
         %Success{from: from, result: result} ->
-          message = "#{inspect(result)} cannot be turned into a region %AT"
+          message = "#{inspect(result)} cannot be hold as a region %AT"
           %Failure{at: from, message: message}
         %Failure{} = failure ->
           failure
@@ -69,7 +69,7 @@ defmodule Paco.Parser do
   parser line, to: line([])
   parser line(opts) when is_list(opts), to: (
     p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
-        |> region
+        |> hold
     p = if Keyword.get(opts, :skip_empty, false) do
           p |> followed_by(many(one_of(Paco.ASCII.nl)))
             |> preceded_by(many(one_of(Paco.ASCII.nl)))
