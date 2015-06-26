@@ -143,7 +143,7 @@ defmodule Paco.Parser do
   defp reduce_within(inner, state, [chunk|chunks], successes) do
     state = State.update_with_chunks(state, [chunk])
     case inner.parse.(state, inner) do
-      %Success{skip: true} = success ->
+      %Success{skip: true} ->
         reduce_within(inner, state, chunks, successes)
       %Success{} = success ->
         reduce_within(inner, state, chunks, [success|successes])
