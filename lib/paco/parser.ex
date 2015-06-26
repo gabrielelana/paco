@@ -23,14 +23,13 @@ defmodule Paco.Parser do
   parser with_block(box(h), box(b)) do
     fn state, _ ->
       case h.parse.(state, h) do
-        %Success{from: {_, _, header_column}} = header ->
+        %Success{from: {_, _, hc}} = header ->
           state = State.update(state, header)
           nl = while(&Paco.ASCII.ws?/1) |> within(line(skip_empty: true))
           case nl.parse.(state, nl) do
-            %Success{at: {_, _, block_column}, result: indentation} when block_column > header_column ->
+            %Success{at: {_, _, bc}, result: indentation} when bc > hc ->
               block = line(skip_empty: true)
-                      |> only_if(Predicate.starts_with?(indentation))
-                      |> drop(lit(indentation))
+                      |> drop(lit(indentation), or_fail: true)
                       |> many
               block = within_each(b, block)
               case block.parse.(state, block) do
@@ -52,9 +51,10 @@ defmodule Paco.Parser do
 
 
 
-  parser drop(p, n), to: drop(n) |> within(p)
-  parser drop(box(p)) do
+  parser drop(r, p, opts), to: drop(p, opts) |> within(r)
+  parser drop(box(p), opts) when is_list(opts) do
     p = capture(p)
+    drop_or_fail = Keyword.get(opts, :or_fail, false)
     fn %State{at: at, chunks: chunks} = state, _ ->
       case p.parse.(state, p) do
         %Success{skip: true} ->
@@ -62,11 +62,15 @@ defmodule Paco.Parser do
         %Success{result: chunks, tail: tail} = success ->
           result = Enum.concat(Chunk.drop(chunks), tail)
           %Success{success|result: result, tail: []}
+        %Failure{} = failure when drop_or_fail ->
+          failure
         %Failure{} ->
           %Success{from: at, to: at, at: at, tail: [], result: chunks}
       end
     end
   end
+  parser drop(r, p), to: drop(p, []) |> within(r)
+  parser drop(p), to: drop(p, [])
 
 
 

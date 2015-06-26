@@ -26,6 +26,11 @@ defmodule Paco.Parser.DropTest do
     assert parse(drop(lit("b")), "aaa") == {:ok, [{{0, 1, 1}, "aaa"}]}
   end
 
+  test "drop or fail" do
+    parser = drop(lit("b"), or_fail: true)
+    assert parse(parser, "aaa") == {:error, ~s|expected "b" at 1:1 but got "a"|}
+  end
+
   test "doesn't drop skipped results" do
     assert parse(drop(skip(lit("a"))), "aaa") == {:ok, [{{0, 1, 1}, "aaa"}]}
   end
