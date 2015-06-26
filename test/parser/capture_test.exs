@@ -13,6 +13,20 @@ defmodule Paco.Parser.CaptureTest do
     assert parse(parser, "bab") == {:ok, [[{{1, 1, 2}, "a"}]]}
   end
 
+  test "capture a sequence of parsers" do
+    parser = capture([lit("a"), lit("b")])
+    assert parse(parser, "ab") == {:ok, [{{0, 1, 1}, "a"},
+                                         {{1, 1, 2}, "b"}]}
+  end
+
+  test "capture a sequence of parsers with some skipped" do
+    parser = capture([skip(lit("a")), lit("b")])
+    assert parse(parser, "ab") == {:ok, [{{1, 1, 2}, "b"}]}
+
+    parser = capture([lit("a"), skip(lit("b"))])
+    assert parse(parser, "ab") == {:ok, [{{0, 1, 1}, "a"}]}
+  end
+
   test "capture is idempotent" do
     text = "a"
     parser = lit("a")

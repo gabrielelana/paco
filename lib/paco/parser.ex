@@ -4,6 +4,7 @@ defmodule Paco.Parser do
   alias Paco.Success
   alias Paco.Failure
   alias Paco.Predicate
+  alias Paco.Chunk
 
   import Paco.Macro.ParserDefinition
 
@@ -19,16 +20,26 @@ defmodule Paco.Parser do
 
 
 
+
+
+
+  parser capture(p) when is_list(p), to:
+    capture(sequence_of(Enum.map(p, &(capture(&1)))))
   parser capture(box(p)) do
     fn state, _ ->
       case p.parse.(state, p) do
         %Success{from: from, result: text} = success when is_binary(text) ->
           %Success{success|result: [{from, text}]}
-        %Success{result: [{_, text}|_]} = success when is_binary(text) ->
-          success
-        %Success{from: from, result: result} ->
-          message = "cannot capture #{inspect(result)} as a region %AT"
-          %Failure{at: from, message: message}
+        %Success{from: from, result: result} = success ->
+          cond do
+            is_list(result) and Chunk.chunks?(result) ->
+              success
+            is_list(result) and Enum.all?(result, &Chunk.chunks?/1) ->
+              %Success{success|result: Enum.concat(result)}
+            true ->
+              message = "cannot capture #{inspect(result)} as a region %AT"
+              %Failure{at: from, message: message}
+          end
         %Failure{} = failure ->
           failure
       end
