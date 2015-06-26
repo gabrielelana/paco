@@ -46,6 +46,8 @@ defmodule Paco.State do
     do: %State{state|chunks: chunks}
   def update_with_chunks(state, [{at, _}|_] = chunks),
     do: %State{state|at: at, chunks: chunks}
+  def update_with_chunks(state, [{_, _, :drop}|chunks]),
+    do: update_with_chunks(state, chunks)
 
   def update(state, %Success{at: at, tail: [{_, _, :drop}|tail]}),
     do: %State{state|at: at, chunks: tail}

@@ -20,6 +20,39 @@ defmodule Paco.Parser do
 
 
 
+  parser with_block(box(h), box(b)) do
+    fn state, _ ->
+      case h.parse.(state, h) do
+        %Success{from: {_, _, header_column}} = header ->
+          state = State.update(state, header)
+          nl = while(&Paco.ASCII.ws?/1) |> within(line(skip_empty: true))
+          case nl.parse.(state, nl) do
+            %Success{at: {_, _, block_column}, result: indentation} when block_column > header_column ->
+              block = line(skip_empty: true)
+                      |> only_if(Predicate.starts_with?(indentation))
+                      |> drop(lit(indentation))
+                      |> many
+              block = within_each(b, block)
+              case block.parse.(state, block) do
+                %Success{result: result} = success ->
+                  %Success{success|from: header.from, result: {header.result, result}}
+                %Failure{} = failure ->
+                  failure
+              end
+            %Success{} ->
+              header
+            %Failure{} = failure ->
+              failure
+          end
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
+
+
+
+  parser drop(p, n), to: drop(n) |> within(p)
   parser drop(box(p)) do
     p = capture(p)
     fn %State{at: at, chunks: chunks} = state, _ ->
@@ -164,7 +197,10 @@ defmodule Paco.Parser do
     end
   end
 
-  defp reduce_within(_, _, [], successes), do: Enum.reverse(successes)
+  defp reduce_within(_, _, [], successes),
+    do: Enum.reverse(successes)
+  defp reduce_within(inner, state, [{_, _, :drop}|chunks], successes),
+    do: reduce_within(inner, state, chunks, successes)
   defp reduce_within(inner, state, [chunk|chunks], successes) do
     state = State.update_with_chunks(state, [chunk])
     case inner.parse.(state, inner) do
