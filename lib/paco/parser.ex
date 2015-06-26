@@ -20,6 +20,20 @@ defmodule Paco.Parser do
 
 
 
+  parser drop(box(p)) do
+    p = capture(p)
+    fn %State{at: at, chunks: chunks} = state, _ ->
+      case p.parse.(state, p) do
+        %Success{skip: true} ->
+          %Success{from: at, to: at, at: at, tail: [], result: chunks}
+        %Success{result: chunks, tail: tail} = success ->
+          result = Enum.concat(Chunk.drop(chunks), tail)
+          %Success{success|result: result, tail: []}
+        %Failure{} ->
+          %Success{from: at, to: at, at: at, tail: [], result: chunks}
+      end
+    end
+  end
 
 
 
