@@ -1,10 +1,10 @@
-# INI files are not hard... for an human, it's one of that grammars conceived
+# INI files are not hard... for a human, it's one of those grammars conceived
 # to please humans but to confuse machines and in this case parsers :-)
 
 # The grammar is not well specified, there are as many INI grammars as parsers,
 # sometimes comments are allowed after sections or properties and sometimes
-# not, sometimes property values could span more than one line and sometimes
-# not, you got it...
+# they are not, sometimes property values could span more than one line and
+# sometimes they could not, you got it...
 
 # Here we are going to pick one of those grammar and parse it with Paco
 
@@ -13,8 +13,7 @@
 # is to pollute the parser with rules to skip comments and whitespaces all over
 # the place
 
-
-# Let's start without comments
+# Let's start with a grammar without comments
 
 defmodule INI1 do
   use Paco
