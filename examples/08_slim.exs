@@ -159,8 +159,8 @@ h1 id="footer"
 # (tag) with the result of the parser passed as a second argument (tags). The
 # difference is that the second parser is applied only to the following block
 # of text which is more indented compared to what was matched by the first
-# parser. Moreover, the indentation is removed from the block so for the second
-# parser (tags) could be ignorant about the indententation
+# parser. Moreover, the indentation is removed from the block so that the
+# second parser (tags) could be ignorant about the indententation
 
 """
 body
