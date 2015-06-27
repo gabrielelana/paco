@@ -5,6 +5,7 @@ defmodule Paco.ExamplesTest do
   @examples Path.join(__DIR__, "../examples/[0-9][0-9]_*.exs") |> Path.wildcard
 
   for example <- @examples do
+    @tag :example
     test "example #{Path.basename(example)}" do
       example_path = Path.expand(unquote(example))
 
