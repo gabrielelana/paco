@@ -8,6 +8,14 @@ defmodule Paco.Predicate do
     end
   end
 
+  def not_empty? do
+    fn([{_, ""}]) -> false
+        ({_, ""}) -> false
+             ("") -> false
+              (_) -> true
+    end
+  end
+
   def consumed_any_input?(message) do
     fn(_, %Success{from: {n, _, _}, at: {m, _, _}}) when m > n
         -> true
