@@ -31,17 +31,15 @@ defmodule Paco.Parser do
               block = line(skip_empty: true)
                       |> drop(lit(indentation), or_fail: true)
                       |> many
-              block = within_each(b, block)
+              block = within(b, block)
               case block.parse.(state, block) do
                 %Success{result: result} = success ->
                   %Success{success|from: header.from, result: {header.result, result}}
                 %Failure{} = failure ->
                   failure
               end
-            %Success{} ->
+            _ ->
               header
-            %Failure{} = failure ->
-              failure
           end
         %Failure{} = failure ->
           failure
