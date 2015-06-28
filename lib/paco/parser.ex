@@ -300,6 +300,14 @@ defmodule Paco.Parser do
   end
 
 
+  parser pair(l, r, opts \\ []), to: (
+    s = while(Paco.ASCII.punctuation, at_least: 1)
+        |> surrounded_by(maybe(whitespaces))
+    s = Keyword.get(opts, :separated_by, s)
+    s = if is_binary(s), do: lex(s),  else: s
+    box({l, skip(s), cut, r})
+  )
+
 
   parser between({l, r}), to: between(l, r, [])
   parser between(d), to: between(d, d, [])
