@@ -94,4 +94,16 @@ defmodule Paco.ASCII do
     end
     def unquote(is_class)(_), do: false
   end
+
+  def rb, do: {"(", ")"}
+  def round_brackets, do: {"(", ")"}
+
+  def sb, do: {"[", "]"}
+  def square_brackets, do: {"[", "]"}
+
+  def cb, do: {"{", "}"}
+  def curly_brackets, do: {"{", "}"}
+
+  def ab, do: {"<", ">"}
+  def angle_brackets, do: {"<", ">"}
 end

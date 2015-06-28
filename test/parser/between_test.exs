@@ -10,6 +10,7 @@ defmodule Paco.Parser.BetweenTest do
 
   test "between two delimiters given as tuple" do
     assert parse(between({"<", ">"}), "<a>") == {:ok, "a"}
+    assert parse(between(Paco.ASCII.angle_brackets), "<a>") == {:ok, "a"}
   end
 
   test "between the same delimiter" do
