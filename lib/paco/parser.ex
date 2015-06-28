@@ -451,11 +451,15 @@ defmodule Paco.Parser do
 
 
 
-  parser skip(box(p)) do
+  parser skip(box(p), opts \\ []) do
+    skip_if_empty = Keyword.get(opts, :if_empty, false)
     fn state, _ ->
       case p.parse.(state, p) do
         %Success{keep: true} = success ->
           %Success{success|keep: false}
+        %Success{from: {n, _, _}, at: {m, _, _}} = success
+          when skip_if_empty and m > n ->
+          success
         %Success{} = success ->
           %Success{success|skip: true}
         %Failure{} = failure ->
@@ -577,7 +581,7 @@ defmodule Paco.Parser do
                         do: failure
   defp compose_failures(%Failure{rank: n} = failure,
                         %Failure{rank: m})
-                        when n > m,
+                          when n > m,
                         do: failure
   defp compose_failures(%Failure{rank: n} = fl,
                         %Failure{rank: n} = fr),

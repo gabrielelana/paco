@@ -4,21 +4,19 @@ defmodule Paco.Parser.KeepTest do
   import Paco
   import Paco.Parser
 
-  test "keep what is skipped" do
-    assert parse(surrounded_by(lit("a"), keep(lex("*"))), "*a*") == {:ok, ["*", "a", "*"]}
+  test "keep" do
+    result = parse(keep(lit("a")), "a", format: :raw)
+    assert result.keep
   end
 
-  test "keep a skip" do
-    parser = keep(skip(lit("a")))
-    success = parser.parse.(Paco.State.from("a"), parser)
-    assert success.keep == false
-    assert success.skip == false
+  test "desn't keep a skip" do
+    result = parse(keep(skip(lit("a"))), "a", format: :raw)
+    refute result.keep
   end
 
-  test "skip a keep" do
-    parser = skip(keep(lit("a")))
-    success = parser.parse.(Paco.State.from("a"), parser)
-    assert success.keep == false
-    assert success.skip == false
+  test "doesn't keep a failure" do
+    text = "b"
+    parser = lit("a")
+    assert parse(keep(parser), text) == parse(parser, text)
   end
 end
