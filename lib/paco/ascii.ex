@@ -106,4 +106,12 @@ defmodule Paco.ASCII do
 
   def ab, do: {"<", ">"}
   def angle_brackets, do: {"<", ">"}
+
+  def sq, do: ~s|'|
+  def single_quote, do: ~s|'|
+
+  def dq, do: ~s|"|
+  def double_quote, do: ~s|"|
+
+  def quotes, do: [sq, dq]
 end

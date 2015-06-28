@@ -46,4 +46,14 @@ defmodule Paco.Parser.BetweenTest do
       ~s|expected ">" at 1:6 but got the end of input|
     }
   end
+
+  test "quoted_by" do
+    assert parse(quoted_by(~s|"|), ~s|"a"|) == {:ok, "a"}
+    assert parse(quoted_by([~s|"|, ~s|'|]), ~s|"a"|) == {:ok, "a"}
+    assert parse(quoted_by([~s|"|, ~s|'|]), ~s|'a'|) == {:ok, "a"}
+    assert parse(quoted_by(Paco.ASCII.single_quote), ~s|'a'|) == {:ok, "a"}
+    assert parse(quoted_by(Paco.ASCII.double_quote), ~s|"a"|) == {:ok, "a"}
+    assert parse(quoted_by(Paco.ASCII.quotes), ~s|'a'|) == {:ok, "a"}
+    assert parse(quoted_by(Paco.ASCII.quotes), ~s|"a"|) == {:ok, "a"}
+  end
 end
