@@ -1,4 +1,5 @@
 /_build
 /deps
+/examples/XX_*.ex
 erl_crash.dump
 *.ez
