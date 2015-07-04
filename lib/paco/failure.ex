@@ -3,20 +3,20 @@ defmodule Paco.Failure do
   alias Paco.State
 
   @type t :: %Failure{at: State.position,
-                      tail: [State.chunk],
+                      tail: String.t,
                       expected: String.t | nil,
                       message: String.t | nil,
                       stack: [String.t],
                       rank: integer,
                       fatal: boolean}
 
-  defexception at: {0, 0, 0}, tail: [], rank: 0,
+  defexception at: {0, 0, 0}, tail: "", rank: 0,
                expected: nil, message: nil, stack: [],
                fatal: false
 
 
-  def at(%State{at: at, chunks: chunks}, opts \\ []) do
-    %Failure{at: at, tail: chunks,
+  def at(%State{at: at, text: text}, opts \\ []) do
+    %Failure{at: at, tail: text,
              rank: Keyword.get(opts, :rank, 0),
              expected: Keyword.get(opts, :expected, nil),
              message: Keyword.get(opts, :message, nil),
@@ -139,36 +139,23 @@ defmodule Paco.Failure do
 
   defp format_position({_, line, column}), do: "at #{line}:#{column}"
 
-  defp format_tail([], _), do: "the end of input"
-  defp format_tail([{_, ""}], _), do: "the end of input"
 
+  defp format_tail("", _), do: "the end of input"
   defp format_tail(tail, s) when is_binary(s) do
-    quoted(slice_tail(tail, String.length(s)))
+    quoted(String.slice(tail, 0, String.length(s)))
   end
 
   defp format_tail(tail, {:while, _, n, _}) do
-    quoted(slice_tail(tail, n))
+    quoted(String.slice(tail, 0, n))
   end
   defp format_tail(tail, {:while_not, _, n, _}) do
-    quoted(slice_tail(tail, n))
+    quoted(String.slice(tail, 0, n))
   end
   defp format_tail(tail, _) do
-    slice = slice_tail(tail, 45)
-    case String.length(slice) do
-      45 -> quoted(String.slice(slice, 0, 42) <> "...")
-      _  -> quoted(slice)
-    end
-  end
-
-  defp slice_tail(tail, len), do: slice_tail(tail, len, "")
-
-  defp slice_tail([], _, sliced), do: sliced
-  defp slice_tail([chunk|tail], len, sliced) do
-    text = case chunk do {_, text} -> text; {_, text, _} -> text; end
-    slice = String.slice(text, 0, len)
-    case String.length(slice) do
-      ^len -> sliced <> slice
-      n    -> slice_tail(tail, len - n, sliced <> slice)
+    tail = Paco.String.line_at(tail, 0)
+    case String.length(tail) do
+      n when n > 21 -> quoted(String.slice(tail, 0, 42) <> "...")
+      _             -> quoted(tail)
     end
   end
 
