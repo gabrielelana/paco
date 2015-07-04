@@ -11,10 +11,10 @@ defmodule Paco.Parser do
   defstruct id: nil, name: nil, description: nil, parse: nil
 
   def box(%Parser{} = p), do: p
-  # def box(%Regex{} = r), do: re(r)
+  def box(%Regex{} = r), do: re(r)
   def box(s) when is_binary(s), do: lit(s)
-  # def box(nil), do: always(nil)
-  # def box(t), do: Paco.Parsable.to_parser(t)
+  def box(nil), do: always(nil)
+  def box(t), do: Paco.Parsable.to_parser(t)
 
 
 
@@ -454,11 +454,11 @@ defmodule Paco.Parser do
 
 
 
-  # parser always(t) do
-  #   fn %State{at: at, chunks: chunks}, _ ->
-  #     %Success{from: at, to: at, at: at, tail: chunks, result: t}
-  #   end
-  # end
+  parser always(t) do
+    fn %State{at: at, text: text}, _ ->
+      %Success{from: at, to: at, at: at, tail: text, result: t}
+    end
+  end
 
 
   # parser fail_with(p, message) do

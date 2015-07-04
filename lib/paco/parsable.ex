@@ -59,24 +59,24 @@ defimpl Paco.Parsable, for: List do
   end
 end
 
-# defimpl Paco.Parsable, for: Map do
-#   import Paco.Parser
-#   def to_parser(map) do
-#     {keys, values} = {Map.keys(map), Map.values(map)}
-#     sequence_of(values)
-#     |> bind(&(Enum.zip(keys, &1) |> Enum.into(Map.new)))
-#   end
-# end
+defimpl Paco.Parsable, for: Map do
+  import Paco.Parser
+  def to_parser(map) do
+    {keys, values} = {Map.keys(map), Map.values(map)}
+    sequence_of(values)
+    |> bind(&(Enum.zip(keys, &1) |> Enum.into(Map.new)))
+  end
+end
 
-# defimpl Paco.Parsable, for: Any do
-#   import Paco.Parser
-#   def to_parser(%{__struct__: name} = struct) do
-#     map = Map.delete(struct, :__struct__)
-#     Paco.Parsable.Map.to_parser(map)
-#     |> bind(&Map.put(&1, :__struct__, name))
-#   end
+defimpl Paco.Parsable, for: Any do
+  import Paco.Parser
+  def to_parser(%{__struct__: name} = struct) do
+    map = Map.delete(struct, :__struct__)
+    Paco.Parsable.Map.to_parser(map)
+    |> bind(&Map.put(&1, :__struct__, name))
+  end
 
-#   def to_parser(term) do
-#     raise Protocol.UndefinedError, protocol: @protocol, value: term
-#   end
-# end
+  def to_parser(term) do
+    raise Protocol.UndefinedError, protocol: @protocol, value: term
+  end
+end

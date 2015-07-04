@@ -99,7 +99,7 @@ defmodule Paco.Parser.OneOfTest do
                      sequence_of([lit("b"), lit("c")])])
     failure = parser.parse.(Paco.State.from("ac"), parser)
     assert failure.at == {1, 1, 2}
-    assert failure.tail == [{failure.at, "c"}]
+    assert failure.tail == "c"
   end
 
   test "doesn't backtrack with fatal failures" do
