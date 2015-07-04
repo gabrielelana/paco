@@ -4,7 +4,6 @@ defmodule Paco.Parser do
   alias Paco.Success
   alias Paco.Failure
   alias Paco.Predicate
-  alias Paco.Chunk
 
   import Paco.Macro.ParserDefinition
 
@@ -111,23 +110,23 @@ defmodule Paco.Parser do
 
 
 
-  # parser within(box(inner), box(outer)) do
-  #   outer = capture(outer)
-  #   fn state, _ ->
-  #     case outer.parse.(state, outer) do
-  #       %Success{tail: tail, result: chunks, skip: skip_outer} ->
-  #         state = State.update_with_chunks(state, chunks)
-  #         case inner.parse.(state, inner) do
-  #           %Success{skip: skip_inner} = success ->
-  #             %Success{success|tail: tail, skip: skip_inner || skip_outer}
-  #           %Failure{} = failure ->
-  #             failure
-  #         end
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser within(box(inner), box(outer)) do
+    fn state, _ ->
+      case outer.parse.(state, outer) do
+
+        %Success{from: from, tail: tail, result: result, skip: skip_outer} when is_binary(result) ->
+          state = %State{state|at: from, text: result}
+          case inner.parse.(state, inner) do
+            %Success{skip: skip_inner} = success ->
+              %Success{success|tail: tail, skip: skip_inner || skip_outer}
+            %Failure{} = failure ->
+              failure
+          end
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
 
 
@@ -172,21 +171,26 @@ defmodule Paco.Parser do
 
 
 
+  parser rol(opts \\ []),
+    to: until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
+
+
+
   parser line, to: line([])
-  parser line(opts) when is_list(opts), to: (
-    p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
+  parser line(opts) when is_list(opts), to: line(rol(opts), opts)
+  parser line(p), to: line(p, [])
+  parser line(p, opts), to: (
     p = if Keyword.get(opts, :skip_empty, false) do
-          p |> followed_by(many(one_of(Paco.ASCII.nl)))
-            |> preceded_by(many(one_of(Paco.ASCII.nl)))
+          p |> followed_by(one_of([while(Paco.ASCII.nl, at_least: 1), eof]))
+            |> preceded_by(while(Paco.ASCII.nl))
             |> bind(fn("", success) -> %Success{success|skip: true}
                       (_ , success) -> success
                     end)
         else
-          p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
+          p |> followed_by(one_of([while(Paco.ASCII.nl, exactly: 1), eof]))
         end
-    p |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
-  # parser line(p), to: within(p, line([]))
-  # parser line(p, opts), to: within(p, line(opts))
+    p |> fail_with("expected end of line %AT% but got %TAIL%")
+      |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
 
 
 
@@ -366,8 +370,8 @@ defmodule Paco.Parser do
     fn
       %State{at: at, text: ""}, _ ->
         %Success{from: at, to: at, at: at, skip: true}
-      %State{at: at, text: text}, _ ->
-        %Failure{at: at, tail: text, rank: at,
+      %State{at: {n, _, _} = at, text: text}, _ ->
+        %Failure{at: at, tail: text, rank: n, expected: :eof,
                  message: "expected the end of input %AT%"}
     end
   end
@@ -597,7 +601,7 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn %State{at: at, text: text} = state, this ->
+    fn %State{at: at, text: text} = state, _ ->
       case reduce_one_of(ps, state) do
         [] ->
           %Success{from: at, to: at, at: at, tail: text, skip: true}

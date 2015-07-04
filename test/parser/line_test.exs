@@ -11,6 +11,14 @@ defmodule Paco.Parser.LineTest do
     assert parse(line, "\n") == {:ok, ""}
   end
 
+  test "refine the line" do
+    assert parse(line(lit("a") |> followed_by(rol)), "aaa\n") == {:ok, "a"}
+
+    assert parse(line(lit("a")), "aaa\n") == {:error,
+      ~s|expected end of line at 1:2 but got "aa"|
+    }
+  end
+
   test "the end of input is a valid line terminator" do
     assert parse(line, "aaa") == {:ok, "aaa"}
   end
@@ -30,13 +38,22 @@ defmodule Paco.Parser.LineTest do
   end
 
   test "skip empty lines skips following empty lines" do
-    assert parse(line(skip_empty: true), "aaa\n") == {:ok, "aaa"}
-    assert parse(line(skip_empty: true), "aaa\n\n") == {:ok, "aaa"}
-    assert parse(line(skip_empty: true), "aaa\n\n\n") == {:ok, "aaa"}
+    assert %Paco.Success{tail: ""} = parse(line(skip_empty: true), "aaa\n", format: :raw)
+    assert %Paco.Success{tail: ""} = parse(line(skip_empty: true), "aaa\n\n", format: :raw)
+    assert %Paco.Success{tail: ""} = parse(line(skip_empty: true), "aaa\n\n\n", format: :raw)
+
+    assert %Paco.Success{tail: ""} = parse(line, "aaa\n", format: :raw)
+    assert %Paco.Success{tail: "\n"} = parse(line, "aaa\n\n", format: :raw)
+    assert %Paco.Success{tail: "\n\n"} = parse(line, "aaa\n\n\n", format: :raw)
   end
 
   test "skip empty lines skips preceding empty lines" do
-    assert parse(line(skip_empty: true), "\naaa\n") == {:ok, "aaa"}
+    assert parse(line(skip_empty: true), "\naaa") == {:ok, "aaa"}
+    assert parse(line(skip_empty: true), "\n\naaa") == {:ok, "aaa"}
+    assert parse(line(skip_empty: true), "\n\n\naaa") == {:ok, "aaa"}
+
+    assert parse(line, "\naaa") == {:ok, ""}
+    assert parse(many(line), "\naaa") == {:ok, ["", "aaa"]}
   end
 
   test "skip empty lines stops at the last newline" do

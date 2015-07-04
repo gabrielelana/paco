@@ -103,6 +103,9 @@ defmodule Paco.Failure do
     |> Enum.join(" ")
   end
 
+  defp format_expected(:eof) do
+    "eof"
+  end
   defp format_expected({:re, r}) do
     inspect(r)
   end
