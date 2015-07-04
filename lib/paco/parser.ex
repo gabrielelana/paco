@@ -407,50 +407,50 @@ defmodule Paco.Parser do
   #   as: sequence_of([skip(left), parser, skip(right)])
   #       |> bind(fn([r]) -> r; (r) -> r end)
 
-  # parser many(p), to: repeat(p)
-  # parser exactly(p, n), to: repeat(p, n)
-  # parser at_least(p, n), to: repeat(p, {n, :infinity})
-  # parser at_most(p, n), to: repeat(p, {0, n})
-  # parser one_or_more(p), to: repeat(p, {1, :infinity})
-  # parser zero_or_more(p), to: repeat(p, {0, :infinity})
+  parser many(p), to: repeat(p)
+  parser exactly(p, n), to: repeat(p, n)
+  parser at_least(p, n), to: repeat(p, {n, :infinity})
+  parser at_most(p, n), to: repeat(p, {0, n})
+  parser one_or_more(p), to: repeat(p, {1, :infinity})
+  parser zero_or_more(p), to: repeat(p, {0, :infinity})
 
-  # parser repeat(p), to: repeat(p, {0, :infinity})
-  # parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
-  # parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
-  # parser repeat(box(p), {at_least, at_most}) do
-  #   fn %State{at: from, chunks: chunks} = state, _ ->
-  #     case unfold_repeat(p, state, at_most) do
-  #       {_, _, %Failure{fatal: true} = failure} ->
-  #         failure
-  #       {n, _, failure} when n < at_least ->
-  #         failure
-  #       {0, _, _} ->
-  #         %Success{from: from, to: from, at: from, tail: chunks, result: []}
-  #       {_, successes, _} ->
-  #         last = List.last(successes)
-  #         results = successes |> Enum.reject(&(&1.skip)) |> Enum.map(&(&1.result))
-  #         %Success{from: from, to: last.to, at: last.at,
-  #                  tail: last.tail, result: results}
-  #     end
-  #   end
-  # end
+  parser repeat(p), to: repeat(p, {0, :infinity})
+  parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
+  parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
+  parser repeat(box(p), {at_least, at_most}) do
+    fn %State{at: from, text: text} = state, _ ->
+      case unfold_repeat(p, state, at_most) do
+        {_, _, %Failure{fatal: true} = failure} ->
+          failure
+        {n, _, failure} when n < at_least ->
+          failure
+        {0, _, _} ->
+          %Success{from: from, to: from, at: from, tail: text, result: []}
+        {_, successes, _} ->
+          last = List.last(successes)
+          results = successes |> Enum.reject(&(&1.skip)) |> Enum.map(&(&1.result))
+          %Success{from: from, to: last.to, at: last.at,
+                   tail: last.tail, result: results}
+      end
+    end
+  end
 
-  # defp unfold_repeat(p, state, at_most) do
-  #   unfold_repeat(p, state, 0, at_most, [])
-  # end
+  defp unfold_repeat(p, state, at_most) do
+    unfold_repeat(p, state, 0, at_most, [])
+  end
 
-  # defp unfold_repeat(_, _, n, n, successes) do
-  #   {n, successes |> Enum.reverse, nil}
-  # end
-  # defp unfold_repeat(p, state, n, m, successes) do
-  #   case p.parse.(state, p) do
-  #     %Success{} = success ->
-  #       state = State.update(state, success)
-  #       unfold_repeat(p, state, n+1, m, [success|successes])
-  #     %Failure{} = failure ->
-  #       {n, successes |> Enum.reverse, failure}
-  #   end
-  # end
+  defp unfold_repeat(_, _, n, n, successes) do
+    {n, successes |> Enum.reverse, nil}
+  end
+  defp unfold_repeat(p, state, n, m, successes) do
+    case p.parse.(state, p) do
+      %Success{} = success ->
+        state = State.update(state, success)
+        unfold_repeat(p, state, n+1, m, [success|successes])
+      %Failure{} = failure ->
+        {n, successes |> Enum.reverse, failure}
+    end
+  end
 
 
 

@@ -28,7 +28,7 @@ defmodule Paco.Parser.RepeatTest do
     assert success.from == {0, 1, 1}
     assert success.to == {3, 1, 4}
     assert success.at == {4, 1, 5}
-    assert success.tail == []
+    assert success.tail == ""
   end
 
   test "repeat and skip" do
@@ -100,7 +100,7 @@ defmodule Paco.Parser.RepeatTest do
     assert success.from == {0, 1, 1}
     assert success.to == {1, 1, 2}
     assert success.at == {2, 1, 3}
-    assert success.tail == [{success.at, "b"}]
+    assert success.tail == "b"
   end
 
   test "doesn't consume input on empty success" do
@@ -109,13 +109,13 @@ defmodule Paco.Parser.RepeatTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
-    assert success.tail == [{success.at, "bbb"}]
+    assert success.tail == "bbb"
   end
 
   test "doesn't consume input on failure" do
     parser = repeat(lit("a"), at_least: 1)
     failure = parser.parse.(Paco.State.from("bbb"), parser)
     assert failure.at == {0, 1, 1}
-    assert failure.tail == [{failure.at, "bbb"}]
+    assert failure.tail == "bbb"
   end
 end
