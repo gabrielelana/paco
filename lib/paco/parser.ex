@@ -336,56 +336,54 @@ defmodule Paco.Parser do
   # defp map_between(result, true), do: (result |> List.first |> String.strip)
 
 
-  # parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
-  #                        |> fail_with("expected 1 whitespace %AT% but got %TAIL%")
+  parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
+                         |> fail_with("expected 1 whitespace %AT% but got %TAIL%")
 
-  # parser whitespaces, as: while(&Paco.String.whitespace?/1, at_least: 1)
-  #                         |> fail_with("expected at least 1 whitespace %AT% but got %TAIL%")
+  parser whitespaces, as: while(&Paco.String.whitespace?/1, at_least: 1)
+                          |> fail_with("expected at least 1 whitespace %AT% but got %TAIL%")
 
-  # parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
+  parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
 
-  # parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
+  parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 
-  # parser replace_with(p, v), as: bind(p, fn _ -> v end)
+  parser replace_with(p, v), as: bind(p, fn _ -> v end)
 
-  # parser followed_by(p, t), as: bind([p, skip(t)], &List.first/1)
+  parser followed_by(p, t), as: bind([p, skip(t)], &List.first/1)
 
-  # parser preceded_by(p, t), as: bind([skip(t), p], &List.first/1)
+  parser preceded_by(p, t), as: bind([skip(t), p], &List.first/1)
 
-  # parser recursive(f) do
-  #   fn state, this ->
-  #     box(f.(this)).parse.(state, this)
-  #   end
-  # end
+  parser recursive(f) do
+    fn state, this ->
+      box(f.(this)).parse.(state, this)
+    end
+  end
 
-  # parser nop do
-  #   fn %State{at: at, chunks: chunks}, _ ->
-  #     %Success{from: at, to: at, at: at, tail: chunks, skip: true}
-  #   end
-  # end
+  parser nop do
+    fn %State{at: at, text: text}, _ ->
+      %Success{from: at, to: at, at: at, tail: text, skip: true}
+    end
+  end
 
-  # parser eof do
-  #   fn
-  #     %State{at: at, chunks: []}, _ ->
-  #       %Success{from: at, to: at, at: at, skip: true}
-  #     %State{at: at, chunks: [{_, ""}]}, _ ->
-  #       %Success{from: at, to: at, at: at, skip: true}
-  #     %State{at: at, chunks: chunks}, _ ->
-  #       %Failure{at: at, tail: chunks, rank: at,
-  #                message: "expected the end of input %AT%"}
-  #   end
-  # end
+  parser eof do
+    fn
+      %State{at: at, text: ""}, _ ->
+        %Success{from: at, to: at, at: at, skip: true}
+      %State{at: at, text: text}, _ ->
+        %Failure{at: at, tail: text, rank: at,
+                 message: "expected the end of input %AT%"}
+    end
+  end
 
-  # parser peek(box(p)) do
-  #   fn %State{at: at, chunks: chunks} = state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{result: result} ->
-  #         %Success{from: at, to: at, at: at, tail: chunks, result: result}
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser peek(box(p)) do
+    fn %State{at: at, text: text} = state, _ ->
+      case p.parse.(state, p) do
+        %Success{result: result} ->
+          %Success{from: at, to: at, at: at, tail: text, result: result}
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
   # parser separated_by(p, s), to: separated_by(p, s, at_least: 0)
   # parser separated_by(p, s, opts) when is_binary(s), to: separated_by(p, lex(s), opts)
@@ -396,16 +394,16 @@ defmodule Paco.Parser do
   #        sequence_of([p, tail])
   #        |> bind(fn([h, []]) -> [h]; ([h, t]) -> [h|t] end))
 
-  # parser surrounded_by(parser, around) when is_binary(around),
-  #   to: surrounded_by(parser, lex(around), lex(around))
-  # parser surrounded_by(parser, around),
-  #   to: surrounded_by(parser, around, around)
+  parser surrounded_by(parser, around) when is_binary(around),
+    to: surrounded_by(parser, lex(around), lex(around))
+  parser surrounded_by(parser, around),
+    to: surrounded_by(parser, around, around)
 
-  # parser surrounded_by(parser, left, right) when is_binary(left) and is_binary(right),
-  #   to: surrounded_by(parser, lex(left), lex(right))
-  # parser surrounded_by(box(parser), left, right),
-  #   as: sequence_of([skip(left), parser, skip(right)])
-  #       |> bind(fn([r]) -> r; (r) -> r end)
+  parser surrounded_by(parser, left, right) when is_binary(left) and is_binary(right),
+    to: surrounded_by(parser, lex(left), lex(right))
+  parser surrounded_by(box(parser), left, right),
+    as: sequence_of([skip(left), parser, skip(right)])
+        |> bind(fn([r]) -> r; (r) -> r end)
 
   parser many(p), to: repeat(p)
   parser exactly(p, n), to: repeat(p, n)
