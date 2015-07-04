@@ -258,13 +258,13 @@ defmodule Paco.Parser do
 
 
 
-  # parser next(p, f) when is_function(f), as:
-  #   bind(p, f)
-  #   |> bind(fn(p) -> box(p) end)
-  #   |> bind(fn(p, _, s) -> p.parse.(s, p) end)
+  parser next(p, f) when is_function(f), as:
+    bind(p, f)
+    |> bind(fn(p) -> box(p) end)
+    |> bind(fn(p, _, s) -> p.parse.(s, p) end)
 
-  # parser next(p, box(next)), as:
-  #   bind(p, fn(_, _, s) -> next.parse.(s, next) end)
+  parser next(p, box(next)), as:
+    bind(p, fn(_, _, s) -> next.parse.(s, next) end)
 
 
 
@@ -297,13 +297,13 @@ defmodule Paco.Parser do
   end
 
 
-  # parser pair(l, r, opts \\ []),
-  #   to: (
-  #     s = while(Paco.ASCII.punctuation, at_least: 1)
-  #         |> surrounded_by(maybe(whitespaces))
-  #     s = Keyword.get(opts, :separated_by, s)
-  #     s = if is_binary(s), do: lex(s),  else: s
-  #     box({l, skip(s), cut, r}))
+  parser pair(l, r, opts \\ []),
+    to: (
+      s = while(Paco.ASCII.punctuation, at_least: 1)
+          |> surrounded_by(maybe(whitespaces))
+      s = Keyword.get(opts, :separated_by, s)
+      s = if is_binary(s), do: lex(s),  else: s
+      box({l, skip(s), cut, r}))
 
 
 
