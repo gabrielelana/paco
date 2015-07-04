@@ -461,16 +461,16 @@ defmodule Paco.Parser do
   end
 
 
-  # parser fail_with(p, message) do
-  #   fn state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{} = success ->
-  #         success
-  #       %Failure{} = failure ->
-  #         %Failure{failure|message: message}
-  #     end
-  #   end
-  # end
+  parser fail_with(p, message) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{} = success ->
+          success
+        %Failure{} = failure ->
+          %Failure{failure|message: message}
+      end
+    end
+  end
 
 
 
