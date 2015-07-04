@@ -50,6 +50,9 @@ defmodule Paco.Parser.WhileTest do
     assert parse(while("abc", at_least: 3), "aad") == {:error,
       ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
+    assert parse(while(["a", "b", "c"], at_least: 2), "xxyy") == {:error,
+      ~s|expected at least 2 characters in alphabet "abc" at 1:1 but got "xx"|
+    }
     assert parse(while("abc", more_than: 2), "aad") == {:error,
       ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }

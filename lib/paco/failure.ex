@@ -195,6 +195,9 @@ defmodule Paco.Failure do
   defp format_description({:while, p}) when is_binary(p) do
     "in alphabet #{quoted(p)}"
   end
+  defp format_description({:while, p}) when is_list(p) do
+    "in alphabet #{quoted(Enum.join(p))}"
+  end
   defp format_description({:while, p}) when is_function(p) do
     "which satisfy #{format_function(p)}"
   end
