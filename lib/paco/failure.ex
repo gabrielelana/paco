@@ -1,6 +1,5 @@
 defmodule Paco.Failure do
   alias Paco.Failure
-  alias Paco.Parser
   alias Paco.State
 
   @type t :: %Failure{at: State.position,
@@ -25,16 +24,10 @@ defmodule Paco.Failure do
   end
 
 
-  def stack(%Parser{description: nil}), do: []
-  def stack(%Parser{description: description}), do: [description]
-
-  def stack(failure, %Parser{description: nil}), do: failure
-  def stack(%Failure{stack: [description|_]} = failure,
-            %Parser{description: description}),
-            do: failure
-  def stack(failure, %Parser{description: description}) do
-    %Failure{failure|stack: [description|failure.stack]}
-  end
+  def stack(%Failure{stack: [description|_]} = failure, description),
+    do: failure
+  def stack(failure, description),
+    do: %Failure{failure|stack: [description|failure.stack]}
 
 
   def compose(failures), do: compose(failures, nil)

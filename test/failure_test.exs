@@ -136,40 +136,27 @@ defmodule Paco.FailureTest do
     assert composed_failure.expected == {:composed, ["b", "a"]}
   end
 
-  test "stack parsers", %{failure: failure} do
-    import Paco.Parser
-
-    failure = Paco.Failure.stack(failure, lit("a") |> as("a"))
+  test "stack description", %{failure: failure} do
+    failure = Paco.Failure.stack(failure, "a")
     assert failure.stack == ["a"]
 
-    failure = Paco.Failure.stack(failure, lit("b") |> as("b"))
+    failure = Paco.Failure.stack(failure, "b")
     assert failure.stack == ["b", "a"]
   end
 
-  test "do not stack a parser without a description", %{failure: failure} do
-    import Paco.Parser
-
-    failure = Paco.Failure.stack(failure, lit("a"))
-    assert failure.stack == []
-  end
-
-  test "do not stack a parser twice in a row", %{failure: failure} do
-    import Paco.Parser
-
+  test "do not stack same description twice in a row", %{failure: failure} do
     failure = failure
-              |> Paco.Failure.stack(lit("a") |> as("a"))
-              |> Paco.Failure.stack(lit("a") |> as("a"))
+              |> Paco.Failure.stack("a")
+              |> Paco.Failure.stack("a")
 
     assert failure.stack == ["a"]
   end
 
-  test "stack same parser when interleaved", %{failure: failure} do
-    import Paco.Parser
-
+  test "stack same description when interleaved", %{failure: failure} do
     failure = failure
-              |> Paco.Failure.stack(lit("a") |> as("a"))
-              |> Paco.Failure.stack(lit("b") |> as("b"))
-              |> Paco.Failure.stack(lit("a") |> as("a"))
+              |> Paco.Failure.stack("a")
+              |> Paco.Failure.stack("b")
+              |> Paco.Failure.stack("a")
 
     assert failure.stack == ["a", "b", "a"]
   end

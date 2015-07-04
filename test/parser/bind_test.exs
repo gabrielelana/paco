@@ -48,7 +48,7 @@ defmodule Paco.Parser.BindTest do
   end
 
   test "failure with description" do
-    parser = bind(lit("a"), fn _  -> raise "boom!" end) |> as ("BIND")
+    parser = bind(lit("a"), fn _  -> raise "boom!" end) |> as("BIND")
     assert parse(parser, "a") == {:error,
       ~s|exception: boom! (BIND) at 1:1|
     }

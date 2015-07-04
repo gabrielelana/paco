@@ -10,8 +10,6 @@ defmodule Paco.Parser do
 
   defstruct id: nil, name: nil, description: nil, parse: nil
 
-  def as(p, description), do: %Parser{box(p)|description: description}
-
   def box(%Parser{} = p), do: p
   def box(%Regex{} = r), do: re(r)
   def box(s) when is_binary(s), do: lit(s)
@@ -135,12 +133,12 @@ defmodule Paco.Parser do
 
   parser otherwise(p, f) when is_function(f), to: otherwise(p, f.(p))
   parser otherwise(box(p), box(n)) do
-    fn state, this ->
+    fn state, _ ->
       case p.parse.(state, p) do
         %Success{} = success ->
           success
         %Failure{fatal: true} = failure ->
-          failure |> Failure.stack(this)
+          failure
         %Failure{} = failure ->
           case n.parse.(state, n) do
             %Success{} = success ->
@@ -148,7 +146,6 @@ defmodule Paco.Parser do
             %Failure{} = alternative_failure ->
               [failure, alternative_failure]
               |> compose_failures
-              |> Failure.stack(this)
           end
       end
     end
@@ -272,7 +269,7 @@ defmodule Paco.Parser do
 
 
   parser bind(box(p), f) when is_function(f) do
-    fn state, this ->
+    fn state, _ ->
       case p.parse.(state, p) do
         %Success{result: result} = success ->
           try do
@@ -284,10 +281,10 @@ defmodule Paco.Parser do
                         else
                           "error: #{inspect(reason)} %STACK% %AT%"
                         end
-              Failure.at(state, message: message) |> Failure.stack(this)
+              Failure.at(state, message: message)
           else
             %Failure{} = failure ->
-              failure |> Failure.stack(this)
+              failure
             %Success{} = success ->
               success
             result ->
@@ -380,12 +377,12 @@ defmodule Paco.Parser do
   end
 
   parser peek(box(p)) do
-    fn %State{at: at, chunks: chunks} = state, this ->
+    fn %State{at: at, chunks: chunks} = state, _ ->
       case p.parse.(state, p) do
         %Success{result: result} ->
           %Success{from: at, to: at, at: at, tail: chunks, result: result}
         %Failure{} = failure ->
-          failure |> Failure.stack(this)
+          failure
       end
     end
   end
@@ -421,12 +418,12 @@ defmodule Paco.Parser do
   parser repeat(p, n) when is_integer(n), to: repeat(p, {n, n})
   parser repeat(p, opts) when is_list(opts), to: repeat(p, extract_limits(opts))
   parser repeat(box(p), {at_least, at_most}) do
-    fn %State{at: from, chunks: chunks} = state, this ->
+    fn %State{at: from, chunks: chunks} = state, _ ->
       case unfold_repeat(p, state, at_most) do
         {_, _, %Failure{fatal: true} = failure} ->
-          failure |> Failure.stack(this)
+          failure
         {n, _, failure} when n < at_least ->
-          failure |> Failure.stack(this)
+          failure
         {0, _, _} ->
           %Success{from: from, to: from, at: from, tail: chunks, result: []}
         {_, successes, _} ->
@@ -465,13 +462,25 @@ defmodule Paco.Parser do
 
 
   parser fail_with(p, message) do
-    fn state, this ->
+    fn state, _ ->
       case p.parse.(state, p) do
         %Success{} = success ->
           success
         %Failure{} = failure ->
           %Failure{failure|message: message}
-          |> Failure.stack(this)
+      end
+    end
+  end
+
+
+
+  parser as(box(p), description) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{} = success ->
+          success
+        %Failure{} = failure ->
+          failure |> Failure.stack(description)
       end
     end
   end
@@ -546,12 +555,12 @@ defmodule Paco.Parser do
 
 
   parser sequence_of(box_each(ps)) do
-    fn %State{at: from} = state, this ->
+    fn %State{at: from} = state, _ ->
       case reduce_sequence_of(ps, state, from) do
         {%State{at: at, chunks: chunks}, to, results, _} ->
           %Success{from: from, to: to, at: at, tail: chunks, result: Enum.reverse(results)}
         %Failure{} = failure ->
-          failure |> Failure.stack(this)
+          failure
       end
     end
   end
@@ -591,14 +600,14 @@ defmodule Paco.Parser do
 
 
   parser one_of(box_each(ps)) do
-    fn %State{at: at, chunks: chunks} = state, this ->
+    fn %State{at: at, chunks: chunks} = state, _ ->
       case reduce_one_of(ps, state) do
         [] ->
           %Success{from: at, to: at, at: at, tail: chunks, skip: true}
         %Success{} = success ->
           success
         failures ->
-          compose_failures(failures) |> Failure.stack(this)
+          compose_failures(failures)
       end
     end
   end
@@ -668,8 +677,7 @@ defmodule Paco.Parser do
         nil when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         nil ->
-          %Failure{at: from, tail: [{from, text}|chunks],
-                   expected: {:re, r}, stack: Failure.stack(this)}
+          %Failure{at: from, tail: [{from, text}|chunks], expected: {:re, r}}
       end
     end
   end
@@ -706,8 +714,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, _} when is_pid(stream) ->
           wait_for_more_and_continue(state, this)
         {_, _, _, _, {n, _, _}} ->
-          %Failure{at: from, tail: [{from, text}|chunks], expected: s,
-                   stack: Failure.stack(this), rank: n+1}
+          %Failure{at: from, tail: [{from, text}|chunks], expected: s, rank: n+1}
       end
     end
   end
@@ -732,7 +739,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, {n, _, _}} ->
           %Failure{at: from, tail: [{from, text}|chunks],
                    expected: {:any, at_least, at_most},
-                   rank: n, stack: Failure.stack(this)}
+                   rank: n}
       end
     end
   end
@@ -756,8 +763,7 @@ defmodule Paco.Parser do
           wait_for_more_and_continue(state, this)
         {:not_enough, _, _, _, {n, _, _}} ->
           %Failure{at: from, tail: [{from, text}|chunks],
-                   expected: {:until, p}, rank: n,
-                   stack: Failure.stack(this)}
+                   expected: {:until, p}, rank: n}
       end
     end
   end
@@ -795,7 +801,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, {n, _, _}} ->
           %Failure{at: from, tail: [{from, text}|chunks],
                    expected: {:while, p, at_least, at_most},
-                   rank: n, stack: Failure.stack(this)}
+                   rank: n}
       end
     end
   end
@@ -829,7 +835,7 @@ defmodule Paco.Parser do
         {:not_enough, _, _, _, {n, _, _}} ->
           %Failure{at: from, tail: [{from, text}|chunks],
                    expected: {:while_not, p, at_least, at_most},
-                   rank: n, stack: Failure.stack(this)}
+                   rank: n}
       end
     end
   end

@@ -19,7 +19,7 @@ defmodule Paco.Macro.ParserDefinition do
             %Paco.Success{} = success ->
               success
             %Paco.Failure{} = failure ->
-              failure |> Paco.Failure.stack(this)
+              failure
           end
         end
       end
@@ -104,7 +104,7 @@ defmodule Paco.Macro.ParserModuleDefinition do
                 %Paco.Success{} = success ->
                   success
                 %Paco.Failure{} = failure ->
-                  failure |> Paco.Failure.stack(parser)
+                  failure |> Paco.Failure.stack(unquote(name))
               end
             _ ->
               raise RuntimeError, message: "Expected a %Paco.Parser"
