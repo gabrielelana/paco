@@ -644,62 +644,52 @@ defmodule Paco.Parser do
 
 
 
-  # parser re(r) do
-  #   fn %State{stream: stream} = state, this ->
-  #     [{from, text}|chunks] = State.chunks_from(state)
-  #     case Regex.run(anchor(r), text, return: :index) do
-  #       [{_, n}] ->
-  #         case Paco.String.seek(text, n, from) do
-  #           {"", _, _, _} when is_pid(stream) ->
-  #             wait_for_more_and_continue(state, this)
-  #           {"", consumed, to, at} ->
-  #             %Success{from: from, to: to, at: at,
-  #                      tail: chunks, result: consumed}
-  #           {tail, consumed, to, at} ->
-  #             %Success{from: from, to: to, at: at,
-  #                      tail: [{at, tail}|chunks], result: consumed}
-  #         end
-  #       [{_, n}|captures] ->
-  #         case Paco.String.seek(text, n, from) do
-  #           {"", _, _, _} when is_pid(stream) ->
-  #             wait_for_more_and_continue(state, this)
-  #           {"", consumed, to, at} ->
-  #             captures = extract_captures(r, captures, text)
-  #             %Success{from: from, to: to, at: at,
-  #                      tail: chunks,
-  #                      result: {consumed, captures}}
-  #           {tail, consumed, to, at} ->
-  #             captures = extract_captures(r, captures, text)
-  #             %Success{from: from, to: to, at: at,
-  #                      tail: [{at, tail}|chunks],
-  #                      result: {consumed, captures}}
-  #         end
-  #       nil when is_pid(stream) ->
-  #         wait_for_more_and_continue(state, this)
-  #       nil ->
-  #         %Failure{at: from, tail: [{from, text}|chunks], expected: {:re, r}}
-  #     end
-  #   end
-  # end
+  parser re(r) do
+    fn %State{at: from, text: text, stream: stream} = state, this ->
+      case Regex.run(anchor(r), text, return: :index) do
+        [{_, n}] ->
+          case Paco.String.seek(text, n, from) do
+            {"", _, _, _} when is_pid(stream) ->
+              wait_for_more_and_continue(state, this)
+            {tail, consumed, to, at} ->
+              %Success{from: from, to: to, at: at,
+                       tail: tail, result: consumed}
+          end
+        [{_, n}|captures] ->
+          case Paco.String.seek(text, n, from) do
+            {"", _, _, _} when is_pid(stream) ->
+              wait_for_more_and_continue(state, this)
+            {tail, consumed, to, at} ->
+              captures = extract_captures(r, captures, text)
+              %Success{from: from, to: to, at: at,
+                       tail: tail, result: {consumed, captures}}
+          end
+        nil when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        nil ->
+          %Failure{at: from, tail: text, expected: {:re, r}}
+      end
+    end
+  end
 
-  # defp extract_captures(r, captures, text) do
-  #   case Regex.names(r) do
-  #     [] ->
-  #       captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
-  #     _ ->
-  #       Regex.named_captures(r, text)
-  #   end
-  # end
+  defp extract_captures(r, captures, text) do
+    case Regex.names(r) do
+      [] ->
+        captures |> Enum.map(fn({from, len}) -> String.slice(text, from, len) end)
+      _ ->
+        Regex.named_captures(r, text)
+    end
+  end
 
-  # defp anchor(r) do
-  #   source = Regex.source(r)
-  #   if String.starts_with?(source, "\\A") do
-  #     r
-  #   else
-  #     {:ok, r} = Regex.compile("\\A#{source}")
-  #     r
-  #   end
-  # end
+  defp anchor(r) do
+    source = Regex.source(r)
+    if String.starts_with?(source, "\\A") do
+      r
+    else
+      {:ok, r} = Regex.compile("\\A#{source}")
+      r
+    end
+  end
 
 
 
