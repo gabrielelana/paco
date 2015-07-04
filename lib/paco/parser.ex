@@ -130,29 +130,6 @@ defmodule Paco.Parser do
 
 
 
-
-  # parser otherwise(p, f) when is_function(f), to: otherwise(p, f.(p))
-  # parser otherwise(box(p), box(n)) do
-  #   fn state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{} = success ->
-  #         success
-  #       %Failure{fatal: true} = failure ->
-  #         failure
-  #       %Failure{} = failure ->
-  #         case n.parse.(state, n) do
-  #           %Success{} = success ->
-  #             success
-  #           %Failure{} = alternative_failure ->
-  #             [failure, alternative_failure]
-  #             |> compose_failures
-  #         end
-  #     end
-  #   end
-  # end
-
-
-
   # parser within(box(inner), box(outer)) do
   #   outer = capture(outer)
   #   fn state, _ ->
@@ -211,6 +188,29 @@ defmodule Paco.Parser do
   #       failure
   #   end
   # end
+
+
+
+
+  parser otherwise(p, f) when is_function(f), to: otherwise(p, f.(p))
+  parser otherwise(box(p), box(n)) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{} = success ->
+          success
+        %Failure{fatal: true} = failure ->
+          failure
+        %Failure{} = failure ->
+          case n.parse.(state, n) do
+            %Success{} = success ->
+              success
+            %Failure{} = alternative_failure ->
+              [failure, alternative_failure]
+              |> compose_failures
+          end
+      end
+    end
+  end
 
 
 
