@@ -1,5 +1,5 @@
 /_build
 /deps
-/examples/XX_*.ex
+/examples/XX_*.exs
 erl_crash.dump
 *.ez
