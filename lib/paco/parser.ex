@@ -268,33 +268,33 @@ defmodule Paco.Parser do
 
 
 
-  # parser bind(box(p), f) when is_function(f) do
-  #   fn state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{result: result} = success ->
-  #         try do
-  #           call_arity_wise(f, result, success, State.update(state, success))
-  #         catch
-  #           :error, reason ->
-  #             message = if Exception.exception?(reason) do
-  #                         "exception: #{Exception.message(reason)} %STACK% %AT%"
-  #                       else
-  #                         "error: #{inspect(reason)} %STACK% %AT%"
-  #                       end
-  #             Failure.at(state, message: message)
-  #         else
-  #           %Failure{} = failure ->
-  #             failure
-  #           %Success{} = success ->
-  #             success
-  #           result ->
-  #             %Success{success|result: result}
-  #         end
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser bind(box(p), f) when is_function(f) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{result: result} = success ->
+          try do
+            call_arity_wise(f, result, success, State.update(state, success))
+          catch
+            :error, reason ->
+              message = if Exception.exception?(reason) do
+                          "exception: #{Exception.message(reason)} %STACK% %AT%"
+                        else
+                          "error: #{inspect(reason)} %STACK% %AT%"
+                        end
+              Failure.at(state, message: message)
+          else
+            %Failure{} = failure ->
+              failure
+            %Success{} = success ->
+              success
+            result ->
+              %Success{success|result: result}
+          end
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
 
   # parser pair(l, r, opts \\ []),
@@ -837,12 +837,12 @@ defmodule Paco.Parser do
     end
   end
 
-  # defp call_arity_wise(f, result, success, state) do
-  #   {:arity, arity} = :erlang.fun_info(f, :arity)
-  #   case arity do
-  #     1 -> f.(result)
-  #     2 -> f.(result, success)
-  #     3 -> f.(result, success, state)
-  #   end
-  # end
+  defp call_arity_wise(f, result, success, state) do
+    {:arity, arity} = :erlang.fun_info(f, :arity)
+    case arity do
+      1 -> f.(result)
+      2 -> f.(result, success)
+      3 -> f.(result, success, state)
+    end
+  end
 end

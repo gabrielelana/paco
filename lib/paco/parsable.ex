@@ -22,42 +22,42 @@ defimpl Paco.Parsable, for: BitString do
   end
 end
 
-# defimpl Paco.Parsable, for: Atom do
-#   import Paco.Parser
-#   def to_parser(a) do
-#     lit(Atom.to_string(a))
-#     |> bind(&String.to_atom/1)
-#   end
-# end
+defimpl Paco.Parsable, for: Atom do
+  import Paco.Parser
+  def to_parser(a) do
+    lit(Atom.to_string(a))
+    |> bind(&String.to_atom/1)
+  end
+end
 
-# defimpl Paco.Parsable, for: Tuple do
-#   import Paco.Parser
-#   def to_parser(tuple) do
-#     sequence_of(Tuple.to_list(tuple))
-#     |> bind(&List.to_tuple/1)
-#   end
-# end
+defimpl Paco.Parsable, for: Tuple do
+  import Paco.Parser
+  def to_parser(tuple) do
+    sequence_of(Tuple.to_list(tuple))
+    |> bind(&List.to_tuple/1)
+  end
+end
 
-# defimpl Paco.Parsable, for: List do
-#   import Paco.Parser
-#   def to_parser(list) do
-#     if Inspect.List.keyword? list do
-#       to_parser_for_keyword(list)
-#     else
-#       to_parser_for_list(list)
-#     end
-#   end
+defimpl Paco.Parsable, for: List do
+  import Paco.Parser
+  def to_parser(list) do
+    if Inspect.List.keyword? list do
+      to_parser_for_keyword(list)
+    else
+      to_parser_for_list(list)
+    end
+  end
 
-#   defp to_parser_for_keyword(list) do
-#     {keys, values} = {Keyword.keys(list), Keyword.values(list)}
-#     sequence_of(values)
-#     |> bind(&(Enum.zip(keys, &1) |> Enum.into(Keyword.new)))
-#   end
+  defp to_parser_for_keyword(list) do
+    {keys, values} = {Keyword.keys(list), Keyword.values(list)}
+    sequence_of(values)
+    |> bind(&(Enum.zip(keys, &1) |> Enum.into(Keyword.new)))
+  end
 
-#   defp to_parser_for_list(list) do
-#     sequence_of(list)
-#   end
-# end
+  defp to_parser_for_list(list) do
+    sequence_of(list)
+  end
+end
 
 # defimpl Paco.Parsable, for: Map do
 #   import Paco.Parser
