@@ -109,10 +109,7 @@ defmodule Paco.Parser.UntilTest do
 
     long_text = "aaa\n" <> String.duplicate("a", 1_000)
     assert parse(parser, long_text) == {:error,
-      """
-      expected something ended by "c" at 1:1 but got \
-      "aaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..."\
-      """
+      ~s|expected something ended by "c" at 1:1 but got "aaa"|
     }
   end
 

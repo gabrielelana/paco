@@ -156,9 +156,10 @@ defmodule Paco.Failure do
   end
   defp format_tail(tail, _) do
     tail = Paco.String.line_at(tail, 0)
-    case String.length(tail) do
-      n when n > 21 -> quoted(String.slice(tail, 0, 42) <> "...")
-      _             -> quoted(tail)
+    if String.length(tail) > 45 do
+      quoted(String.slice(tail, 0, 42) <> "...")
+    else
+      quoted(tail)
     end
   end
 
