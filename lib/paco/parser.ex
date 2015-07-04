@@ -307,33 +307,33 @@ defmodule Paco.Parser do
 
 
 
-  # parser quoted_by(q), to: quoted_by(q, [])
+  parser quoted_by(q), to: quoted_by(q, [])
 
-  # parser quoted_by(q, opts) when is_binary(q),
-  #   to: between(q, q, opts)
-  # parser quoted_by(qs, opts) when is_list(qs),
-  #   to: one_of(Enum.map(qs, fn(q) -> between(q, q, opts) end))
-
-
-
-  # parser between({l, r}), to: between(l, r, [])
-  # parser between(d), to: between(d, d, [])
-
-  # parser between({l, r}, opts) when is_list(opts), to: between(l, r, opts)
-  # parser between(d, opts) when is_list(opts), to: between(d, d, opts)
-  # parser between(l, r), to: between(l, r, [])
-
-  # parser between(l, r, opts) when is_binary(l) and is_binary(r), to: (
-  #   sequence_of([skip(maybe(whitespaces)),
-  #                skip(lit(l)),
-  #                until(r, Keyword.merge(opts, [eof: true])),
-  #                skip(lit(r)),
-  #                skip(maybe(whitespaces))])
-  #   |> bind(&map_between(&1, Keyword.get(opts, :strip, true))))
+  parser quoted_by(q, opts) when is_binary(q),
+    to: between(q, q, opts)
+  parser quoted_by(qs, opts) when is_list(qs),
+    to: one_of(Enum.map(qs, fn(q) -> between(q, q, opts) end))
 
 
-  # defp map_between(result, false), do: (result |> List.first)
-  # defp map_between(result, true), do: (result |> List.first |> String.strip)
+
+  parser between({l, r}), to: between(l, r, [])
+  parser between(d), to: between(d, d, [])
+
+  parser between({l, r}, opts) when is_list(opts), to: between(l, r, opts)
+  parser between(d, opts) when is_list(opts), to: between(d, d, opts)
+  parser between(l, r), to: between(l, r, [])
+
+  parser between(l, r, opts) when is_binary(l) and is_binary(r), to: (
+    sequence_of([skip(maybe(whitespaces)),
+                 skip(lit(l)),
+                 until(r, Keyword.merge(opts, [eof: true])),
+                 skip(lit(r)),
+                 skip(maybe(whitespaces))])
+    |> bind(&map_between(&1, Keyword.get(opts, :strip, true))))
+
+
+  defp map_between(result, false), do: (result |> List.first)
+  defp map_between(result, true), do: (result |> List.first |> String.strip)
 
 
   parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
