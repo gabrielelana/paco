@@ -504,37 +504,37 @@ defmodule Paco.Parser do
 
 
 
-  # parser skip(box(p), opts \\ []) do
-  #   skip_if_empty = Keyword.get(opts, :if_empty, false)
-  #   fn state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{keep: true} = success ->
-  #         %Success{success|keep: false}
-  #       %Success{from: {n, _, _}, at: {m, _, _}} = success
-  #         when skip_if_empty and m > n ->
-  #         success
-  #       %Success{} = success ->
-  #         %Success{success|skip: true}
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser skip(box(p), opts \\ []) do
+    skip_if_empty = Keyword.get(opts, :if_empty, false)
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{keep: true} = success ->
+          %Success{success|keep: false}
+        %Success{from: {n, _, _}, at: {m, _, _}} = success
+          when skip_if_empty and m > n ->
+          success
+        %Success{} = success ->
+          %Success{success|skip: true}
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
 
 
-  # parser keep(box(p)) do
-  #   fn state, _ ->
-  #     case p.parse.(state, p) do
-  #       %Success{skip: true} = success ->
-  #         %Success{success|skip: false}
-  #       %Success{} = success ->
-  #         %Success{success|keep: true}
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser keep(box(p)) do
+    fn state, _ ->
+      case p.parse.(state, p) do
+        %Success{skip: true} = success ->
+          %Success{success|skip: false}
+        %Success{} = success ->
+          %Success{success|keep: true}
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
 
 
@@ -599,48 +599,48 @@ defmodule Paco.Parser do
 
 
 
-  # parser one_of(box_each(ps)) do
-  #   fn %State{at: at, chunks: chunks} = state, _ ->
-  #     case reduce_one_of(ps, state) do
-  #       [] ->
-  #         %Success{from: at, to: at, at: at, tail: chunks, skip: true}
-  #       %Success{} = success ->
-  #         success
-  #       failures ->
-  #         compose_failures(failures)
-  #     end
-  #   end
-  # end
+  parser one_of(box_each(ps)) do
+    fn %State{at: at, text: text} = state, this ->
+      case reduce_one_of(ps, state) do
+        [] ->
+          %Success{from: at, to: at, at: at, tail: text, skip: true}
+        %Success{} = success ->
+          success
+        failures ->
+          compose_failures(failures)
+      end
+    end
+  end
 
-  # defp reduce_one_of(ps, state) do
-  #   Enum.reduce(ps, {state, []}, &reduce_one_of_each/2) |> elem(1)
-  # end
+  defp reduce_one_of(ps, state) do
+    Enum.reduce(ps, {state, []}, &reduce_one_of_each/2) |> elem(1)
+  end
 
-  # defp reduce_one_of_each(_, {_, [%Failure{fatal: true}]} = failure), do: failure
-  # defp reduce_one_of_each(_, {_, %Success{}} = success), do: success
-  # defp reduce_one_of_each(p, {state, failures}) do
-  #   case p.parse.(state, p) do
-  #     %Success{} = success -> {state, success}
-  #     %Failure{fatal: true} = failure -> {state, [failure]}
-  #     %Failure{} = failure -> {state, [failure|failures]}
-  #   end
-  # end
+  defp reduce_one_of_each(_, {_, [%Failure{fatal: true}]} = failure), do: failure
+  defp reduce_one_of_each(_, {_, %Success{}} = success), do: success
+  defp reduce_one_of_each(p, {state, failures}) do
+    case p.parse.(state, p) do
+      %Success{} = success -> {state, success}
+      %Failure{fatal: true} = failure -> {state, [failure]}
+      %Failure{} = failure -> {state, [failure|failures]}
+    end
+  end
 
-  # defp compose_failures(failures) do
-  #   Enum.reduce(failures, nil, &compose_failures/2)
-  # end
+  defp compose_failures(failures) do
+    Enum.reduce(failures, nil, &compose_failures/2)
+  end
 
-  # defp compose_failures(failure, nil),
-  #                       do: failure
-  # defp compose_failures(%Failure{rank: n} = failure,
-  #                       %Failure{rank: m})
-  #                         when n > m,
-  #                       do: failure
-  # defp compose_failures(%Failure{rank: n} = fl,
-  #                       %Failure{rank: n} = fr),
-  #                       do: Failure.compose([fl, fr])
-  # defp compose_failures(_, failure),
-  #                       do: failure
+  defp compose_failures(failure, nil),
+                        do: failure
+  defp compose_failures(%Failure{rank: n} = failure,
+                        %Failure{rank: m})
+                          when n > m,
+                        do: failure
+  defp compose_failures(%Failure{rank: n} = fl,
+                        %Failure{rank: n} = fr),
+                        do: Failure.compose([fl, fr])
+  defp compose_failures(_, failure),
+                        do: failure
 
 
 
