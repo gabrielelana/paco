@@ -704,19 +704,6 @@ defmodule Paco.Parser do
 
 
   parser lit(s) do
-    # fn %State{stream: stream} = state, this ->
-    #   [{from, text}|chunks] = State.chunks_from(state)
-    #   case Paco.String.consume(text, s, from) do
-    #     {"", _, to, at} ->
-    #       %Success{from: from, to: to, at: at, tail: chunks, result: s}
-    #     {tail, _, to, at} ->
-    #       %Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: s}
-    #     {:not_enough, _, _, _, _} when is_pid(stream) ->
-    #       wait_for_more_and_continue(state, this)
-    #     {_, _, _, _, {n, _, _}} ->
-    #       %Failure{at: from, tail: [{from, text}|chunks], expected: s, rank: n+1}
-    #   end
-    # end
     fn %State{at: from, text: text, stream: stream} = state, this ->
       case Paco.String.consume(text, s, from) do
         {tail, _, to, at} ->
@@ -790,28 +777,25 @@ defmodule Paco.Parser do
 
 
 
-  # parser while(p), to: while(p, {0, :infinity})
-  # parser while(p, n) when is_integer(n), to: while(p, {n, n})
-  # parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
-  # parser while(p, {at_least, at_most}) do
-  #   fn %State{stream: stream} = state, this ->
-  #     [{from, text}|chunks] = State.chunks_from(state)
-  #     case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
-  #       {"", _, _, _} when is_pid(stream) ->
-  #         wait_for_more_and_continue(state, this)
-  #       {"", consumed, to, at} ->
-  #         %Success{from: from, to: to, at: at, tail: chunks, result: consumed}
-  #       {tail, consumed, to, at} ->
-  #         %Success{from: from, to: to, at: at, tail: [{at, tail}|chunks], result: consumed}
-  #       {:not_enough, "", _, _, _} when is_pid(stream) ->
-  #         wait_for_more_and_continue(state, this)
-  #       {:not_enough, _, _, _, {n, _, _}} ->
-  #         %Failure{at: from, tail: [{from, text}|chunks],
-  #                  expected: {:while, p, at_least, at_most},
-  #                  rank: n}
-  #     end
-  #   end
-  # end
+  parser while(p), to: while(p, {0, :infinity})
+  parser while(p, n) when is_integer(n), to: while(p, {n, n})
+  parser while(p, opts) when is_list(opts), to: while(p, extract_limits(opts))
+  parser while(p, {at_least, at_most}) do
+    fn %State{at: from, text: text, stream: stream} = state, this ->
+      case Paco.String.consume_while(text, p, {at_least, at_most}, from) do
+        {"", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {tail, consumed, to, at} ->
+          %Success{from: from, to: to, at: at, tail: tail, result: consumed}
+        {:not_enough, "", _, _, _} when is_pid(stream) ->
+          wait_for_more_and_continue(state, this)
+        {:not_enough, _, _, _, {n, _, _}} ->
+          %Failure{at: from, tail: text,
+                   expected: {:while, p, at_least, at_most},
+                   rank: n}
+      end
+    end
+  end
 
 
 
