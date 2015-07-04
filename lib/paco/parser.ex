@@ -111,25 +111,6 @@ defmodule Paco.Parser do
 
 
 
-  # parser line, to: line([])
-  # parser line(opts) when is_list(opts), to: (
-  #   p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
-  #       |> capture
-  #   p = if Keyword.get(opts, :skip_empty, false) do
-  #         p |> followed_by(many(one_of(Paco.ASCII.nl)))
-  #           |> preceded_by(many(one_of(Paco.ASCII.nl)))
-  #           |> bind(fn([{_, ""}], success) -> %Success{success|skip: true}
-  #                     (_        , success) -> success
-  #                   end)
-  #       else
-  #         p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
-  #       end
-  #   p |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
-  # parser line(p), to: within(p, line([]))
-  # parser line(p, opts), to: within(p, line(opts))
-
-
-
   # parser within(box(inner), box(outer)) do
   #   outer = capture(outer)
   #   fn state, _ ->
@@ -189,6 +170,23 @@ defmodule Paco.Parser do
   #   end
   # end
 
+
+
+  # parser line, to: line([])
+  # parser line(opts) when is_list(opts), to: (
+  #   p = until(Paco.ASCII.nl, Keyword.put(opts, :eof, true))
+  #   p = if Keyword.get(opts, :skip_empty, false) do
+  #         p |> followed_by(many(one_of(Paco.ASCII.nl)))
+  #           |> preceded_by(many(one_of(Paco.ASCII.nl)))
+  #           |> bind(fn([{_, ""}], success) -> %Success{success|skip: true}
+  #                     (_        , success) -> success
+  #                   end)
+  #       else
+  #         p |> followed_by(maybe(one_of(Paco.ASCII.nl)))
+  #       end
+  #   p |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
+  # parser line(p), to: within(p, line([]))
+  # parser line(p, opts), to: within(p, line(opts))
 
 
 
@@ -536,19 +534,19 @@ defmodule Paco.Parser do
 
 
 
-  # parser only_if(p, f), to:
-  #   bind(p, fn(result, success, state) ->
-  #             case call_arity_wise(f, result, success, state) do
-  #               true ->
-  #                 success
-  #               false ->
-  #                 message = "#{inspect(result)} is not acceptable %STACK% %AT%"
-  #                 %Failure{at: success.from, tail: success.tail, message: message}
-  #               {false, message} ->
-  #                 message = String.replace(message, "%RESULT%", inspect(result))
-  #                 %Failure{at: success.from, tail: success.tail, message: message}
-  #             end
-  #           end)
+  parser only_if(p, f), to:
+    bind(p, fn(result, success, state) ->
+              case call_arity_wise(f, result, success, state) do
+                true ->
+                  success
+                false ->
+                  message = "#{inspect(result)} is not acceptable %STACK% %AT%"
+                  %Failure{at: success.from, tail: success.tail, message: message}
+                {false, message} ->
+                  message = String.replace(message, "%RESULT%", inspect(result))
+                  %Failure{at: success.from, tail: success.tail, message: message}
+              end
+            end)
 
 
 
