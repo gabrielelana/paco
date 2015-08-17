@@ -244,6 +244,12 @@ defmodule Paco.Parser do
     end
   end
 
+  parser empty do
+    fn %State{at: at, text: text}, _ ->
+      %Success{from: at, to: at, at: at, tail: text, result: ""}
+    end
+  end
+
   parser eof do
     fn
       %State{at: at, text: ""}, _ ->
