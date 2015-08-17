@@ -437,8 +437,11 @@ defmodule Paco.Parser do
 
   parser sequence_of(box_each(ps)) do
     fn %State{at: from} = state, _ ->
-      case reduce_sequence_of(ps, state, from) do
-        {%State{at: at, text: text}, to, results, _} ->
+      case reduce_sequence_of(ps, state) do
+        {%State{at: at, text: text}, {nil, to}, results, _} ->
+          %Success{from: from, to: to, at: at, tail: text,
+                   result: Enum.reverse(results)}
+        {%State{at: at, text: text}, {from, to}, results, _} ->
           %Success{from: from, to: to, at: at, tail: text,
                    result: Enum.reverse(results)}
         %Failure{} = failure ->
@@ -447,25 +450,29 @@ defmodule Paco.Parser do
     end
   end
 
-  defp reduce_sequence_of(ps, state, from) do
-    Enum.reduce(ps, {state, from, [], {false, false}}, &reduce_sequence_of/2)
+  defp reduce_sequence_of(ps, state) do
+    acc = {state, {nil, state.at}, [], {false, false}}
+    Enum.reduce(ps, acc, &do_reduce_sequence_of/2)
   end
 
-  defp reduce_sequence_of(_, %Failure{} = failure), do: failure
-  defp reduce_sequence_of(p, {state, at, results, {cut, sew}}) do
+  defp do_reduce_sequence_of(_, %Failure{} = failure), do: failure
+  defp do_reduce_sequence_of(p, {state, {sf, et}, results, {cut, sew}}) do
     case p.parse.(state, p) do
-      %Success{from: ^at, to: ^at, at: ^at, skip: true} = success ->
+      %Success{from: ^et, to: ^et, at: ^et, skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
-        {state, at, results, {cut, sew}}
-      %Success{from: ^at, to: ^at, at: ^at, result: result} = success ->
+        {state, {sf, et}, results, {cut, sew}}
+      %Success{from: ^et, to: ^et, at: ^et, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
-        {state, at, [result|results], {cut, sew}}
-      %Success{to: to, skip: true} = success ->
+        {state, {sf, et}, [result|results], {cut, sew}}
+      %Success{skip: true} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
-        {State.update(state, success), to, results, {cut, sew}}
+        {State.update(state, success), {sf, et}, results, {cut, sew}}
+      %Success{from: from, to: to, result: result} = success when sf == nil ->
+        {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
+        {State.update(state, success), {from, to}, [result|results], {cut, sew}}
       %Success{to: to, result: result} = success ->
         {cut, sew} = cut_and_sew(success.cut, success.sew, cut, sew)
-        {State.update(state, success), to, [result|results], {cut, sew}}
+        {State.update(state, success), {sf, to}, [result|results], {cut, sew}}
       %Failure{} = failure when cut ->
         %Failure{failure|fatal: true}
       %Failure{} = failure ->

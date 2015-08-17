@@ -123,7 +123,7 @@ defmodule Paco.Parser.SequenceOfTest do
     assert success.tail == "c"
   end
 
-  test "doesn't consume input on failure" do
+  test "does not consume input on failure" do
     parser = sequence_of([lit("a"), lit("b")])
     failure = parser.parse.(Paco.State.from("bbb"), parser)
     assert failure.at == {0, 1, 1}
@@ -135,5 +135,19 @@ defmodule Paco.Parser.SequenceOfTest do
     failure = parser.parse.(Paco.State.from("aa"), parser)
     assert failure.at == {1, 1, 2}
     assert failure.tail == "a"
+  end
+
+  test "does not include head skips in success coordinates" do
+    parser = sequence_of([skip(lit("a")), lit("b")])
+    success = parser.parse.(Paco.State.from("abc"), parser)
+    assert success.from == {1, 1, 2}
+    assert success.to == {1, 1, 2}
+  end
+
+  test "does not include tail skips in success coordinates" do
+    parser = sequence_of([lit("a"), skip(lit("b"))])
+    success = parser.parse.(Paco.State.from("abc"), parser)
+    assert success.from == {0, 1, 1}
+    assert success.to == {0, 1, 1}
   end
 end

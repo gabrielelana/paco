@@ -51,4 +51,9 @@ defmodule Paco.Parser.LineTest do
     parser = line(lit("aaa"), skip_empty: true)
     assert %Paco.Success{tail: "a\n"} = parse(parser, "aaa\n\na\n", format: :raw)
   end
+
+  test "keeps skipped what the inner parser skips at the beginning" do
+    parser = line(lit("aaa") |> preceded_by("b"))
+    assert %Paco.Success{from: {1, 1, 2}} = parse(parser, "baaa", format: :raw)
+  end
 end
