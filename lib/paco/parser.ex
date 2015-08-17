@@ -200,11 +200,11 @@ defmodule Paco.Parser do
   parser between(l, r), to: between(l, r, [])
 
   parser between(l, r, opts) when is_binary(l) and is_binary(r), to: (
-    sequence_of([skip(maybe(whitespaces)),
+    sequence_of([skip(while(Paco.ASCII.blank)),
                  skip(lit(l)),
                  until(r, Keyword.merge(opts, [eof: true])),
                  skip(lit(r)),
-                 skip(maybe(whitespaces))])
+                 skip(while(Paco.ASCII.blank))])
     |> bind(&map_between(&1, Keyword.get(opts, :strip, true))))
 
 
