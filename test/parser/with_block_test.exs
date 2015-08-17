@@ -13,7 +13,7 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, "a"}
   end
 
-  test "parse indented block of one line" do
+  test "parse indented block (2 spaces)" do
     block = fn gap -> lit("b") |> preceded_by(gap) end
     parser = lit("a") |> with_block(block)
     text = """
@@ -23,17 +23,7 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, {"a", "b"}}
   end
 
-  test "parse tab indented block" do
-    block = fn gap -> lit("b") |> preceded_by(gap) end
-    parser = lit("a") |> with_block(block)
-    text = """
-           a
-           \tb
-           """
-    assert parse(parser, text) == {:ok, {"a", "b"}}
-  end
-
-  test "parse four spaces indented block" do
+  test "parse indented block (4 spaces)" do
     block = fn gap -> lit("b") |> preceded_by(gap) end
     parser = lit("a") |> with_block(block)
     text = """
@@ -43,7 +33,17 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, {"a", "b"}}
   end
 
-  test "parse indented block of few lines" do
+  test "parse indented block (1 tab)" do
+    block = fn gap -> lit("b") |> preceded_by(gap) end
+    parser = lit("a") |> with_block(block)
+    text = """
+           a
+           \tb
+           """
+    assert parse(parser, text) == {:ok, {"a", "b"}}
+  end
+
+  test "parse indented block with few lines" do
     block = fn gap ->
               many(line(lit("b") |> preceded_by(gap)))
             end
@@ -71,7 +71,7 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, {"a", ["b", "b"]}}
   end
 
-  test "parse indented blocks that contains indented blocks" do
+  test "parse sequence of recursively indented blocks" do
     block = fn block ->
               fn gap ->
                 many(line(lit("b") |> preceded_by(gap)))
@@ -96,7 +96,7 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 
-  test "failure inside the block depends on the parser" do
+  test "failure depends on the inner parser" do
     text = """
            a
              c
