@@ -16,17 +16,17 @@ defmodule Paco.Parser do
 
 
 
-  parser with_block(box(h), f) do
+  parser with_block(box(ph), f) do
     fn state, _ ->
-      case h.parse.(state, h) do
+      case ph.parse.(state, ph) do
         %Success{from: {_, _, hc}} = header ->
           state = State.update(state, header)
           # TODO: ensure we are at the first column `at_column(p, 1)`
-          gap = while(&Paco.ASCII.ws?/1) |> preceded_by(while(&Paco.ASCII.nl?/1))
-          case gap.parse.(state, gap) do
+          pg = while(Paco.ASCII.blank) |> preceded_by(while(Paco.ASCII.nl))
+          case pg.parse.(state, pg) do
             %Success{at: {_, _, bc}} when bc > hc ->
-              block = peek(while(&Paco.ASCII.ws?/1))
-                      |> preceded_by(while(&Paco.ASCII.nl?/1))
+              block = peek(while(Paco.ASCII.blank))
+                      |> preceded_by(while(Paco.ASCII.nl))
                       |> next(f)
               case block.parse.(state, block) do
                 %Success{result: result} = success ->
