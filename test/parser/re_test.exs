@@ -55,7 +55,7 @@ defmodule Paco.Parser.RegexTest do
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
     assert success.at == {3, 1, 4}
-    assert success.tail == [{success.at, "bbb"}]
+    assert success.tail == "bbb"
   end
 
   test "increment indexes for a match with newlines" do
@@ -64,7 +64,7 @@ defmodule Paco.Parser.RegexTest do
     assert success.from == {0, 1, 1}
     assert success.to == {5, 3, 2}
     assert success.at == {6, 4, 1}
-    assert success.tail == [{success.at, "bbb"}]
+    assert success.tail == "bbb"
   end
 
   test "increment indexes for a match with captures" do
@@ -73,7 +73,7 @@ defmodule Paco.Parser.RegexTest do
     assert success.from == {0, 1, 1}
     assert success.to == {2, 1, 3}
     assert success.at == {3, 1, 4}
-    assert success.tail == [{success.at, "bbb"}]
+    assert success.tail == "bbb"
   end
 
   test "increment indexes for a single character match" do
@@ -82,7 +82,7 @@ defmodule Paco.Parser.RegexTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {1, 1, 2}
-    assert success.tail == [{success.at, "aabbb"}]
+    assert success.tail == "aabbb"
   end
 
   test "increment indexes for an empty match" do
@@ -91,14 +91,14 @@ defmodule Paco.Parser.RegexTest do
     assert success.from == {0, 1, 1}
     assert success.to == {0, 1, 1}
     assert success.at == {0, 1, 1}
-    assert success.tail == [{success.at, "bbb"}]
+    assert success.tail == "bbb"
   end
 
   test "increment indexes for a failure" do
     parser = re(~r/a+/)
     failure = parser.parse.(Paco.State.from("bb"), parser)
     assert failure.at == {0, 1, 1}
-    assert failure.tail == [{failure.at, "bb"}]
+    assert failure.tail == "bb"
   end
 
   test "stream mode success" do

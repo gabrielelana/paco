@@ -11,25 +11,43 @@ defmodule Paco.Parser.WithBlockTest do
            a
            """
     assert parse(parser, text) == {:ok, "a"}
-
-    text = """
-           a
-           a
-           """
-    assert parse(parser, text) == {:ok, "a"}
   end
 
-  test "parse with indented block of one line" do
-    parser = lit("a") |> with_block(many(lit("b")))
+  test "parse indented block (2 spaces)" do
+    block = fn gap -> lit("b") |> preceded_by(gap) end
+    parser = lit("a") |> with_block(block)
     text = """
            a
              b
            """
-    assert parse(parser, text) == {:ok, {"a", ["b"]}}
+    assert parse(parser, text) == {:ok, {"a", "b"}}
   end
 
-  test "parse with indented block of few lines" do
-    parser = lit("a") |> with_block(many(lit("b")))
+  test "parse indented block (4 spaces)" do
+    block = fn gap -> lit("b") |> preceded_by(gap) end
+    parser = lit("a") |> with_block(block)
+    text = """
+           a
+               b
+           """
+    assert parse(parser, text) == {:ok, {"a", "b"}}
+  end
+
+  test "parse indented block (1 tab)" do
+    block = fn gap -> lit("b") |> preceded_by(gap) end
+    parser = lit("a") |> with_block(block)
+    text = """
+           a
+           \tb
+           """
+    assert parse(parser, text) == {:ok, {"a", "b"}}
+  end
+
+  test "parse indented block with few lines" do
+    block = fn gap ->
+              many(line(lit("b") |> preceded_by(gap)))
+            end
+    parser = lit("a") |> with_block(block)
     text = """
            a
              b
@@ -39,8 +57,11 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, {"a", ["b", "b", "b"]}}
   end
 
-  test "parse with indented block followed by a non indented line" do
-    parser = lit("a") |> with_block(many(lit("b")))
+  test "parse indented block followed by a non indented line" do
+    block = fn gap ->
+              many(line(lit("b") |> preceded_by(gap)))
+            end
+    parser = lit("a") |> with_block(block)
     text = """
            a
              b
@@ -50,56 +71,51 @@ defmodule Paco.Parser.WithBlockTest do
     assert parse(parser, text) == {:ok, {"a", ["b", "b"]}}
   end
 
-  test "lines inside the indented block could be further indented" do
-    parser = lit("a") |> with_block(many(lex("b")))
+  test "parse sequence of recursively indented blocks" do
+    block = fn block ->
+              fn gap ->
+                many(line(lit("b") |> preceded_by(gap)))
+                |> with_block(block.(block))
+              end
+            end
+    parser = lit("a") |> with_block(block.(block))
     text = """
            a
              b
                b
+                 b
            """
-    assert parse(parser, text) == {:ok, {"a", ["b", "b"]}}
+    assert parse(parser, text) == {:ok, {"a", {["b"], {["b"], ["b"]}}}}
   end
 
   test "fail to match the header" do
-    parser = lit("a") |> with_block(many(lit("b")))
+    parser = lit("a") |> with_block(lit("b"))
     text = """
            b
            """
     assert parse(parser, text) == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 
-  test "failure inside the block depends on the parser" do
-    # expecting exacly lit("b") will fail
-    parser = lit("a") |> with_block(lit("b"))
+  test "failure depends on the inner parser" do
     text = """
            a
              c
            """
+
+    # This will not fail because the the parser (many) of the indented body
+    # allows the body to be empty
+    block = fn gap -> many(lit("b") |> preceded_by(gap)) end
+    parser = lit("a") |> with_block(block)
+    assert parse(parser, text) == {:ok, {"a", []}}
+
+    # We could use the end of input, but the error is not very informative
+    parser = lit("a") |> with_block(block) |> followed_by(eof)
+    assert parse(parser, text) == {:error, ~s|expected the end of input at 2:1|}
+
+    # The best thing to do is to use the cut asserting that after the gap you
+    # must find what it is supposed to be in an indented block
+    block = fn gap -> many(lit("b") |> preceded_by(cut(gap))) end
+    parser = lit("a") |> with_block(block)
     assert parse(parser, text) == {:error, ~s|expected "b" at 2:3 but got "c"|}
-
-    # expecting many lit("b") isn't going to fail unless you know
-    # how many do you expect or you use the cut
-    parser = lit("a") |> with_block(many(lit("b")))
-    text = """
-           a
-             b
-             c
-           """
-    assert parse(parser, text) == {:ok, {"a", ["b"]}}
-  end
-
-  test "coordinates" do
-    parser = lit("a") |> with_block(many(lit("b")))
-    text = """
-           a
-             b
-             b
-           e
-           """
-    result = parse(parser, text, format: :raw)
-
-    assert result.from == {0, 1, 1}
-    assert result.to == {8, 3, 3}
-    assert result.at == {9, 3, 4}
   end
 end

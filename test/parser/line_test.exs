@@ -4,44 +4,56 @@ defmodule Paco.Parser.LineTest do
   import Paco
   import Paco.Parser
 
-  test "parse" do
-    assert parse(line, "aaa\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
-    assert parse(line, "aaa\n\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
-    assert parse(line, "aaa\r\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
-    assert parse(line, "\n") == {:ok, [{{0, 1, 1}, ""}]}
+  test "parse something that must be contained in a line" do
+    assert parse(line(lit("aaa")), "aaa\n") == {:ok, "aaa"}
+    assert parse(line(lit("aaa")), "aaa\r\n") == {:ok, "aaa"}
+    assert parse(line(empty), "\n") == {:ok, ""}
   end
 
   test "the end of input is a valid line terminator" do
-    assert parse(line, "aaa") == {:ok, [{{0, 1, 1}, "aaa"}]}
+    assert parse(line(lit("aaa")), "aaa") == {:ok, "aaa"}
   end
 
-  test "an empty string is not a line" do
-    assert parse(line, "") == {:error, "an empty string is not a line at 1:1"}
+  test "the line content must be completely specified" do
+    assert parse(line(lit("a")), "aaa\n") == {:error,
+      ~s|expected end of line at 1:2 but got "aa"|
+    }
   end
 
-  test "escape new lines" do
-    assert parse(line(escaped_with: "\\"), "aaa\\\na\n") == {:ok, [{{0, 1, 1}, "aaa\na"}]}
+  test "does not consumes following empty lines" do
+    parser = line(lit("aaa"))
+    assert %Paco.Success{tail: ""} = parse(parser, "aaa\n", format: :raw)
+    assert %Paco.Success{tail: "\n"} = parse(parser, "aaa\n\n", format: :raw)
+    assert %Paco.Success{tail: "\n\n"} = parse(parser, "aaa\n\n\n", format: :raw)
   end
 
-  test "skip empty lines" do
-    success = parse(line(skip_empty: true), "\n", format: :raw)
-    assert success.result == [{{1, 2, 1}, ""}]
-    assert success.skip
+  test "does not consumes preceding empty lines" do
+    assert parse(line(lit("aaa")), "\naaa") == {:error,
+      ~s|expected "aaa" at 1:1 but got "\naa"|
+    }
   end
 
-  test "skip empty lines skips following empty lines" do
-    assert parse(line(skip_empty: true), "aaa\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
-    assert parse(line(skip_empty: true), "aaa\n\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
-    assert parse(line(skip_empty: true), "aaa\n\n\n") == {:ok, [{{0, 1, 1}, "aaa"}]}
+  test "consumes and skips following empty lines when skip_empty" do
+    parser = line(lit("aaa"), skip_empty: true)
+    assert %Paco.Success{tail: ""} = parse(parser, "aaa\n", format: :raw)
+    assert %Paco.Success{tail: ""} = parse(parser, "aaa\n\n", format: :raw)
+    assert %Paco.Success{tail: ""} = parse(parser, "aaa\n\n\n", format: :raw)
   end
 
-  test "skip empty lines skips preceding empty lines" do
-    assert parse(line(skip_empty: true), "\naaa\n") == {:ok, [{{1, 2, 1}, "aaa"}]}
+  test "consumes and skips preceding empty lines when skip_empty" do
+    parser = line(lit("aaa"), skip_empty: true)
+    assert parse(parser, "\naaa") == {:ok, "aaa"}
+    assert parse(parser, "\n\naaa") == {:ok, "aaa"}
+    assert parse(parser, "\n\n\naaa") == {:ok, "aaa"}
   end
 
-  test "skip empty lines stops at the last newline" do
-    success = parse(line(skip_empty: true), "aaa\n\na\n", format: :raw)
-    assert success.result == [{{0, 1, 1}, "aaa"}]
-    assert success.tail == [{success.at, "a\n"}]
+  test "does not consumes and skips following non empty lines when skip empty" do
+    parser = line(lit("aaa"), skip_empty: true)
+    assert %Paco.Success{tail: "a\n"} = parse(parser, "aaa\n\na\n", format: :raw)
+  end
+
+  test "keeps skipped what the inner parser skips at the beginning" do
+    parser = line(lit("aaa") |> preceded_by("b"))
+    assert %Paco.Success{from: {1, 1, 2}} = parse(parser, "baaa", format: :raw)
   end
 end

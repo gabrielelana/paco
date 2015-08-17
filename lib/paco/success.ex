@@ -5,14 +5,14 @@ defmodule Paco.Success do
   @type t :: %Success{from: State.position,
                       to: State.position,
                       at: State.position,
-                      tail: [State.chunk],
+                      tail: String.t,
                       result: any,
                       cut: boolean,
                       sew: boolean,
                       skip: boolean,
                       keep: boolean}
 
-  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0}, tail: [], result: "",
+  defstruct from: {0, 0, 0}, to: {0, 0, 0}, at: {0, 0, 0}, tail: "", result: "",
             cut: false, sew: false, skip: false, keep: false
 
   def format(%Success{} = success, :raw), do: success

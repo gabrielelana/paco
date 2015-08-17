@@ -16,6 +16,6 @@ defmodule Paco.Parser.AlwaysTest do
     parser = always("something")
     success = parser.parse.(Paco.State.from("a"), parser)
     assert success.at == {0, 1, 1}
-    assert success.tail == [{success.at, "a"}]
+    assert success.tail == "a"
   end
 end
