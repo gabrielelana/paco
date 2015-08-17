@@ -31,17 +31,6 @@ defmodule Slim do
 
   parser text, do: rol |> only_if(Predicate.not_empty?)
 
-  parser verbatim_text(gap \\ "") do
-    [gap, while(Paco.ASCII.blank), skip("|"), ]
-    |> peek
-    |> next(fn(gap) ->
-              [ line(rol |> preceded_by(gap ++ ["| "])),
-                many(line(rol |> preceded_by(gap ++ ["  "])))
-              ]
-              |> bind(fn(l) -> l |> List.flatten |> Enum.join("\n") end)
-            end)
-  end
-
   parser tag(gap \\ "") do
     line([while(ASCII.alnum, at_least: 1) |> preceded_by(gap),
           attributes,
@@ -51,7 +40,7 @@ defmodule Slim do
     |> bind(&map_block/1)
   end
 
-  parser tags(gap \\ ""), do: many(one_of([tag(gap), verbatim_text(gap)]))
+  parser tags(gap \\ ""), do: many(tag(gap))
 
 
   defp map_attribute({key, value}),
@@ -63,8 +52,6 @@ defmodule Slim do
     do: %Tag{name: name, attributes: attributes, children: [text]}
 
   defp map_block(%Tag{} = tag), do: tag
-  defp map_block({%Tag{children: children} = tag, text}) when is_binary(text),
-    do: %Tag{tag|children: children ++ [text]}
   defp map_block({%Tag{children: children} = tag, tags}),
     do: %Tag{tag|children: children ++ tags}
 end
@@ -127,19 +114,15 @@ h1 id="footer"
 
 """
 body
-  | This is text in body
   h1 id="1"
-    | This is text in h1 1
   h1 id="2"
-    h2 id="3" This is text in h2 3
+    h2 id="3"
 """
 |> Slim.parse |> IO.inspect
 # >> {:ok,
 # >>  [%Slim.Tag{attributes: [],
-# >>   children: ["This is text in body",
-# >>    %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "1"}],
-# >>     children: ["This is text in h1 1"], name: "h1"},
-# >>    %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "2"}],
-# >>     children: [%Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "3"}],
-# >>       children: ["This is text in h2 3"], name: "h2"}], name: "h1"}],
-# >>   name: "body"}]}
+# >>    children: [%Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "1"}],
+# >>      children: [], name: "h1"},
+# >>     %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "2"}],
+# >>      children: [%Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "3"}],
+# >>        children: [], name: "h2"}], name: "h1"}], name: "body"}]}
