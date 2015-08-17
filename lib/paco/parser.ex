@@ -23,9 +23,9 @@ defmodule Paco.Parser do
         %Success{from: {_, _, hc}} = header ->
           state = State.update(state, header)
           # TODO: ensure we are at the first column `at_column(p, 1)`
-          ind = while(&Paco.ASCII.ws?/1) |> preceded_by(while(&Paco.ASCII.nl?/1))
-          case ind.parse.(state, ind) do
-            %Success{at: {_, _, bc}, result: ind} = success when bc > hc ->
+          gap = while(&Paco.ASCII.ws?/1) |> preceded_by(while(&Paco.ASCII.nl?/1))
+          case gap.parse.(state, gap) do
+            %Success{at: {_, _, bc}} when bc > hc ->
               block = peek(while(&Paco.ASCII.ws?/1))
                       |> preceded_by(while(&Paco.ASCII.nl?/1))
                       |> next(f)
@@ -35,9 +35,7 @@ defmodule Paco.Parser do
                 %Failure{} = failure ->
                   failure
               end
-            %Success{} = success ->
-              header
-            %Failure{} = failure ->
+            _ ->
               header
           end
         %Failure{} = failure ->
