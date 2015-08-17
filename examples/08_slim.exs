@@ -21,40 +21,40 @@ defmodule Slim do
 
   parser attribute_key, do: while(ASCII.alnum)
 
-  parser attribute_value do
-    # will be better with: quoted_by([ASCII.sq, ASCII.dq])
-    one_of([until(~s|"|) |> surrounded_by(~s|"|),
-            until(~s|'|) |> surrounded_by(~s|'|)])
-  end
+  parser attribute_value, do: quoted_by([ASCII.dq, ASCII.sq])
 
-  parser attribute do
-    # will be better with: pair(attribute_key, attribute_value, separated_by: "=")
-    [attribute_key, skip(lex("=")), cut, attribute_value]
-    |> surrounded_by(maybe(whitespaces))
-    |> bind(&map_attribute/1)
-  end
+  parser attribute, do: pair(attribute_key, attribute_value, separated_by: "=")
+                        |> surrounded_by(while(ASCII.blank))
+                        |> bind(&map_attribute/1)
 
   parser attributes, do: many(attribute)
 
-  parser text do
-    until(ASCII.nl, eof: true)
-    |> preceded_by(maybe(lex("|")))
-    |> only_if(Predicate.not_empty?)
+  parser text, do: rol |> only_if(Predicate.not_empty?)
+
+  parser verbatim_text(gap \\ "") do
+    [gap, while(Paco.ASCII.blank), skip("|"), ]
+    |> peek
+    |> next(fn(gap) ->
+              [ line(rol |> preceded_by(gap ++ ["| "])),
+                many(line(rol |> preceded_by(gap ++ ["  "])))
+              ]
+              |> bind(fn(l) -> l |> List.flatten |> Enum.join("\n") end)
+            end)
   end
 
-  parser tag do
-    [while(ASCII.alnum, at_least: 1), attributes, maybe(text)]
-    |> within(line)
+  parser tag(gap \\ "") do
+    line([while(ASCII.alnum, at_least: 1) |> preceded_by(gap),
+          attributes,
+          maybe(text)])
     |> bind(&map_tag/1)
-    |> with_block(tags)
+    |> with_block(&tags/1)
     |> bind(&map_block/1)
   end
 
-  parser tags, do: one_or_more(one_of([tag, text]))
+  parser tags(gap \\ ""), do: many(one_of([tag(gap), verbatim_text(gap)]))
 
 
-
-  defp map_attribute([key, value]),
+  defp map_attribute({key, value}),
     do: %Attribute{key: key, value: value}
 
   defp map_tag([name, attributes]),
@@ -70,14 +70,8 @@ defmodule Slim do
 end
 
 
-# parser attribute do
-#   [attribute_key, skip(lex("=")), cut, attribute_value]
-#   |> surrounded_by(maybe(whitespaces))
-#   |> bind(&map_attribute/1)
-# end
 
-# lex("=") and surrounded_by(maybe(whitespaces)) are there to get rid of
-# meaningless white spaces
+# We don't care about meaningless white spaces
 Paco.parse(Slim.attribute, ~s|id="headline"|) |> IO.inspect
 # >> {:ok, %Slim.Attribute{key: "id", value: "headline"}}
 Paco.parse(Slim.attribute, ~s|id = "headline"|) |> IO.inspect
@@ -93,40 +87,24 @@ Paco.parse(Slim.attribute, ~s|id=|) |> IO.inspect
 # >>  "expected one of [\"\"\", \"'\"] (attribute_value < attribute) at 1:4 but got the end of input"}
 
 
-# parser attributes, do: many(attribute)
-
 Paco.parse(Slim.attributes, ~s|id="headline" class="headline"|) |> IO.inspect
 # >> {:ok,
 # >>  [%Slim.Attribute{key: "id", value: "headline"},
 # >>   %Slim.Attribute{key: "class", value: "headline"}]}
 
 
-# parser tag do
-#   [while(ASCII.alnum, at_least: 1), attributes, maybe(text)]
-#   |> within(line)
-#   |> bind(&map_tag/1)
-#   ... omitted part not relevant for now
-# end
-
-# `within(line)` forces the tag to be a single line, `line` combinator could be
-# configured to recognize escape characters to continue the logical line on
-# multiple physical lines
 Paco.parse(Slim.tag, ~s|div id="headline" class="headline"|) |> IO.inspect
 # >> {:ok,
 # >>  %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "headline"},
 # >>    %Slim.Attribute{key: "class", value: "headline"}], children: [],
 # >>   name: "div"}}
 
-# `maybe(text)` since `text` will fail with an empty string, we could avoid to
-# always add an empty text child to every tag
 Paco.parse(Slim.tag, ~s|div id="headline" class="headline" Text|) |> IO.inspect
 # >> {:ok,
 # >>  %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "headline"},
 # >>    %Slim.Attribute{key: "class", value: "headline"}], children: ["Text"],
 # >>   name: "div"}}
 
-
-# parser tags, do: one_or_more(one_of([tag, text]))
 
 """
 h1 id="headline"
@@ -143,24 +121,9 @@ h1 id="footer"
 # >>    children: [], name: "h1"}]}
 
 
-# parser tag do
-#   [while(ASCII.alnum, at_least: 1), attributes, maybe(text)]
-#   |> within(line)
-#   |> bind(&map_tag/1)
-#   |> with_block(tags)
-#   |> bind(&map_block/1)
-# end
-
-# Here the magic of `with_block`, until now we had:
-# 1 - parse a tag on a single line
-# 2 - map the result to a %Slim.Tag structure
-
 # `with_block` will combine the result of the parser passed as the first argument
-# (tag) with the result of the parser passed as a second argument (tags). The
-# difference is that the second parser is applied only to the following block
-# of text which is more indented compared to what was matched by the first
-# parser. Moreover, the indentation is removed from the block so that the
-# second parser (tags) could be ignorant about the indententation
+# (tag) with the result of the parser passed as a second argument (tags)
+
 
 """
 body
