@@ -17,32 +17,34 @@ defmodule Paco.Parser do
 
 
 
-  # parser with_block(box(h), box(b)) do
-  #   fn state, _ ->
-  #     case h.parse.(state, h) do
-  #       %Success{from: {_, _, hc}} = header ->
-  #         state = State.update(state, header)
-  #         nl = while(&Paco.ASCII.ws?/1) |> within(line(skip_empty: true))
-  #         case nl.parse.(state, nl) do
-  #           %Success{at: {_, _, bc}, result: indentation} when bc > hc ->
-  #             block = line(skip_empty: true)
-  #                     |> drop(lit(indentation), or_fail: true)
-  #                     |> many
-  #             block = within(b, block)
-  #             case block.parse.(state, block) do
-  #               %Success{result: result} = success ->
-  #                 %Success{success|from: header.from, result: {header.result, result}}
-  #               %Failure{} = failure ->
-  #                 failure
-  #             end
-  #           _ ->
-  #             header
-  #         end
-  #       %Failure{} = failure ->
-  #         failure
-  #     end
-  #   end
-  # end
+  parser with_block(box(h), f) do
+    fn state, _ ->
+      case h.parse.(state, h) do
+        %Success{from: {_, _, hc}} = header ->
+          state = State.update(state, header)
+          # TODO: ensure we are at the first column `at_column(p, 1)`
+          ind = while(&Paco.ASCII.ws?/1) |> preceded_by(while(&Paco.ASCII.nl?/1))
+          case ind.parse.(state, ind) do
+            %Success{at: {_, _, bc}, result: ind} = success when bc > hc ->
+              block = peek(while(&Paco.ASCII.ws?/1))
+                      |> preceded_by(while(&Paco.ASCII.nl?/1))
+                      |> next(f)
+              case block.parse.(state, block) do
+                %Success{result: result} = success ->
+                  %Success{success|from: header.from, result: {header.result, result}}
+                %Failure{} = failure ->
+                  failure
+              end
+            %Success{} = success ->
+              header
+            %Failure{} = failure ->
+              header
+          end
+        %Failure{} = failure ->
+          failure
+      end
+    end
+  end
 
 
 
@@ -221,6 +223,7 @@ defmodule Paco.Parser do
   parser whitespaces, as: while(&Paco.String.whitespace?/1, at_least: 1)
                           |> fail_with("expected at least 1 whitespace %AT% but got %TAIL%")
 
+  # TODO: parser lex(s), as: lit(s) |> surrounded_by(while(Paco.ASCII.blank))
   parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
