@@ -3,7 +3,6 @@ defmodule Paco.Parser do
   alias Paco.State
   alias Paco.Success
   alias Paco.Failure
-  alias Paco.Predicate
 
   import Paco.Macro.ParserDefinition
 
@@ -53,21 +52,19 @@ defmodule Paco.Parser do
 
 
 
-  parser line, to: line([])
-  parser line(opts) when is_list(opts), to: line(rol(opts), opts)
   parser line(p), to: line(p, [])
   parser line(p, opts), to: (
-    p = if Keyword.get(opts, :skip_empty, false) do
-          p |> followed_by(one_of([while(Paco.ASCII.nl, at_least: 1), eof]))
-            |> preceded_by(while(Paco.ASCII.nl))
-            |> bind(fn("", success) -> %Success{success|skip: true}
-                      (_ , success) -> success
-                    end)
-        else
-          p |> followed_by(one_of([while(Paco.ASCII.nl, exactly: 1), eof]))
-        end
-    p |> fail_with("expected end of line %AT% but got %TAIL%")
-      |> only_if(Predicate.consumed_any_input?("an empty string is not a line %AT%")))
+    if Keyword.get(opts, :skip_empty, false) do
+      p |> followed_by(one_of([while(Paco.ASCII.nl, at_least: 1), eof])
+                       |> fail_with("expected end of line %AT% but got %TAIL%"))
+        |> preceded_by(while(Paco.ASCII.nl))
+        |> bind(fn("", success) -> %Success{success|skip: true}
+                  (_ , success) -> success
+                end)
+    else
+      p |> followed_by(one_of([while(Paco.ASCII.nl, exactly: 1), eof])
+                       |> fail_with("expected end of line %AT% but got %TAIL%"))
+    end)
 
 
 
