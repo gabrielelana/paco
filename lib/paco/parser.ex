@@ -54,6 +54,7 @@ defmodule Paco.Parser do
 
   parser line(p), to: line(p, [])
   parser line(p, opts), to: (
+    import Paco.Predicate, only: [consumed_any_input?: 1]
     if Keyword.get(opts, :skip_empty, false) do
       p |> followed_by(one_of([while(Paco.ASCII.nl, at_least: 1), eof])
                        |> fail_with("expected end of line %AT% but got %TAIL%"))
@@ -64,7 +65,8 @@ defmodule Paco.Parser do
     else
       p |> followed_by(one_of([while(Paco.ASCII.nl, exactly: 1), eof])
                        |> fail_with("expected end of line %AT% but got %TAIL%"))
-    end)
+    end
+    |> only_if(consumed_any_input?("expected at least an empty line %AT%")))
 
 
 

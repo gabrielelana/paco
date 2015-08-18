@@ -56,4 +56,11 @@ defmodule Paco.Parser.LineTest do
     parser = line(lit("aaa") |> preceded_by("b"))
     assert %Paco.Success{from: {1, 1, 2}} = parse(parser, "baaa", format: :raw)
   end
+
+  test "must at least consume a newline" do
+    # This will be replaced by the infinite recursion check, for now we need this
+    assert parse(line(""), "") == {:error,
+      ~s|expected at least an empty line at 1:1|
+    }
+  end
 end
