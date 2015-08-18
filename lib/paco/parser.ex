@@ -274,10 +274,23 @@ defmodule Paco.Parser do
   parser separated_by(p, s, opts) when is_binary(s), to: separated_by(p, lex(s), opts)
   parser separated_by(box(p), box(s), opts),
     as: (import Paco.Transform, only: [flatten_first: 1]
-         tail = repeat(sequence_of([cut(skip(s)), p]), opts)
+         {n, m} = extract_limits(opts)
+         {nt, mt} = case {n, m} do
+                      {0, :infinity} -> {0, :infinity}
+                      {n, :infinity} -> {n - 1, :infinity}
+                      {0, m} when m > 0 -> {0, m - 1}
+                      {n, m} -> {n - 1, m - 1}
+                    end
+         tail = repeat(sequence_of([cut(skip(s)), p]), {nt, mt})
                 |> bind(&flatten_first/1)
-         sequence_of([p, tail])
-         |> bind(fn([h, []]) -> [h]; ([h, t]) -> [h|t] end))
+         case n do
+           0 -> one_of([sequence_of([p, tail]), maybe(p, default: [])])
+           _ -> sequence_of([p, tail])
+         end
+         |> bind(fn [] -> []
+                    [h, []] -> [h]
+                    [h, t] -> [h|t]
+                 end))
 
   parser surrounded_by(parser, around) when is_binary(around),
     to: surrounded_by(parser, lex(around), lex(around))

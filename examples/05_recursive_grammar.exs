@@ -79,8 +79,8 @@ expression =
     fn(e) ->
       multipliables = one_of([number, e |> surrounded_by("(", ")")])
       one_of([
-        multipliables |> separated_by("*", at_least: 1),
-        multipliables |> separated_by("/", at_least: 1)
+        multipliables |> separated_by("*", at_least: 2),
+        multipliables |> separated_by("/", at_least: 2)
       ])
     end)
 
@@ -109,8 +109,8 @@ expression =
     fn(e) ->
       multipliables = one_of([number, e |> surrounded_by("(", ")")])
       one_of([
-        multipliables |> separated_by("*", at_least: 1),
-        multipliables |> separated_by("/", at_least: 1),
+        multipliables |> separated_by("*", at_least: 2),
+        multipliables |> separated_by("/", at_least: 2),
         multipliables
       ])
     end)
@@ -136,8 +136,8 @@ expression =
     fn(e) ->
       multipliables = one_of([number, e |> surrounded_by("(", ")")])
       one_of([
-        multipliables |> separated_by("*", at_least: 1),
-        multipliables |> separated_by("/", at_least: 1),
+        multipliables |> separated_by("*", at_least: 2),
+        multipliables |> separated_by("/", at_least: 2),
         multipliables
       ])
     end)

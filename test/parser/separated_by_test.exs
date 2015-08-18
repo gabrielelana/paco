@@ -7,26 +7,46 @@ defmodule Paco.Parser.SeparatedByTest do
   test "parse elements separated by a delimiter" do
     parser = lit("a") |> separated_by(lex(","))
 
+    assert parse(parser, "") == {:ok, []}
     assert parse(parser, "a") == {:ok, ["a"]}
     assert parse(parser, "a,a") == {:ok, ["a", "a"]}
     assert parse(parser, "a,a,a") == {:ok, ["a", "a", "a"]}
     assert parse(parser, "a, a, a") == {:ok, ["a", "a", "a"]}
   end
 
-  test "takes same options as repeat/while" do
+  test "takes the same options as repeat and while" do
     parser = lit("a") |> separated_by(lex(","), at_least: 1)
+    assert parse(parser, "") == {:error,
+      ~s|expected "a" at 1:1 but got the end of input|
+    }
+    assert parse(parser, "a") == {:ok, ["a"]}
+
+    parser = lit("a") |> separated_by(lex(","), at_least: 2)
+    assert parse(parser, "") == {:error,
+      ~s|expected "a" at 1:1 but got the end of input|
+    }
     assert parse(parser, "a") == {:error,
       ~s|expected "," at 1:2 but got the end of input|
     }
+    assert parse(parser, "a,a") == {:ok, ["a", "a"]}
 
     parser = lit("a") |> separated_by(lex(","), at_most: 2)
     assert parse(parser, "a") == {:ok, ["a"]}
     assert parse(parser, "a,a") == {:ok, ["a", "a"]}
-    assert parse(parser, "a,a,a") == {:ok, ["a", "a", "a"]}
-    assert parse(parser, "a,a,a,a") == {:ok, ["a", "a", "a"]}
+    assert parse(parser, "a,a,a") == {:ok, ["a", "a"]}
+    assert parse(parser, "a,a,a,a") == {:ok, ["a", "a"]}
   end
 
-  test "keep the separator" do
+  test "does not fail when it does not match the first element" do
+    parser = lit("a") |> separated_by(lex(","))
+    assert parse(parser, "b") == {:ok, []}
+
+    # unless you specify that at least one element must match
+    parser = lit("a") |> separated_by(lex(","), at_least: 1)
+    assert parse(parser, "b") == {:error, ~s|expected "a" at 1:1 but got "b"|}
+  end
+
+  test "can keep the separator" do
     parser = lit("a") |> separated_by(keep(lex(",")))
 
     assert parse(parser, "a") == {:ok, ["a"]}
@@ -34,7 +54,7 @@ defmodule Paco.Parser.SeparatedByTest do
     assert parse(parser, "a,a,a") == {:ok, ["a", ",", "a", ",", "a"]}
   end
 
-  test "keep the structure of the parsed elements" do
+  test "keeps the structure of the parsed elements" do
     parser = sequence_of([lit("a"), lit("b")])
              |> separated_by(lex(","))
 
@@ -77,17 +97,5 @@ defmodule Paco.Parser.SeparatedByTest do
     parser = separated_by("a", ",")
     assert parse(parser, "a,a") == {:ok, ["a", "a"]}
     assert parse(parser, "a , a") == {:ok, ["a", "a"]}
-  end
-
-  test "fails on end of input" do
-    parser = lit("a") |> separated_by(lex(","))
-    assert parse(parser, "") == {:error,
-      ~s|expected "a" at 1:1 but got the end of input|
-    }
-  end
-
-  test "fails when doesn't match the first element" do
-    parser = lit("a") |> separated_by(lex(","))
-    assert parse(parser, "b") == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 end
