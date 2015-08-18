@@ -26,12 +26,12 @@ parse(tail, "bbbccc") |> IO.inspect
 # >> {:ok, ["bbb", "ccc"]}
 
 # Time to combine all this together. When you have a situation where you know
-# what comes next only at runtime you should use the `next` combinator. The
-# `next` combinator applies a parser (first argument) and pass the success to a
+# what comes next only at runtime you should use the `then` combinator. The
+# `then` combinator applies a parser (first argument) and pass the success to a
 # function (second argument) that is supposed to return the next parser that is
 # going to be applied
 root = while("a")
-       |> next(fn(a) ->
+       |> then(fn(a) ->
             len = String.length(a)
             [while("b", len), while("c", len)]
           end)
@@ -45,7 +45,7 @@ parse(root, "abc") |> IO.inspect
 
 # Inject the result with the `always` combinator
 root = while("a")
-       |> next(fn(a) ->
+       |> then(fn(a) ->
             len = String.length(a)
             [always(a), while("b", len), while("c", len)]
           end)
@@ -58,7 +58,7 @@ parse(root, "abc") |> IO.inspect
 # Avoid to consume the input in the first place with the `peek` combinator
 root = while("a")
        |> peek
-       |> next(fn(a) ->
+       |> then(fn(a) ->
             len = String.length(a)
             [while("a", len), while("b", len), while("c", len)]
           end)

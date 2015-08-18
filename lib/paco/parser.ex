@@ -27,7 +27,7 @@ defmodule Paco.Parser do
             %Success{at: {_, _, bc}} when bc > hc ->
               block = peek(while(Paco.ASCII.blank))
                       |> preceded_by(while(Paco.ASCII.nl))
-                      |> next(f)
+                      |> then(f)
               case block.parse.(state, block) do
                 %Success{result: result} = success ->
                   %Success{success|from: header.from, result: {header.result, result}}
@@ -136,13 +136,13 @@ defmodule Paco.Parser do
 
 
 
-  parser next(p, f) when is_function(f), as:
+  parser then(p, f) when is_function(f), as:
     bind(p, f)
     |> bind(fn(p) -> box(p) end)
     |> bind(fn(p, _, s) -> p.parse.(s, p) end)
 
-  parser next(p, box(next)), as:
-    bind(p, fn(_, _, s) -> next.parse.(s, next) end)
+  parser then(p, box(then)), as:
+    bind(p, fn(_, _, s) -> then.parse.(s, then) end)
 
 
 
