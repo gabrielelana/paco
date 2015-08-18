@@ -3,7 +3,7 @@ defmodule Paco.Parser.WhileTest do
 
   import Paco
   import Paco.Parser
-  import Paco.String, only: [uppercase?: 1]
+  import Paco.ASCII, only: [uppercase?: 1]
 
   alias Paco.Test.Helper
 

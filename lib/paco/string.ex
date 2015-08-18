@@ -2,76 +2,7 @@ defmodule Paco.String do
   import String
   alias Paco.State
 
-  @nl ["\x{000A}",         # LINE FEED
-       "\x{000B}",         # LINE TABULATION
-       "\x{000C}",         # FORM FEED
-       "\x{000D}",         # CARRIAGE RETURN
-       "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
-       "\x{0085}",         # NEXT LINE
-       "\x{2028}",         # LINE SEPARATOR
-       "\x{2029}"]         # PARAGRAPH SEPARATOR
-
-  for nl <- @nl do
-    def newline?(<<unquote(nl)>>), do: true
-  end
-  def newline?(_), do: false
-
-
-  @ws ["\x{0009}",         # CHARACTER TABULATION
-       "\x{000A}",         # LINE FEED
-       "\x{000B}",         # LINE TABULATION
-       "\x{000C}",         # FORM FEED
-       "\x{000D}",         # CARRIAGE RETURN
-       "\x{000D}\x{000A}", # CARRIAGE RETURN + LINE FEED
-       "\x{0020}",         # SPACE
-       "\x{0085}",         # NEXT LINE
-       "\x{00A0}",         # NO-BREAK SPACE
-       "\x{1680}",         # OGHAM SPACE MARK
-       "\x{2000}",         # EN QUAD
-       "\x{2001}",         # EM QUAD
-       "\x{2002}",         # EN SPACE
-       "\x{2003}",         # EM SPACE
-       "\x{2004}",         # THREE-PER-EM SPACE
-       "\x{2005}",         # FOUR-PER-EM SPACE
-       "\x{2006}",         # SIX-PER-EM SPACE
-       "\x{2007}",         # FIGURE SPACE
-       "\x{2008}",         # PUNCTUATION SPACE
-       "\x{2009}",         # THIN SPACE
-       "\x{200A}",         # HAIR SPACE
-       "\x{2028}",         # LINE SEPARATOR
-       "\x{2029}",         # PARAGRAPH SEPARATOR
-       "\x{202F}",         # NARROW NO-BREAK SPACE
-       "\x{205F}",         # MEDIUM MATHEMATICAL SPACE
-       "\x{3000}",         # IDEOGRAPHIC SPACE
-       "\x{180E}",         # MONGOLIAN VOWEL SEPARATOR
-       "\x{200B}",         # ZERO WIDTH SPACE
-       "\x{200C}",         # ZERO WIDTH NON-JOINER
-       "\x{200D}",         # ZERO WIDTH JOINER
-       "\x{2060}",         # WORD JOINER
-       "\x{FEFF}"]         # ZERO WIDTH NON-BREAKING SPACE
-
-  for ws <- @ws do
-    def whitespace?(<<unquote(ws)>>), do: true
-  end
-  def whitespace?(_), do: false
-
-
-  @letters ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","X","Y","Z",
-            "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","w","x","y","z"]
-  for letter <- @letters do
-    def letter?(<<unquote(letter)>>), do: true
-  end
-  def letter?(_), do: false
-
-  @uppercase ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","W","X","Y","Z"]
-  for uppercase <- @uppercase do
-    def uppercase?(<<unquote(uppercase)>>), do: true
-  end
-  def uppercase?(_), do: false
-
   @typep limit :: exactly::non_neg_integer | {at_least::non_neg_integer, at_most::non_neg_integer}
-
-
 
 
   @spec consume(text::String.t, expected::String.t, at::State.position)
@@ -91,8 +22,6 @@ defmodule Paco.String do
       _      -> {:not_expected, text, consumed, to, at}
     end
   end
-
-
 
 
   @spec consume(text::String.t, limits::limit, at::State.position)
@@ -116,8 +45,6 @@ defmodule Paco.String do
         {text, consumed, to, at}
     end
   end
-
-
 
 
   @spec consume_while(text::String.t, what, limits::limit, at::State.position)
@@ -163,8 +90,6 @@ defmodule Paco.String do
         {text, consumed, to, at}
     end
   end
-
-
 
 
   @spec consume_until(text::String.t, what, at::State.position, opts::Keyword.t)
@@ -244,7 +169,7 @@ defmodule Paco.String do
 
 
   defp position_after({n, l, c}, grapheme) do
-    if newline?(grapheme) do
+    if Paco.ASCII.newline?(grapheme) do
       {n + 1, l + 1, 1}
     else
       {n + 1, l, c + 1}
@@ -263,7 +188,7 @@ defmodule Paco.String do
           n -> line_at(text, n - 1)
         end
       grapheme ->
-        if (newline?(grapheme)) do
+        if (Paco.ASCII.newline?(grapheme)) do
           collect_line_at(text, at - 1, &(&1 - 1))
           |> Enum.reverse
           |> Enum.join
@@ -287,7 +212,7 @@ defmodule Paco.String do
       nil ->
         nil
       in_line ->
-        if newline?(in_line) do
+        if Paco.ASCII.newline?(in_line) do
           nil
         else
           {in_line, next.(at)}

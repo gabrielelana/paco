@@ -3,7 +3,7 @@ defmodule Paco.Parser.WhileNotTest do
 
   import Paco
   import Paco.Parser
-  import Paco.String, only: [uppercase?: 1]
+  import Paco.ASCII, only: [uppercase?: 1]
 
   test "parse characters not in alphabet as string" do
     assert parse(while_not("abc"), "dda") == {:ok, "dd"}

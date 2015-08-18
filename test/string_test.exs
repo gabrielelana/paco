@@ -2,6 +2,7 @@ defmodule Paco.StringTest do
   use ExUnit.Case, async: true
 
   import Paco.String
+  import Paco.ASCII, only: [whitespace?: 1, letter?: 1]
 
   test "consume" do
     assert consume("a", "a", {0, 1, 1}) == {"", "a", {0, 1, 1}, {1, 1, 2}}
