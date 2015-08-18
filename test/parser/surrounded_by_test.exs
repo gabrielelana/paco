@@ -4,8 +4,9 @@ defmodule Paco.Parser.SurroundedByTest do
   import Paco
   import Paco.Parser
 
-  test "parse elements surrounded by boundaries" do
+  test "parse element surrounded by boundaries" do
     assert parse(surrounded_by(lit("a"), lit("["), lit("]")), "[a]") == {:ok, "a"}
+    assert parse(surrounded_by(lit("a"), {lit("["), lit("]")}), "[a]") == {:ok, "a"}
     assert parse(surrounded_by(lit("a"), lit("*")), "*a*") == {:ok, "a"}
   end
 

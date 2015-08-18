@@ -109,9 +109,15 @@ defmodule Paco.ASCII do
 
   def sq, do: ~s|'|
   def single_quote, do: ~s|'|
+  def single_quotes, do: ~s|'|
 
   def dq, do: ~s|"|
   def double_quote, do: ~s|"|
+  def double_quotes, do: ~s|"|
+
+  def comma, do: ~s|,|
+  def colon, do: ~s|:|
+  def semicolon, do: ~s|;|
 
   def quotes, do: [sq, dq]
 end

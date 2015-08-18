@@ -292,8 +292,8 @@ defmodule Paco.Parser do
                     [h, t] -> [h|t]
                  end))
 
-  parser surrounded_by(parser, around) when is_binary(around),
-    to: surrounded_by(parser, lex(around), lex(around))
+  parser surrounded_by(parser, {left, right}),
+    to: surrounded_by(parser, left, right)
   parser surrounded_by(parser, around),
     to: surrounded_by(parser, around, around)
 
