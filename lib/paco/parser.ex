@@ -178,9 +178,8 @@ defmodule Paco.Parser do
   parser pair(l, r, opts \\ []),
     to: (
       s = while(Paco.ASCII.punctuation, at_least: 1)
-          |> surrounded_by(maybe(whitespaces))
       s = Keyword.get(opts, :separated_by, s)
-      s = if is_binary(s), do: lex(s),  else: s
+      s = if is_binary(s), do: lex(s), else: s
       box({l, skip(s), cut, r}))
 
 
@@ -214,14 +213,23 @@ defmodule Paco.Parser do
   defp map_between(result, true), do: (result |> List.first |> String.strip)
 
 
-  parser whitespace, as: while(&Paco.String.whitespace?/1, exactly: 1)
-                         |> fail_with("expected 1 whitespace %AT% but got %TAIL%")
 
-  parser whitespaces, as: while(&Paco.String.whitespace?/1, at_least: 1)
-                          |> fail_with("expected at least 1 whitespace %AT% but got %TAIL%")
+  parser ws, as: one_of(Paco.ASCII.ws) |> skip
+  parser ws?, as: maybe(ws)
+  parser wss, as: while(Paco.ASCII.ws, at_least: 1) |> skip
+  parser wss?, as: while(Paco.ASCII.ws) |> skip
 
-  # TODO: parser lex(s), as: lit(s) |> surrounded_by(while(Paco.ASCII.blank))
-  parser lex(s), as: lit(s) |> surrounded_by(maybe(whitespaces))
+  parser bl, as: one_of(Paco.ASCII.bl) |> skip
+  parser bl?, as: maybe(bl)
+  parser bls, as: while(Paco.ASCII.bl, at_least: 1) |> skip
+  parser bls?, as: while(Paco.ASCII.bl) |> skip
+
+  parser nl, as: one_of(Paco.ASCII.nl) |> skip
+  parser nl?, as: maybe(nl)
+  parser nls, as: while(Paco.ASCII.nl, at_least: 1) |> skip
+  parser nls?, as: while(Paco.ASCII.nl) |> skip
+
+  parser lex(s), as: lit(s) |> surrounded_by(bls?)
 
   parser join(p, joiner \\ ""), as: bind(p, &Enum.join(&1, joiner))
 

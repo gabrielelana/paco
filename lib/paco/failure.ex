@@ -67,6 +67,8 @@ defmodule Paco.Failure do
                      %Failure{stack: [_|t]}), do: t
   defp compose_stack(%Failure{stack: [_|t]},
                      %Failure{stack: t}), do: t
+  defp compose_stack(%Failure{stack: _},
+                     %Failure{stack: _}), do: []
 
 
   def message(%Failure{} = failure), do: format(failure, :flat)

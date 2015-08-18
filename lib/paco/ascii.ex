@@ -72,6 +72,7 @@ defmodule Paco.ASCII do
             {:word,       :word?,       @word},
             {:xdigit,     :xdigit?,     @xdigit},
             # aliases
+            {:bl,         :bl?,         @blank},
             {:nl,         :nl?,         @newline},
             {:ws,         :ws?,         @space},
             {:hex,        :hex?,        @xdigit},

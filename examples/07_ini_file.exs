@@ -16,23 +16,27 @@
 # Let's start with a grammar without comments
 
 defmodule INI1 do
+  alias Paco.ASCII
   use Paco
 
   parser section_header do
-    until([{"]", "\\"}, "\n"]) |> surrounded_by("[", "]")
+    until("]", escaped_with: "\\")
+    |> surrounded_by(ASCII.square_brackets)
+    |> line(skip_empty: true)
   end
 
   parser property_name do
-    until([{"=", "\\"}, "\n"])
+    while(ASCII.alnum, at_least: 1)
+    |> surrounded_by(bls?)
   end
 
   parser property_value do
-    until("\n", escaped_with: "\\") |> followed_by("\n")
+    until("\n", escaped_with: "\\")
+    |> line(skip_empty: true)
   end
 
   parser property do
-    [property_name, skip(lex("=")), property_value]
-    |> surrounded_by(maybe(whitespaces))
+    pair(property_name, property_value, separated_by: "=")
   end
 
   parser section, do: [section_header, many(property)]
@@ -47,7 +51,7 @@ key1=value1
 key2=value2
 """
 |> INI1.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1", "value1"], ["key2", "value2"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1"}, {"key2", "value2"}]]]}
 
 # Few sections
 """
@@ -61,8 +65,8 @@ key1=value1
 """
 |> INI1.parse |> IO.inspect
 # >> {:ok,
-# >>  [["section1", [["key1", "value1"], ["key2", "value2"]]],
-# >>   ["section2", [["key1", "value1"]]], ["section3", [["key1", "value1"]]]]}
+# >>  [["section1", [{"key1", "value1"}, {"key2", "value2"}]],
+# >>   ["section2", [{"key1", "value1"}]], ["section3", [{"key1", "value1"}]]]}
 
 # Empty sections: we have `many(property)` so is fine to have empty sections
 """
@@ -82,7 +86,7 @@ key1=value1
 key1=value1
 """
 |> INI1.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1", "value1"]]], ["section2", [["key1", "value1"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1"}]], ["section2", [{"key1", "value1"}]]]}
 
 # Whitespaces before properties: in property rule we have explicitly surrounded
 # properties in optional white spaces and so they are consumed and discarded
@@ -94,7 +98,7 @@ key1=value1
     key1=value1
 """
 |> INI1.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1", "value1"]]], ["section2", [["key1", "value1"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1"}]], ["section2", [{"key1", "value1"}]]]}
 
 # Empty lines: empty lines are also consumed by `surrounded_by("[", "]")`
 """
@@ -105,7 +109,7 @@ key1=value1
 
 """
 |> INI1.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1", "value1"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1"}]]]}
 
 # Property values can continue on the next line if escaped: using `until("\n",
 # escaped_with: "\\")` we are saying that the property values ends at the end
@@ -119,40 +123,37 @@ key2=value2
 |> INI1.parse |> IO.inspect
 # >> {:ok,
 # >>  [["section1",
-# >>    [["key1", "value1 on the first line\nvalue1 on the second line"],
-# >>     ["key2", "value2"]]]]}
+# >>    [{"key1", "value1 on the first line\nvalue1 on the second line"},
+# >>     {"key2", "value2"}]]]}
 
 
 # Let's start to consider something that will be required by any decent hand
 # made parser: error conditions
 
-# Incomplete section: the `lex` combinator here consumes the end of line of
-# line 1 shifting the error reporting to the next line (we will se a solution
-# for that in another example), but the error is what you would expect, we were
-# expecting the end of the section header
+# Incomplete section: missing square bracket terminator
 """
 [section1
 key1=value1
 """
 |> INI1.parse |> IO.inspect
 # >> {:error,
-# >>  "expected \"]\" (section_header < section < sections) at 2:1 but got \"k\""}
+# >>  "expected something ended by \"]\" (section_header < section < sections) at 1:2 but got \"section1\""}
 
-# Incomplete section: nothing to say about that
+# Incomplete section: missing square bracket at the beginning
 """
 section1]
+key1=value1
 """
 |> INI1.parse |> IO.inspect
 # >> {:error,
 # >>  "expected \"[\" (section_header < section < sections) at 1:1 but got \"s\""}
 
-# Incomplete property: mmm... not good, we successfully parsed someting that is
-# wrong, that's because we said that it's fine for a section to be empty, since
-# what follows a section is not a valid section content the parser concludes
-# that the section ended at line 1. We could use the trick to require the end
-# of file at the end (`one_or_more(section) |> followed_by(eof)`) but this
-# would not improve much the error message, the parser would say something like
-# "expected end of input at 2:1 but got \"v\"", why?
+# Incomplete property: this will not report an error because we said that a
+# section could be empty and what follows is not another section nor a property
+# so the parser will happily stop at the end of the section leaving `value1` as a
+# trail. We could require to have the end of input after the parsed sections
+# but the error message would not improve much, we need to use the `cut`
+# combinator
 """
 [section1]
 value1
@@ -161,26 +162,36 @@ value1
 # >> {:ok, [["section1", []]]}
 
 
-# TODO: explain cut
+# `cut` is a combinator that is used to avoid backtracking when we know that
+# trying another alternative would be useless. This not only will imporove
+# performances but also will improve the error message
+
+# In this case we are going to use the cut after the property name, when a
+# property name is successfully parsed then we expect to find an `=` next and
+# nothing else.
 
 defmodule INI2 do
+  alias Paco.ASCII
   use Paco
 
   parser section_header do
-    until([{"]", "\\"}, "\n"]) |> surrounded_by("[", "]")
+    until("]", escaped_with: "\\")
+    |> surrounded_by(ASCII.square_brackets)
+    |> line(skip_empty: true)
   end
 
   parser property_name do
-    until([{"=", "\\"}, "\n"])
+    while(ASCII.alnum, at_least: 1)
+    |> surrounded_by(bls?)
   end
 
   parser property_value do
-    until("\n", escaped_with: "\\") |> followed_by("\n")
+    until("\n", escaped_with: "\\")
+    |> line(skip_empty: true)
   end
 
   parser property do
-    [property_name, cut, skip(lex("=")), property_value]
-    |> surrounded_by(maybe(whitespaces))
+    pair(cut(property_name), property_value, separated_by: "=")
   end
 
   parser section, do: [section_header, many(property)]
@@ -194,38 +205,37 @@ end
 value1
 """
 |> INI2.parse |> IO.inspect
-# >> {:error,
-# >>  "expected \"=\" (property < section < sections) at 3:1 but got the end of input"}
+# >> {:error, "expected \"=\" (property < section < sections) at 2:7 but got \"\n\""}
 
-
-# TODO: introducing comments
 
 defmodule INI3 do
+  alias Paco.ASCII
   use Paco
 
   parser comment do
-    [one_of(["#", ";"]), until("\n")] |> followed_by("\n")
+    [one_of(["#", ";"]), rol]
   end
 
   parser section_header do
-    until([{"]", "\\"}, "\n"])
-    |> surrounded_by("[", "]")
+    until("]", escaped_with: "\\")
+    |> surrounded_by(ASCII.square_brackets)
     |> followed_by(maybe(comment))
+    |> line(skip_empty: true)
   end
 
   parser property_name do
-    until([{"=", "\\"}, "\n"])
+    while(ASCII.alnum, at_least: 1)
+    |> surrounded_by(bls?)
   end
 
   parser property_value do
     until(["\n", "#", ";"], escaped_with: "\\")
     |> followed_by(maybe(comment))
-    |> bind(&String.rstrip/1)
+    |> line(skip_empty: true)
   end
 
   parser property do
-    [property_name, cut, skip(lex("=")), property_value]
-    |> surrounded_by(maybe(whitespaces))
+    pair(cut(property_name), property_value, separated_by: "=")
   end
 
   parser section, do: [section_header, many(property)]
@@ -240,53 +250,59 @@ key1 = value1 # comment
 key2 = value2 # comment
 """
 |> INI3.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1 ", "value1"], ["key2 ", "value2"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1 "}, {"key2", "value2 "}]]]}
 
 
-# TODO: What about comments on a whole line
+# What about comments on a whole line
 
 defmodule INI4 do
+  alias Paco.ASCII
   use Paco
 
   parser comment do
-    [one_of(["#", ";"]), until("\n")] |> followed_by("\n")
+    [one_of(["#", ";"]), rol]
+  end
+
+  parser comment_line do
+    line(comment)
   end
 
   parser section_header do
-    until([{"]", "\\"}, "\n"])
-    |> surrounded_by("[", "]")
-    |> surrounded_by(maybe(comment))
+    until("]", escaped_with: "\\")
+    |> surrounded_by(ASCII.square_brackets)
+    |> followed_by(maybe(comment))
+    |> line(skip_empty: true)
   end
 
   parser property_name do
-    until([{"=", "\\"}, "\n"])
+    while(ASCII.alnum, at_least: 1)
+    |> surrounded_by(bls?)
   end
 
   parser property_value do
     until(["\n", "#", ";"], escaped_with: "\\")
     |> followed_by(maybe(comment))
-    |> bind(&String.rstrip/1)
+    |> line(skip_empty: true)
   end
 
   parser property do
-    [property_name, cut, skip(lex("=")), property_value]
-    |> surrounded_by(maybe(whitespaces))
+    pair(cut(property_name), property_value, separated_by: "=")
   end
 
-  parser section, do: [section_header, many(one_of([skip(comment), property]))]
+  parser section, do: [section_header, many(one_of([property, skip(comment_line)]))]
 
-  parser sections, do: one_or_more(section)
+  parser sections, do: one_or_more(one_of([section, skip(comment_line)]))
+
 end
-
 
 """
 # comment
 [section1]
 # comment
-key1 = value1
+key1=value1
 # comment
-key2 = value2
+key2=value2
 # comment
 """
 |> INI4.parse |> IO.inspect
-# >> {:ok, [["section1", [["key1 ", "value1"], ["key2 ", "value2"]]]]}
+# >> {:ok, [["section1", [{"key1", "value1"}, {"key2", "value2"}]]]}

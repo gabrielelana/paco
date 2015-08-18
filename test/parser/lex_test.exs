@@ -7,12 +7,16 @@ defmodule Paco.Parser.LexemeTest do
   test "success" do
     assert parse(lex("a"), "a") == {:ok, "a"}
     assert parse(lex("a"), " a") == {:ok, "a"}
-    assert parse(lex("a"), "\na") == {:ok, "a"}
     assert parse(lex("a"), "  a") == {:ok, "a"}
     assert parse(lex("a"), "a ") == {:ok, "a"}
-    assert parse(lex("a"), "a\n") == {:ok, "a"}
     assert parse(lex("a"), "a  ") == {:ok, "a"}
     assert parse(lex("aaa"), "aaa") == {:ok, "aaa"}
+  end
+
+  test "does not consumes newlines" do
+    assert parse(lex("a"), "\n") == {:error,
+      ~s|expected "a" at 1:1 but got "\n"|
+    }
   end
 
   test "failure" do

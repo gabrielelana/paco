@@ -32,7 +32,7 @@ parse(number, "42") |> IO.inspect
 # the `surrounded_by` combinator, since the whitespaces are optionals we also
 # use the `maybe` combinator
 number = while("0123456789", at_least: 1)
-         |> surrounded_by(maybe(whitespaces))
+         |> surrounded_by(bls?)
          |> bind(&String.to_integer/1)
 
 parse(number, " 42 ") |> IO.inspect
