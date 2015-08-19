@@ -7,91 +7,91 @@ defmodule Paco.Parser.UntilTest do
   alias Paco.Test.Helper
 
   test "parse until boundary" do
-    assert parse(until("c"), "abc") == {:ok, "ab"}
-    assert parse(until("c"), "abcb") == {:ok, "ab"}
+    assert parse("abc", until("c")) == {:ok, "ab"}
+    assert parse("abcb", until("c")) == {:ok, "ab"}
   end
 
   test "parse until boundary with escape" do
-    assert parse(until("c", escaped_with: "\\"), "ab\\cdce") == {:ok, "abcd"}
+    assert parse("ab\\cdce", until("c", escaped_with: "\\")) == {:ok, "abcd"}
   end
 
   test "parse until boundary with escape keeping escpe" do
     parser = until("c", escaped_with: "\\", keep_escape: true)
-    assert parse(parser, "ab\\cdce") == {:ok, "ab\\cd"}
+    assert parse("ab\\cdce", parser) == {:ok, "ab\\cd"}
   end
 
   test "parse until eof" do
-    assert parse(until("b", eof: true), "aaa") == {:ok, "aaa"}
+    assert parse("aaa", until("b", eof: true)) == {:ok, "aaa"}
   end
 
   test "parse until boundaries" do
-    assert parse(until(["c"]), "abc") == {:ok, "ab"}
-    assert parse(until(["c", "d"]), "abdcb") == {:ok, "ab"}
-    assert parse(until(["c", "d", "b"]), "abdcb") == {:ok, "a"}
+    assert parse("abc", until(["c"])) == {:ok, "ab"}
+    assert parse("abdcb", until(["c", "d"])) == {:ok, "ab"}
+    assert parse("abdcb", until(["c", "d", "b"])) == {:ok, "a"}
   end
 
   test "parse until boundaries with escape" do
-    assert parse(until([{"c", "\\"}]), "a\\cbcde") == {:ok, "acb"}
-    assert parse(until(["c"], escaped_with: "\\"), "a\\cbcde") == {:ok, "acb"}
+    assert parse("a\\cbcde", until([{"c", "\\"}])) == {:ok, "acb"}
+    assert parse("a\\cbcde", until(["c"], escaped_with: "\\")) == {:ok, "acb"}
 
-    assert parse(until([{"c", "\\"}, {"d", "\\"}]), "a\\c\\dc") == {:ok, "acd"}
-    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\c\\dc") == {:ok, "acd"}
+    assert parse("a\\c\\dc", until([{"c", "\\"}, {"d", "\\"}])) == {:ok, "acd"}
+    assert parse("a\\c\\dc", until(["c", "d"], escaped_with: "\\")) == {:ok, "acd"}
 
-    assert parse(until([{"c", "\\"}, {"d", "#"}]), "a\\c#dc") == {:ok, "acd"}
-    assert parse(until(["c", {"d", "#"}], escaped_with: "\\"), "a\\c#dd") == {:ok, "acd"}
+    assert parse("a\\c#dc", until([{"c", "\\"}, {"d", "#"}])) == {:ok, "acd"}
+    assert parse("a\\c#dd", until(["c", {"d", "#"}], escaped_with: "\\")) == {:ok, "acd"}
   end
 
   test "parse until boundaries with escape keeping escape" do
     ke = [keep_escape: true]
     eke = [escaped_with: "\\", keep_escape: true]
 
-    assert parse(until([{"c", "\\"}], ke), "a\\cbcde") == {:ok, "a\\cb"}
-    assert parse(until(["c"], eke), "a\\cbcde") == {:ok, "a\\cb"}
+    assert parse("a\\cbcde", until([{"c", "\\"}], ke)) == {:ok, "a\\cb"}
+    assert parse("a\\cbcde", until(["c"], eke)) == {:ok, "a\\cb"}
 
-    assert parse(until([{"c", "\\"}, {"d", "\\"}], ke), "a\\c\\dc") == {:ok, "a\\c\\d"}
-    assert parse(until(["c", "d"], eke), "a\\c\\dc") == {:ok, "a\\c\\d"}
+    assert parse("a\\c\\dc", until([{"c", "\\"}, {"d", "\\"}], ke)) == {:ok, "a\\c\\d"}
+    assert parse("a\\c\\dc", until(["c", "d"], eke)) == {:ok, "a\\c\\d"}
 
-    assert parse(until([{"c", "\\"}, {"d", "#"}], ke), "a\\c#dc") == {:ok, "a\\c#d"}
-    assert parse(until(["c", {"d", "#"}], eke), "a\\c#dd") == {:ok, "a\\c#d"}
+    assert parse("a\\c#dc", until([{"c", "\\"}, {"d", "#"}], ke)) == {:ok, "a\\c#d"}
+    assert parse("a\\c#dd", until(["c", {"d", "#"}], eke)) == {:ok, "a\\c#d"}
   end
 
   test "boundaries are flattened" do
-    assert parse(until(["c", ["d", "e"]]), "aaae") == {:ok, "aaa"}
-    assert parse(until([{"c", "\\"}, ["d", "e"]]), "a\\cae") == {:ok, "aca"}
-    assert parse(until(["c", [{"d", "\\"}, "e"]]), "a\\dae") == {:ok, "ada"}
-    assert parse(until(["c", ["d", {"e", "\\"}]]), "a\\eae") == {:ok, "aea"}
-    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\cae") == {:ok, "aca"}
-    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\dae") == {:ok, "ada"}
-    assert parse(until(["c", ["d", "e"]], escaped_with: "\\"), "a\\eae") == {:ok, "aea"}
+    assert parse("aaae", until(["c", ["d", "e"]])) == {:ok, "aaa"}
+    assert parse("a\\cae", until([{"c", "\\"}, ["d", "e"]])) == {:ok, "aca"}
+    assert parse("a\\dae", until(["c", [{"d", "\\"}, "e"]])) == {:ok, "ada"}
+    assert parse("a\\eae", until(["c", ["d", {"e", "\\"}]])) == {:ok, "aea"}
+    assert parse("a\\cae", until(["c", ["d", "e"]], escaped_with: "\\")) == {:ok, "aca"}
+    assert parse("a\\dae", until(["c", ["d", "e"]], escaped_with: "\\")) == {:ok, "ada"}
+    assert parse("a\\eae", until(["c", ["d", "e"]], escaped_with: "\\")) == {:ok, "aea"}
   end
 
   test "failure when missing boundary" do
-    assert parse(until("c"), "aaa") == {:error,
+    assert parse("aaa", until("c")) == {:error,
       ~s|expected something ended by "c" at 1:1 but got "aaa"|
     }
   end
 
   test "failure when missing boundary with escape" do
-    assert parse(until("c", escaped_with: "\\"), "a\\ca") == {:error,
+    assert parse("a\\ca", until("c", escaped_with: "\\")) == {:error,
       ~S|expected something ended by "c" at 1:1 but got "a\ca"|
     }
   end
 
   test "failure when missing boundaries" do
-    assert parse(until(["c", "d"]), "aaa") == {:error,
+    assert parse("aaa", until(["c", "d"])) == {:error,
       ~s|expected something ended by one of ["c", "d"] at 1:1 but got "aaa"|
     }
   end
 
   test "failure when missing boundaries with escape" do
-    assert parse(until(["c", "d"], escaped_with: "\\"), "a\\ca") == {:error,
+    assert parse("a\\ca", until(["c", "d"], escaped_with: "\\")) == {:error,
       ~S|expected something ended by one of ["c", "d"] at 1:1 but got "a\ca"|
     }
   end
 
   test "failure with description" do
     parser = until("c") |> as("TOKEN")
-    assert parse(parser, "aaa") == {:error,
+    assert parse("aaa", parser) == {:error,
       ~s|expected something ended by "c" (TOKEN) at 1:1 but got "aaa"|
     }
   end
@@ -100,7 +100,7 @@ defmodule Paco.Parser.UntilTest do
     parser = until("c")
 
     long_text = String.duplicate("a", 1_000)
-    assert parse(parser, long_text) == {:error,
+    assert parse(long_text, parser) == {:error,
       """
       expected something ended by "c" at 1:1 but got \
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..."\
@@ -108,7 +108,7 @@ defmodule Paco.Parser.UntilTest do
     }
 
     long_text = "aaa\n" <> String.duplicate("a", 1_000)
-    assert parse(parser, long_text) == {:error,
+    assert parse(long_text, parser) == {:error,
       ~s|expected something ended by "c" at 1:1 but got "aaa"|
     }
   end

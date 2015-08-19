@@ -59,34 +59,34 @@ end
 
 
 # We don't care about meaningless white spaces
-Paco.parse(Slim.attribute, ~s|id="headline"|) |> IO.inspect
+Paco.parse(~s|id="headline"|, Slim.attribute) |> IO.inspect
 # >> {:ok, %Slim.Attribute{key: "id", value: "headline"}}
-Paco.parse(Slim.attribute, ~s|id = "headline"|) |> IO.inspect
+Paco.parse(~s|id = "headline"|, Slim.attribute) |> IO.inspect
 # >> {:ok, %Slim.Attribute{key: "id", value: "headline"}}
-Paco.parse(Slim.attribute, ~s|  id = "headline"  |) |> IO.inspect
+Paco.parse(~s|  id = "headline"  |, Slim.attribute) |> IO.inspect
 # >> {:ok, %Slim.Attribute{key: "id", value: "headline"}}
-Paco.parse(Slim.attribute, ~s|id = 'headline'|) |> IO.inspect
+Paco.parse(~s|id = 'headline'|, Slim.attribute) |> IO.inspect
 # >> {:ok, %Slim.Attribute{key: "id", value: "headline"}}
 
 # The cut does its job giving meaningful error messages
-Paco.parse(Slim.attribute, ~s|id=|) |> IO.inspect
+Paco.parse(~s|id=|, Slim.attribute) |> IO.inspect
 # >> {:error,
 # >>  "expected one of [\"\"\", \"'\"] (attribute_value < attribute) at 1:4 but got the end of input"}
 
 
-Paco.parse(Slim.attributes, ~s|id="headline" class="headline"|) |> IO.inspect
+Paco.parse(~s|id="headline" class="headline"|, Slim.attributes) |> IO.inspect
 # >> {:ok,
 # >>  [%Slim.Attribute{key: "id", value: "headline"},
 # >>   %Slim.Attribute{key: "class", value: "headline"}]}
 
 
-Paco.parse(Slim.tag, ~s|div id="headline" class="headline"|) |> IO.inspect
+Paco.parse(~s|div id="headline" class="headline"|, Slim.tag) |> IO.inspect
 # >> {:ok,
 # >>  %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "headline"},
 # >>    %Slim.Attribute{key: "class", value: "headline"}], children: [],
 # >>   name: "div"}}
 
-Paco.parse(Slim.tag, ~s|div id="headline" class="headline" Text|) |> IO.inspect
+Paco.parse(~s|div id="headline" class="headline" Text|, Slim.tag) |> IO.inspect
 # >> {:ok,
 # >>  %Slim.Tag{attributes: [%Slim.Attribute{key: "id", value: "headline"},
 # >>    %Slim.Attribute{key: "class", value: "headline"}], children: ["Text"],

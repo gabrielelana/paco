@@ -5,14 +5,14 @@ defmodule Paco.Parser.ReplaceWithTest do
   import Paco.Parser
 
   test "replace result with another value" do
-    assert parse(lit("a") |> replace_with("b"), "a") == {:ok, "b"}
+    assert parse("a", lit("a") |> replace_with("b")) == {:ok, "b"}
   end
 
   test "boxing: the first argument is turned into a parser" do
-    assert parse("a" |> replace_with("b"), "a") == {:ok, "b"}
+    assert parse("a", "a" |> replace_with("b")) == {:ok, "b"}
   end
 
   test "it has no effect on failures" do
-    assert parse(lit("a") |> replace_with("b"), "b") == parse(lit("a"), "b")
+    assert parse("b", lit("a") |> replace_with("b")) == parse("b", lit("a"))
   end
 end

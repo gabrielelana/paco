@@ -114,7 +114,7 @@ defmodule Paco.Stream do
                        {at, text, :cont} ->
                          # IO.puts("[PARSER] GOING TO PARSE #{inspect(text)}")
                          opts = Keyword.put(opts, :at, at)
-                         case Paco.parse(parser, text, opts) do
+                         case Paco.parse(text, parser, opts) do
                            %Paco.Success{from: at, to: at, at: at} ->
                              # IO.puts("[PARSER] FAILURE! DIDN'T CONSUME ANY INPUT")
                              message = "failure! parser didn't consume any input"

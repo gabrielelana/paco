@@ -7,46 +7,46 @@ defmodule Paco.Parser.RegexTest do
   alias Paco.Test.Helper
 
   test "parse regular expression" do
-    assert parse(re(~r/a+/), "a") == {:ok, "a"}
-    assert parse(re(~r/a+/), "aa") == {:ok, "aa"}
-    assert parse(re(~r/a+/), "aaa") == {:ok, "aaa"}
+    assert parse("a", re(~r/a+/)) == {:ok, "a"}
+    assert parse("aa", re(~r/a+/)) == {:ok, "aa"}
+    assert parse("aaa", re(~r/a+/)) == {:ok, "aaa"}
   end
 
   test "parse regular expression with captures" do
-    assert parse(re(~r/c(a+)/), "ca") == {:ok, {"ca", ["a"]}}
+    assert parse("ca", re(~r/c(a+)/)) == {:ok, {"ca", ["a"]}}
     # repeated subpatterns are not supported by regular expressions
-    assert parse(re(~r/c(a|b)+/), "cab") == {:ok, {"cab", ["b"]}}
-    assert parse(re(~r/c(a+)(b+)/), "caaabbb") == {:ok, {"caaabbb", ["aaa", "bbb"]}}
-    assert parse(re(~r/c(a+)(b*)/), "caaa") == {:ok, {"caaa", ["aaa", ""]}}
+    assert parse("cab", re(~r/c(a|b)+/)) == {:ok, {"cab", ["b"]}}
+    assert parse("caaabbb", re(~r/c(a+)(b+)/)) == {:ok, {"caaabbb", ["aaa", "bbb"]}}
+    assert parse("caaa", re(~r/c(a+)(b*)/)) == {:ok, {"caaa", ["aaa", ""]}}
   end
 
   test "parse regular expression with named captures" do
-    assert parse(re(~r/c(?<N>a+)/), "ca") == {:ok, {"ca", %{"N" => "a"}}}
-    assert parse(re(~r/c(?<N>a+)/), "caaa") == {:ok, {"caaa", %{"N" => "aaa"}}}
+    assert parse("ca", re(~r/c(?<N>a+)/)) == {:ok, {"ca", %{"N" => "a"}}}
+    assert parse("caaa", re(~r/c(?<N>a+)/)) == {:ok, {"caaa", %{"N" => "aaa"}}}
     # repeated subpatterns are not supported by regular expressions
-    assert parse(re(~r/c(?<N>a|b)+/), "cab") == {:ok, {"cab", %{"N" => "b"}}}
-    assert parse(re(~r/c(?<N>a+)(?<M>b+)/), "cab") == {:ok, {"cab", %{"N" => "a", "M" => "b"}}}
+    assert parse("cab", re(~r/c(?<N>a|b)+/)) == {:ok, {"cab", %{"N" => "b"}}}
+    assert parse("cab", re(~r/c(?<N>a+)(?<M>b+)/)) == {:ok, {"cab", %{"N" => "a", "M" => "b"}}}
   end
 
   test "parse regular expression with mixed captures" do
     # TODO
-    # assert parse(re(~r/c(?<N>a)(b)/), "cab") == {:ok, {"cab", ["b"], %{"N" => "a"}}}
+    # assert parse("cab", re(~r/c(?<N>a)(b)/)) == {:ok, {"cab", ["b"], %{"N" => "a"}}}
   end
 
   test "patterns are anchored at the beginning of the text" do
-    assert {:error, _} = parse(re(~r/a+/), "baaa")
-    assert {:error, _} = parse(re(~r/.*a+/), "b\naaa")
-    assert {:ok, _}    = parse(re(~r/.*\na+/m), "b\naaa")
-    assert {:error, _} = parse(re(~r/\Aa+/), "baaa")
+    assert {:error, _} = parse("baaa", re(~r/a+/))
+    assert {:error, _} = parse("b\naaa", re(~r/.*a+/))
+    assert {:ok, _}    = parse("b\naaa", re(~r/.*\na+/m))
+    assert {:error, _} = parse("baaa", re(~r/\Aa+/))
   end
 
   test "failure" do
-    assert parse(re(~r/a+/), "b") == {:error, ~s|expected ~r/a+/ at 1:1 but got "b"|}
+    assert parse("b", re(~r/a+/)) == {:error, ~s|expected ~r/a+/ at 1:1 but got "b"|}
   end
 
   test "failure with description" do
     parser = re(~r/a+/) |> as("TOKEN")
-    assert parse(parser, "b") == {:error, ~s|expected ~r/a+/ (TOKEN) at 1:1 but got "b"|}
+    assert parse("b", parser) == {:error, ~s|expected ~r/a+/ (TOKEN) at 1:1 but got "b"|}
   end
 
   test "increment indexes for a match" do

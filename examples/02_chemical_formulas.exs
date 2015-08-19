@@ -24,13 +24,13 @@ reference = {element, maybe(quantity, default: 1)}
 formula = one_or_more(reference)
 
 
-parse(formula, "H2O") |> IO.inspect
+parse("H2O", formula) |> IO.inspect
 # >> {:ok, [{"H", 2}, {"O", 1}]}
 
-parse(formula, "NaCl") |> IO.inspect
+parse("NaCl", formula) |> IO.inspect
 # >> {:ok, [{"Na", 1}, {"Cl", 1}]}
 
-parse(formula, "C6H5OH") |> IO.inspect
+parse("C6H5OH", formula) |> IO.inspect
 # >> {:ok, [{"C", 6}, {"H", 5}, {"O", 1}, {"H", 1}]}
 
 
@@ -49,5 +49,5 @@ calculate_weight = &(&1 |> Enum.map(fn({e, q}) -> Map.fetch!(atomic_weight, e) *
 
 weight = formula |> bind(calculate_weight)
 
-parse(weight, "C6H5OH") |> IO.inspect
+parse("C6H5OH", weight) |> IO.inspect
 # >> {:ok, 94.11124}

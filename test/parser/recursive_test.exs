@@ -9,10 +9,10 @@ defmodule Paco.Parser.RecursiveTest do
                          one_of([lit("a"), p |> surrounded_by("(", ")")])
                        end)
 
-    assert parse(parser, "a") == {:ok, "a"}
-    assert parse(parser, "(a)") == {:ok, "a"}
-    assert parse(parser, "((a))") == {:ok, "a"}
-    assert parse(parser, "(((a)))") == {:ok, "a"}
+    assert parse("a", parser) == {:ok, "a"}
+    assert parse("(a)", parser) == {:ok, "a"}
+    assert parse("((a))", parser) == {:ok, "a"}
+    assert parse("(((a)))", parser) == {:ok, "a"}
   end
 
   test "failure" do
@@ -20,7 +20,7 @@ defmodule Paco.Parser.RecursiveTest do
                          one_of([lit("a"), p |> surrounded_by("(", ")")])
                        end)
 
-    assert parse(parser, "(a") == {:error,
+    assert parse("(a", parser) == {:error,
       ~s|expected ")" at 1:3 but got the end of input|
     }
   end

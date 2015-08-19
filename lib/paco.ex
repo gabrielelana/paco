@@ -1,21 +1,21 @@
 defmodule Paco do
 
-  def parse!(p, text, opts \\ []) do
-    parse(p, text, Keyword.merge(opts, [on_failure: :raise]))
+  def parse!(text, p, opts \\ []) do
+    parse(text, p, Keyword.merge(opts, [on_failure: :raise]))
   end
 
-  def parse(p, text, opts \\ []) do
+  def parse(text, p, opts \\ []) do
     p = Paco.Parser.box(p)
     p.parse.(Paco.State.from(text, opts), p)
     |> handle_failure(Keyword.get(opts, :on_failure, :yield))
     |> format(Keyword.get(opts, :format, :tagged))
   end
 
-  def parse_all!(p, text, opts \\ []) do
-    parse_all(p, text, Keyword.merge(opts, [on_failure: :raise]))
+  def parse_all!(text, p, opts \\ []) do
+    parse_all(text, p, Keyword.merge(opts, [on_failure: :raise]))
   end
 
-  def parse_all(p, text, opts \\ []) do
+  def parse_all(text, p, opts \\ []) do
     [text]
     |> Paco.Stream.parse(p, Keyword.merge(opts, [format: :raw, on_failure: :yield]))
     |> Enum.map(&handle_failure(&1, Keyword.get(opts, :on_failure, :yield)))
@@ -42,8 +42,8 @@ defmodule Paco do
       Module.get_attribute(env.module, :paco_parsers) |> Enum.reverse
     )
     quote do
-      def parse(s, opts \\ []), do: Paco.parse(apply(__MODULE__, unquote(root_parser), []), s, opts)
-      def parse!(s, opts \\ []), do: Paco.parse!(apply(__MODULE__, unquote(root_parser), []), s, opts)
+      def parse(s, opts \\ []), do: Paco.parse(s, apply(__MODULE__, unquote(root_parser), []), opts)
+      def parse!(s, opts \\ []), do: Paco.parse!(s, apply(__MODULE__, unquote(root_parser), []), opts)
     end
   end
 

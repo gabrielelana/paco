@@ -10,7 +10,7 @@ defmodule Paco.Parser.WithBlockTest do
     text = """
            a
            """
-    assert parse(parser, text) == {:ok, "a"}
+    assert parse(text, parser) == {:ok, "a"}
   end
 
   test "parse indented block (2 spaces)" do
@@ -20,7 +20,7 @@ defmodule Paco.Parser.WithBlockTest do
            a
              b
            """
-    assert parse(parser, text) == {:ok, {"a", "b"}}
+    assert parse(text, parser) == {:ok, {"a", "b"}}
   end
 
   test "parse indented block (4 spaces)" do
@@ -30,7 +30,7 @@ defmodule Paco.Parser.WithBlockTest do
            a
                b
            """
-    assert parse(parser, text) == {:ok, {"a", "b"}}
+    assert parse(text, parser) == {:ok, {"a", "b"}}
   end
 
   test "parse indented block (1 tab)" do
@@ -40,7 +40,7 @@ defmodule Paco.Parser.WithBlockTest do
            a
            \tb
            """
-    assert parse(parser, text) == {:ok, {"a", "b"}}
+    assert parse(text, parser) == {:ok, {"a", "b"}}
   end
 
   test "parse indented block with few lines" do
@@ -54,7 +54,7 @@ defmodule Paco.Parser.WithBlockTest do
              b
              b
            """
-    assert parse(parser, text) == {:ok, {"a", ["b", "b", "b"]}}
+    assert parse(text, parser) == {:ok, {"a", ["b", "b", "b"]}}
   end
 
   test "parse indented block followed by a non indented line" do
@@ -68,7 +68,7 @@ defmodule Paco.Parser.WithBlockTest do
              b
            e
            """
-    assert parse(parser, text) == {:ok, {"a", ["b", "b"]}}
+    assert parse(text, parser) == {:ok, {"a", ["b", "b"]}}
   end
 
   test "parse sequence of recursively indented blocks" do
@@ -85,7 +85,7 @@ defmodule Paco.Parser.WithBlockTest do
                b
                  b
            """
-    assert parse(parser, text) == {:ok, {"a", {["b"], {["b"], ["b"]}}}}
+    assert parse(text, parser) == {:ok, {"a", {["b"], {["b"], ["b"]}}}}
   end
 
   test "fail to match the header" do
@@ -93,7 +93,7 @@ defmodule Paco.Parser.WithBlockTest do
     text = """
            b
            """
-    assert parse(parser, text) == {:error, ~s|expected "a" at 1:1 but got "b"|}
+    assert parse(text, parser) == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 
   test "failure depends on the inner parser" do
@@ -106,16 +106,16 @@ defmodule Paco.Parser.WithBlockTest do
     # allows the body to be empty
     block = fn gap -> many(lit("b") |> preceded_by(gap)) end
     parser = lit("a") |> with_block(block)
-    assert parse(parser, text) == {:ok, {"a", []}}
+    assert parse(text, parser) == {:ok, {"a", []}}
 
     # We could use the end of input, but the error is not very informative
     parser = lit("a") |> with_block(block) |> followed_by(eof)
-    assert parse(parser, text) == {:error, ~s|expected the end of input at 2:1|}
+    assert parse(text, parser) == {:error, ~s|expected the end of input at 2:1|}
 
     # The best thing to do is to use the cut asserting that after the gap you
     # must find what it is supposed to be in an indented block
     block = fn gap -> many(lit("b") |> preceded_by(cut(gap))) end
     parser = lit("a") |> with_block(block)
-    assert parse(parser, text) == {:error, ~s|expected "b" at 2:3 but got "c"|}
+    assert parse(text, parser) == {:error, ~s|expected "b" at 2:3 but got "c"|}
   end
 end

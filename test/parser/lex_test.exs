@@ -5,28 +5,28 @@ defmodule Paco.Parser.LexemeTest do
   import Paco.Parser
 
   test "success" do
-    assert parse(lex("a"), "a") == {:ok, "a"}
-    assert parse(lex("a"), " a") == {:ok, "a"}
-    assert parse(lex("a"), "  a") == {:ok, "a"}
-    assert parse(lex("a"), "a ") == {:ok, "a"}
-    assert parse(lex("a"), "a  ") == {:ok, "a"}
-    assert parse(lex("aaa"), "aaa") == {:ok, "aaa"}
+    assert parse("a", lex("a")) == {:ok, "a"}
+    assert parse(" a", lex("a")) == {:ok, "a"}
+    assert parse("  a", lex("a")) == {:ok, "a"}
+    assert parse("a ", lex("a")) == {:ok, "a"}
+    assert parse("a  ", lex("a")) == {:ok, "a"}
+    assert parse("aaa", lex("aaa")) == {:ok, "aaa"}
   end
 
   test "does not consumes newlines" do
-    assert parse(lex("a"), "\n") == {:error,
+    assert parse("\n", lex("a")) == {:error,
       ~s|expected "a" at 1:1 but got "\n"|
     }
   end
 
   test "failure" do
-    assert parse(lex("aaa"), "bbb") == {:error,
+    assert parse("bbb", lex("aaa")) == {:error,
       ~s|expected "aaa" at 1:1 but got "bbb"|
     }
   end
 
   test "failure with description" do
-    assert parse(lex("aaa") |> as("LEX"), "bbb") == {:error,
+    assert parse("bbb", lex("aaa") |> as("LEX")) == {:error,
       ~s|expected "aaa" (LEX) at 1:1 but got "bbb"|
     }
   end

@@ -7,7 +7,7 @@ defmodule Paco.Parser.PeekTest do
   test "parse and returns the result but doesn't consume any input" do
     parser = peek(lit("a"))
 
-    assert parse(parser, "a") == {:ok, "a"}
+    assert parse("a", parser) == {:ok, "a"}
 
     success = parser.parse.(Paco.State.from("a"), parser)
     assert success.result == "a"
@@ -18,6 +18,6 @@ defmodule Paco.Parser.PeekTest do
   end
 
   test "it has no effect on failures" do
-    assert parse(lit("a") |> peek, "b") == parse(lit("a"), "b")
+    assert parse("b", lit("a") |> peek) == parse("b", lit("a"))
   end
 end

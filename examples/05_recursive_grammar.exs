@@ -12,11 +12,11 @@ import Paco.Parser
 # complex than that but for now we don't care and we will keep it simple
 number = while("0123456789", at_least: 1)
 
-parse(number, "1") |> IO.inspect
+parse("1", number) |> IO.inspect
 # >> {:ok, "1"}
-parse(number, "42") |> IO.inspect
+parse("42", number) |> IO.inspect
 # >> {:ok, "42"}
-parse(number, "1024") |> IO.inspect
+parse("1024", number) |> IO.inspect
 # >> {:ok, "1024"}
 
 # Ok, but we need numbers not strings, we need to be able to take the result of
@@ -25,7 +25,7 @@ parse(number, "1024") |> IO.inspect
 number = while("0123456789", at_least: 1)
          |> bind(&String.to_integer/1)
 
-parse(number, "42") |> IO.inspect
+parse("42", number) |> IO.inspect
 # >> {:ok, 42}
 
 # We also need to ignore whitespaces around a number, to do that we will use
@@ -35,7 +35,7 @@ number = while("0123456789", at_least: 1)
          |> surrounded_by(bls?)
          |> bind(&String.to_integer/1)
 
-parse(number, " 42 ") |> IO.inspect
+parse(" 42 ", number) |> IO.inspect
 # >> {:ok, 42}
 
 # An expression is a number, an operation between expressions and an expression
@@ -54,9 +54,9 @@ expression =
 # parser itself as the first parameter. Here `expression` and `e` are the same
 # parser
 
-parse(expression, "42") |> IO.inspect
+parse("42", expression) |> IO.inspect
 # >> {:ok, 42}
-parse(expression, "(42)") |> IO.inspect
+parse("(42)", expression) |> IO.inspect
 # >> {:ok, 42}
 
 # Note that surrounded_by takes two lexemes that are going to consume useless
@@ -68,7 +68,7 @@ expression =
       one_of([number, e |> surrounded_by("(", ")")])
     end)
 
-parse(expression, "( 42 )") |> IO.inspect
+parse("( 42 )", expression) |> IO.inspect
 # >> {:ok, 42}
 
 # Now we are going to add the `*` and `/` operator, what is going to be
@@ -88,16 +88,16 @@ expression =
 # otherwise it would be happy to match a single number as multiplication and so
 # to never parse divisions
 
-parse(expression, "42 * 2") |> IO.inspect
+parse("42 * 2", expression) |> IO.inspect
 # >> {:ok, [42, 2]}
-parse(expression, "42 * 2 * 2") |> IO.inspect
+parse("42 * 2 * 2", expression) |> IO.inspect
 # >> {:ok, [42, 2, 2]}
-parse(expression, "42 / 2") |> IO.inspect
+parse("42 / 2", expression) |> IO.inspect
 # >> {:ok, [42, 2]}
 
 # We have a problem
 
-parse(expression, "42") |> IO.inspect
+parse("42", expression) |> IO.inspect
 # >> {:error, "expected one of [\"*\", \"/\"] at 1:3 but got the end of input"}
 
 # We have lost the power to match single numbers because the only parser we
@@ -115,16 +115,16 @@ expression =
       ])
     end)
 
-parse(expression, "42 * 2") |> IO.inspect
+parse("42 * 2", expression) |> IO.inspect
 # >> {:ok, [42, 2]}
-parse(expression, "42 / 2") |> IO.inspect
+parse("42 / 2", expression) |> IO.inspect
 # >> {:ok, [42, 2]}
-parse(expression, "42") |> IO.inspect
+parse("42", expression) |> IO.inspect
 # >> {:ok, 42}
 
 # Unfortunately we have another problem
 
-parse(expression, "42 * 2 / 2") |> IO.inspect
+parse("42 * 2 / 2", expression) |> IO.inspect
 # >> {:ok, [42, 2]}
 
 # The last expression should have been `{:ok, [42, 2, 2]}` why we didn't get a
@@ -143,7 +143,7 @@ expression =
     end)
   |> followed_by(eof)
 
-parse(expression, "42 * 2 / 2") |> IO.inspect
+parse("42 * 2 / 2", expression) |> IO.inspect
 # >> {:error, "expected the end of input at 1:8"}
 
 # Now it's clear, the `/` is not recognized... the problem is that once the
@@ -152,7 +152,7 @@ parse(expression, "42 * 2 / 2") |> IO.inspect
 # surrounded by parentheses, but not a division. In fact puting parentheses
 # around the division solves the problem
 
-parse(expression, "42 * (2 * 2)") |> IO.inspect
+parse("42 * (2 * 2)", expression) |> IO.inspect
 # >> {:ok, [42, [2, 2]]}
 
 # How do we solve this? Moving the `one_of` combinator inside the
@@ -166,13 +166,13 @@ expression =
     end)
   |> followed_by(eof)
 
-parse(expression, "16") |> IO.inspect
+parse("16", expression) |> IO.inspect
 # >> {:ok, [16]}
-parse(expression, "16 * 2") |> IO.inspect
+parse("16 * 2", expression) |> IO.inspect
 # >> {:ok, [16, 2]}
-parse(expression, "16 / 2") |> IO.inspect
+parse("16 / 2", expression) |> IO.inspect
 # >> {:ok, [16, 2]}
-parse(expression, "16 * 2 / 2") |> IO.inspect
+parse("16 * 2 / 2", expression) |> IO.inspect
 # >> {:ok, [16, 2, 2]}
 
 # The only downside is that we need to keep the separator because now we can't
@@ -188,9 +188,9 @@ expression =
     end)
   |> followed_by(eof)
 
-parse(expression, "42 * 2") |> IO.inspect
+parse("42 * 2", expression) |> IO.inspect
 # >> {:ok, [42, "*", 2]}
-parse(expression, "42 / 2") |> IO.inspect
+parse("42 / 2", expression) |> IO.inspect
 # >> {:ok, [42, "/", 2]}
 
 # Now we can start to reduce the expression with the help of
@@ -211,9 +211,9 @@ expression =
     end)
   |> followed_by(eof)
 
-parse(expression, "42 * 2") |> IO.inspect
+parse("42 * 2", expression) |> IO.inspect
 # >> {:ok, 84}
-parse(expression, "42 / 2") |> IO.inspect
+parse("42 / 2", expression) |> IO.inspect
 # >> {:ok, 21}
 
 # Nice, time to introduce the last two operators following the same pattern
@@ -240,48 +240,48 @@ expression =
   |> followed_by(eof)
 
 
-parse(expression, "42 + 2") |> IO.inspect
+parse("42 + 2", expression) |> IO.inspect
 # >> {:ok, 44}
-parse(expression, "42 - 2") |> IO.inspect
+parse("42 - 2", expression) |> IO.inspect
 # >> {:ok, 40}
 
 # What about the operators precedence?
-parse(expression, "42 - 2 * 5") |> IO.inspect
+parse("42 - 2 * 5", expression) |> IO.inspect
 # >> {:ok, 32}
-parse(expression, "(42 - 2) * 5") |> IO.inspect
+parse("(42 - 2) * 5", expression) |> IO.inspect
 # >> {:ok, 200}
 
 # It works! Let's check if all it's ok
 
-parse(expression, "42") |> IO.inspect
+parse("42", expression) |> IO.inspect
 # >> {:ok, 42}
-parse(expression, "(42)") |> IO.inspect
+parse("(42)", expression) |> IO.inspect
 # >> {:ok, 42}
-parse(expression, "42 + 2") |> IO.inspect
+parse("42 + 2", expression) |> IO.inspect
 # >> {:ok, 44}
-parse(expression, "42 + 2 - 2") |> IO.inspect
+parse("42 + 2 - 2", expression) |> IO.inspect
 # >> {:ok, 42}
-parse(expression, "(42) + (2)") |> IO.inspect
+parse("(42) + (2)", expression) |> IO.inspect
 # >> {:ok, 44}
-parse(expression, "42 * 2 + 1") |> IO.inspect
+parse("42 * 2 + 1", expression) |> IO.inspect
 # >> {:ok, 85}
-parse(expression, "42 * (2 + 1)") |> IO.inspect
+parse("42 * (2 + 1)", expression) |> IO.inspect
 # >> {:ok, 126}
-parse(expression, "(42 + 2) / (3 - 1)") |> IO.inspect
+parse("(42 + 2) / (3 - 1)", expression) |> IO.inspect
 # >> {:ok, 22}
-parse(expression, "((42 + 2) / (3 - 1))") |> IO.inspect
+parse("((42 + 2) / (3 - 1))", expression) |> IO.inspect
 # >> {:ok, 22}
-parse(expression, "42 + 2 * 3 + 100") |> IO.inspect
+parse("42 + 2 * 3 + 100", expression) |> IO.inspect
 # >> {:ok, 148}
-parse(expression, "((42+2)/(3-1))") |> IO.inspect
+parse("((42+2)/(3-1))", expression) |> IO.inspect
 # >> {:ok, 22}
-parse(expression, "9 - 12 - 6") |> IO.inspect
+parse("9 - 12 - 6", expression) |> IO.inspect
 # >> {:ok, -9}
-parse(expression, "9 - (12 - 6)") |> IO.inspect
+parse("9 - (12 - 6)", expression) |> IO.inspect
 # >> {:ok, 3}
-parse(expression, "(1+1*2)+(3*4*5)/20") |> IO.inspect
+parse("(1+1*2)+(3*4*5)/20", expression) |> IO.inspect
 # >> {:ok, 6}
-parse(expression, "((1+1*2)+(3*4*5))/3") |> IO.inspect
+parse("((1+1*2)+(3*4*5))/3", expression) |> IO.inspect
 # >> {:ok, 21}
 
 # After a little simplification here's the final result

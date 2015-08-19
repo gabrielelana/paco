@@ -5,15 +5,15 @@ defmodule Paco.Parser.OtherwiseTest do
   import Paco.Parser
 
   test "parse" do
-    assert parse(lit("a") |> otherwise(lit("b")), "a") == {:ok, "a"}
-    assert parse(lit("a") |> otherwise(lit("b")), "b") == {:ok, "b"}
+    assert parse("a", lit("a") |> otherwise(lit("b"))) == {:ok, "a"}
+    assert parse("b", lit("a") |> otherwise(lit("b"))) == {:ok, "b"}
   end
 
   test "combine failures" do
-    assert parse(lit("a") |> otherwise(lit("b")), "c") == {:error,
+    assert parse("c", lit("a") |> otherwise(lit("b"))) == {:error,
       ~s|expected one of ["b", "a"] at 1:1 but got "c"|
     }
-    assert parse(lit("aaa") |> otherwise(lit("b")), "aac") == {:error,
+    assert parse("aac", lit("aaa") |> otherwise(lit("b"))) == {:error,
       ~s|expected "aaa" at 1:1 but got "aac"|
     }
   end
@@ -22,13 +22,13 @@ defmodule Paco.Parser.OtherwiseTest do
     alternative = fn(p) -> p |> preceded_by("b") end
     parser = lit("a") |> otherwise(alternative)
 
-    assert parse(parser, "a") == {:ok, "a"}
-    assert parse(parser, "ba") == {:ok, "a"}
+    assert parse("a", parser) == {:ok, "a"}
+    assert parse("ba", parser) == {:ok, "a"}
   end
 
   test "fatal failures could not be recovered" do
     # TODO: use cut_before(lit("a")) when available
-    assert parse([cut, lit("a")] |> otherwise(lit("b")), "b") == {:error,
+    assert parse("b", [cut, lit("a")] |> otherwise(lit("b"))) == {:error,
       ~s|expected "a" at 1:1 but got "b"|
     }
   end

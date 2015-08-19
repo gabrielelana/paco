@@ -8,68 +8,68 @@ defmodule Paco.Parser.WhileTest do
   alias Paco.Test.Helper
 
   test "parse characters in alphabet as string" do
-    assert parse(while("abc"), "bbacbcd") == {:ok, "bbacbc"}
-    assert parse(while("abc"), "xxx") == {:ok, ""}
-    assert parse(while("abc"), "") == {:ok, ""}
+    assert parse("bbacbcd", while("abc")) == {:ok, "bbacbc"}
+    assert parse("xxx", while("abc")) == {:ok, ""}
+    assert parse("", while("abc")) == {:ok, ""}
   end
 
   test "parse characters in alphabet as list" do
-    assert parse(while(["a", "b", "c"]), "bbacbcd") == {:ok, "bbacbc"}
-    assert parse(while(["a", "b", "c"]), "xxx") == {:ok, ""}
-    assert parse(while(["a", "b", "c"]), "") == {:ok, ""}
+    assert parse("bbacbcd", while(["a", "b", "c"])) == {:ok, "bbacbc"}
+    assert parse("xxx", while(["a", "b", "c"])) == {:ok, ""}
+    assert parse("", while(["a", "b", "c"])) == {:ok, ""}
   end
 
   test "parse characters for which a given function returns true" do
-    assert parse(while(&uppercase?/1), "ABc") == {:ok, "AB"}
-    assert parse(while(&uppercase?/1), "abc") == {:ok, ""}
-    assert parse(while(&uppercase?/1), "") == {:ok, ""}
+    assert parse("ABc", while(&uppercase?/1)) == {:ok, "AB"}
+    assert parse("abc", while(&uppercase?/1)) == {:ok, ""}
+    assert parse("", while(&uppercase?/1)) == {:ok, ""}
   end
 
   test "parse characters in alpahbet for an exact number of times" do
-    assert parse(while("abc", 2), "bbacbcd") == {:ok, "bb"}
-    assert parse(while("abc", exactly: 2), "bbacbcd") == {:ok, "bb"}
+    assert parse("bbacbcd", while("abc", 2)) == {:ok, "bb"}
+    assert parse("bbacbcd", while("abc", exactly: 2)) == {:ok, "bb"}
 
-    assert parse(while("abc", 3), "aad") == {:error,
+    assert parse("aad", while("abc", 3)) == {:error,
       ~s|expected exactly 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
   end
 
   test "parse characters for which a given function returns true for an exact number of times" do
-    assert parse(while(&uppercase?/1, 2), "ABC") == {:ok, "AB"}
-    assert parse(while(&uppercase?/1, exactly: 2), "ABC") == {:ok, "AB"}
+    assert parse("ABC", while(&uppercase?/1, 2)) == {:ok, "AB"}
+    assert parse("ABC", while(&uppercase?/1, exactly: 2)) == {:ok, "AB"}
 
-    assert parse(while(&uppercase?/1, 3), "ABc") == {:error,
+    assert parse("ABc", while(&uppercase?/1, 3)) == {:error,
       ~s|expected exactly 3 characters which satisfy uppercase? at 1:1 but got "ABc"|
     }
   end
 
   test "parse characters in alpahbet for a number of times" do
-    assert parse(while("abc", at_most: 2), "bbacbc") == {:ok, "bb"}
-    assert parse(while("abc", less_than: 2), "bbacbc") == {:ok, "b"}
+    assert parse("bbacbc", while("abc", at_most: 2)) == {:ok, "bb"}
+    assert parse("bbacbc", while("abc", less_than: 2)) == {:ok, "b"}
 
-    assert parse(while("abc", at_least: 3), "aad") == {:error,
+    assert parse("aad", while("abc", at_least: 3)) == {:error,
       ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
-    assert parse(while(["a", "b", "c"], at_least: 2), "xxyy") == {:error,
+    assert parse("xxyy", while(["a", "b", "c"], at_least: 2)) == {:error,
       ~s|expected at least 2 characters in alphabet "abc" at 1:1 but got "xx"|
     }
-    assert parse(while("abc", more_than: 2), "aad") == {:error,
+    assert parse("aad", while("abc", more_than: 2)) == {:error,
       ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "aad"|
     }
   end
 
   test "failure with description" do
     parser = while(&uppercase?/1, 3) |> as("TOKEN")
-    assert parse(parser, "ABc") == {:error,
+    assert parse("ABc", parser) == {:error,
       ~s|expected exactly 3 characters which satisfy uppercase? (TOKEN) at 1:1 but got "ABc"|
     }
   end
 
   test "failure keeps the relevant part of the tail" do
-    assert parse(while("abc", at_least: 2), "xxyy") == {:error,
+    assert parse("xxyy", while("abc", at_least: 2)) == {:error,
       ~s|expected at least 2 characters in alphabet "abc" at 1:1 but got "xx"|
     }
-    assert parse(while("abc", more_than: 2), "xxxyyy") == {:error,
+    assert parse("xxxyyy", while("abc", more_than: 2)) == {:error,
       ~s|expected at least 3 characters in alphabet "abc" at 1:1 but got "xxx"|
     }
   end

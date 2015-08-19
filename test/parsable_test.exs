@@ -5,51 +5,51 @@ defmodule Paco.ParsableTest do
   import Paco
 
   test "no effect on parsers" do
-    assert parse(box(lit("a")), "a") == parse(lit("a"), "a")
+    assert parse("a", box(lit("a"))) == parse("a", lit("a"))
   end
 
   test "works on strings" do
-    assert parse(box("a"), "a") == parse(lit("a"), "a")
+    assert parse("a", box("a")) == parse("a", lit("a"))
   end
 
   test "works on regular expressions" do
-    assert parse(box(~r/a/), "a") == parse(re(~r/a/), "a")
+    assert parse("a", box(~r/a/)) == parse("a", re(~r/a/))
   end
 
   test "works on atoms" do
-    assert parse(box(:a), "a") == {:ok, :a}
+    assert parse("a", box(:a)) == {:ok, :a}
   end
 
   test "nil is not parsed and always returned" do
-    assert parse(box(nil), "a") == {:ok, nil}
+    assert parse("a", box(nil)) == {:ok, nil}
   end
 
   test "works on tuples" do
-    assert parse(box({lit("a")}), "a") == {:ok, {"a"}}
-    assert parse(box({lit("a"), lit("b")}), "ab") == {:ok, {"a", "b"}}
-    assert parse(box({}), "a") == {:ok, {}}
+    assert parse("a", box({lit("a")})) == {:ok, {"a"}}
+    assert parse("ab", box({lit("a"), lit("b")})) == {:ok, {"a", "b"}}
+    assert parse("a", box({})) == {:ok, {}}
   end
 
   test "works on lists" do
-    assert parse(box([lit("a")]), "a") == parse(sequence_of([lit("a")]), "a")
-    assert parse(box([lit("a"), lit("b")]), "ab") == parse(sequence_of([lit("a"), lit("b")]), "ab")
-    assert parse(box([]), "a") == parse(sequence_of([]), "a")
+    assert parse("a", box([lit("a")])) == parse("a", sequence_of([lit("a")]))
+    assert parse("ab", box([lit("a"), lit("b")])) == parse("ab", sequence_of([lit("a"), lit("b")]))
+    assert parse("a", box([])) == parse("a", sequence_of([]))
   end
 
   test "works on maps" do
     parser = box(%{a: lit("a"), b: lit("b")})
-    assert parse(parser, "ab") == {:ok, %{a: "a", b: "b"}}
+    assert parse("ab", parser) == {:ok, %{a: "a", b: "b"}}
 
     parser = box(%{1 => lit("a"), 2 => lit("b")})
-    assert parse(parser, "ab") == {:ok, %{1 => "a", 2 => "b"}}
+    assert parse("ab", parser) == {:ok, %{1 => "a", 2 => "b"}}
 
     parser = box(%{})
-    assert parse(parser, "a") == {:ok, %{}}
+    assert parse("a", parser) == {:ok, %{}}
   end
 
   test "works on keywords" do
     parser = box([a: lit("a"), b: lit("b")])
-    assert parse(parser, "ab") == {:ok, [a: "a", b: "b"]}
+    assert parse("ab", parser) == {:ok, [a: "a", b: "b"]}
   end
 
   defmodule Something do
@@ -58,11 +58,11 @@ defmodule Paco.ParsableTest do
 
   test "works on structs" do
     parser = box(%Something{a: lit("a"), b: lit("b")})
-    assert parse(parser, "ab") == {:ok, %Something{a: "a", b: "b"}}
+    assert parse("ab", parser) == {:ok, %Something{a: "a", b: "b"}}
 
     # nils are not parsed and kept in the struct
     parser = box(%Something{a: lit("a")})
-    assert parse(parser, "ab") == {:ok, %Something{a: "a"}}
+    assert parse("ab", parser) == {:ok, %Something{a: "a"}}
   end
 
   defmodule SomethingParsable do
@@ -78,14 +78,14 @@ defmodule Paco.ParsableTest do
 
   test "works on structs that implements the protocol" do
     parser = box(%SomethingParsable{a: "a", b: "b"})
-    assert parse(parser, "ab") == {:ok, %SomethingParsable{a: "a", b: "b"}}
-    assert parse(parser, "a b") == {:ok, %SomethingParsable{a: "a", b: "b"}}
-    assert parse(parser, " ab ") == {:ok, %SomethingParsable{a: "a", b: "b"}}
+    assert parse("ab", parser) == {:ok, %SomethingParsable{a: "a", b: "b"}}
+    assert parse("a b", parser) == {:ok, %SomethingParsable{a: "a", b: "b"}}
+    assert parse(" ab ", parser) == {:ok, %SomethingParsable{a: "a", b: "b"}}
   end
 
   test "works recursively" do
-    assert parse(box({"a"}), "a") == {:ok, {"a"}}
-    assert parse(box({~r/a/}), "a") == {:ok, {"a"}}
-    assert parse(box([{"a", "b"}, {"c", "d"}]), "abcd") == {:ok, [{"a", "b"}, {"c", "d"}]}
+    assert parse("a", box({"a"})) == {:ok, {"a"}}
+    assert parse("a", box({~r/a/})) == {:ok, {"a"}}
+    assert parse("abcd", box([{"a", "b"}, {"c", "d"}])) == {:ok, [{"a", "b"}, {"c", "d"}]}
   end
 end

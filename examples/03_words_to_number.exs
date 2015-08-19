@@ -62,41 +62,41 @@ number = [one_of([hundreds, tens]), maybe(scales, default: 1)] |> bind(mul)
 number = number |> separated_by(maybe(lex("and"))) |> bind(sum)
 
 
-parse(number, "one") |> IO.inspect
+parse("one", number) |> IO.inspect
 # >> {:ok, 1}
-parse(number, "twenty") |> IO.inspect
+parse("twenty", number) |> IO.inspect
 # >> {:ok, 20}
-parse(number, "twenty-two") |> IO.inspect
+parse("twenty-two", number) |> IO.inspect
 # >> {:ok, 22}
-parse(number, "seventy-seven") |> IO.inspect
+parse("seventy-seven", number) |> IO.inspect
 # >> {:ok, 77}
-parse(number, "one hundred") |> IO.inspect
+parse("one hundred", number) |> IO.inspect
 # >> {:ok, 100}
-parse(number, "one hundred twenty") |> IO.inspect
+parse("one hundred twenty", number) |> IO.inspect
 # >> {:ok, 120}
-parse(number, "one hundred and twenty") |> IO.inspect
+parse("one hundred and twenty", number) |> IO.inspect
 # >> {:ok, 120}
-parse(number, "one hundred and twenty-two") |> IO.inspect
+parse("one hundred and twenty-two", number) |> IO.inspect
 # >> {:ok, 122}
-parse(number, "one hundred and twenty three") |> IO.inspect
+parse("one hundred and twenty three", number) |> IO.inspect
 # >> {:ok, 123}
-parse(number, "twelve hundred and twenty-two") |> IO.inspect
+parse("twelve hundred and twenty-two", number) |> IO.inspect
 # >> {:ok, 1222}
-parse(number, "one thousand") |> IO.inspect
+parse("one thousand", number) |> IO.inspect
 # >> {:ok, 1000}
-parse(number, "twenty thousand") |> IO.inspect
+parse("twenty thousand", number) |> IO.inspect
 # >> {:ok, 20000}
-parse(number, "twenty-two thousand") |> IO.inspect
+parse("twenty-two thousand", number) |> IO.inspect
 # >> {:ok, 22000}
-parse(number, "one hundred thousand") |> IO.inspect
+parse("one hundred thousand", number) |> IO.inspect
 # >> {:ok, 100000}
-parse(number, "twelve hundred and twenty-two thousand") |> IO.inspect
+parse("twelve hundred and twenty-two thousand", number) |> IO.inspect
 # >> {:ok, 1222000}
-parse(number, "one hundred and twenty three million") |> IO.inspect
+parse("one hundred and twenty three million", number) |> IO.inspect
 # >> {:ok, 123000000}
-parse(number, "one hundred and twenty three million and three") |> IO.inspect
+parse("one hundred and twenty three million and three", number) |> IO.inspect
 # >> {:ok, 123000003}
-parse(number, "seventy-seven thousand eight hundred and nineteen") |> IO.inspect
+parse("seventy-seven thousand eight hundred and nineteen", number) |> IO.inspect
 # >> {:ok, 77819}
-parse(number, "seven hundred seventy-seven thousand seven hundred and seventy-seven") |> IO.inspect
+parse("seven hundred seventy-seven thousand seven hundred and seventy-seven", number) |> IO.inspect
 # >> {:ok, 777777}

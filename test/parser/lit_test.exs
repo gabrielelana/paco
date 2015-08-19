@@ -7,9 +7,9 @@ defmodule Paco.Parser.LiteralTest do
   alias Paco.Test.Helper
 
   test "success" do
-    assert parse(lit("aaa"), "aaa") == {:ok, "aaa"}
-    assert parse(lit("あいうえお"), "あいうえお") == {:ok, "あいうえお"}
-    assert parse(lit(""), "") == {:ok, ""}
+    assert parse("aaa", lit("aaa")) == {:ok, "aaa"}
+    assert parse("あいうえお", lit("あいうえお")) == {:ok, "あいうえお"}
+    assert parse("", lit("")) == {:ok, ""}
   end
 
   test "boxing" do
@@ -17,23 +17,23 @@ defmodule Paco.Parser.LiteralTest do
   end
 
   test "failure" do
-    assert parse(lit("aaa"), "bbb") == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
-    assert parse(lit("aaa"), "aa") == {:error, ~s|expected "aaa" at 1:1 but got "aa"|}
-    assert parse(lit("a"), "bbb") == {:error, ~s|expected "a" at 1:1 but got "b"|}
+    assert parse("bbb", lit("aaa")) == {:error, ~s|expected "aaa" at 1:1 but got "bbb"|}
+    assert parse("aa", lit("aaa")) == {:error, ~s|expected "aaa" at 1:1 but got "aa"|}
+    assert parse("bbb", lit("a")) == {:error, ~s|expected "a" at 1:1 but got "b"|}
   end
 
   test "failure for end of input" do
-    assert parse(lit("aaa"), "") == {:error, ~s|expected "aaa" at 1:1 but got the end of input|}
+    assert parse("", lit("aaa")) == {:error, ~s|expected "aaa" at 1:1 but got the end of input|}
   end
 
   test "failure with description" do
     parser = lit("aaa") |> as("A")
-    assert parse(parser, "") == {:error, ~s|expected "aaa" (A) at 1:1 but got the end of input|}
+    assert parse("", parser) == {:error, ~s|expected "aaa" (A) at 1:1 but got the end of input|}
   end
 
   test "failure keeps only relevant part of the tail" do
     parser = lit("aaa")
-    assert parse(parser, "xxxyyy") == {:error, ~s|expected "aaa" at 1:1 but got "xxx"|}
+    assert parse("xxxyyy", parser) == {:error, ~s|expected "aaa" at 1:1 but got "xxx"|}
   end
 
   test "failure has rank" do

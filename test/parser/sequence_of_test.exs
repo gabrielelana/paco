@@ -5,54 +5,54 @@ defmodule Paco.Parser.SequenceOfTest do
   import Paco.Parser
 
   test "parse sequence of parsers" do
-    assert parse(sequence_of([lit("a"), lit("b")]), "ab") == {:ok, ["a", "b"]}
-    assert parse(sequence_of([lit("a")]), "a") == {:ok, ["a"]}
-    assert parse(sequence_of([]), "a") == {:ok, []}
+    assert parse("ab", sequence_of([lit("a"), lit("b")])) == {:ok, ["a", "b"]}
+    assert parse("a", sequence_of([lit("a")])) == {:ok, ["a"]}
+    assert parse("a", sequence_of([])) == {:ok, []}
   end
 
   test "boxing" do
-    assert parse(sequence_of(["a", "b"]), "ab") == {:ok, ["a", "b"]}
+    assert parse("ab", sequence_of(["a", "b"])) == {:ok, ["a", "b"]}
   end
 
   test "skipped parsers should be removed from result" do
-    assert parse(sequence_of([lit("a"), skip(lit("b")), lit("c")]), "abc") == {:ok, ["a", "c"]}
-    assert parse(sequence_of([skip(lit("a"))]), "a") == {:ok, []}
+    assert parse("abc", sequence_of([lit("a"), skip(lit("b")), lit("c")])) == {:ok, ["a", "c"]}
+    assert parse("a", sequence_of([skip(lit("a"))])) == {:ok, []}
   end
 
   test "fail to parse because of the first parser" do
-    assert parse(sequence_of([lit("a"), lit("b")]), "bb") == {:error,
+    assert parse("bb", sequence_of([lit("a"), lit("b")])) == {:error,
       ~s|expected "a" at 1:1 but got "b"|
     }
   end
 
   test "fail to parse because of the last parser" do
-    assert parse(sequence_of([lit("a"), lit("b")]), "aa") == {:error,
+    assert parse("aa", sequence_of([lit("a"), lit("b")])) == {:error,
       ~s|expected "b" at 1:2 but got "a"|
     }
   end
 
   test "fail to parse for end of input" do
-    assert parse(sequence_of([lit("a"), lit("b")]), "a") == {:error,
+    assert parse("a", sequence_of([lit("a"), lit("b")])) == {:error,
       ~s|expected "b" at 1:2 but got the end of input|
     }
   end
 
   test "failure with description" do
     parser = sequence_of([lit("a"), lit("b")]) |> as ("SEQUENCE_OF")
-    assert parse(parser, "bb") == {:error,
+    assert parse("bb", parser) == {:error,
       ~s|expected "a" (SEQUENCE_OF) at 1:1 but got "b"|
     }
-    assert parse(parser, "aa") == {:error,
+    assert parse("aa", parser) == {:error,
       ~s|expected "b" (SEQUENCE_OF) at 1:2 but got "a"|
     }
   end
 
   test "failure with nested description" do
     parser = lit("a") |> as("TOKEN")
-    assert parse(sequence_of([parser, lit("b")]), "bb") == {:error,
+    assert parse("bb", sequence_of([parser, lit("b")])) == {:error,
       ~s|expected "a" (TOKEN) at 1:1 but got "b"|
     }
-    assert parse(sequence_of([parser, lit("b")]), "aa") == {:error,
+    assert parse("aa", sequence_of([parser, lit("b")])) == {:error,
       ~s|expected "b" at 1:2 but got "a"|
     }
   end
@@ -60,7 +60,7 @@ defmodule Paco.Parser.SequenceOfTest do
   test "failure with stack of descriptions" do
     parser = lit("a") |> as("TOKEN")
     parser = sequence_of([parser, lit("b")]) |> as("SEQUENCE_OF")
-    assert parse(parser, "bb") == {:error,
+    assert parse("bb", parser) == {:error,
       ~s|expected "a" (TOKEN < SEQUENCE_OF) at 1:1 but got "b"|
     }
   end
@@ -79,39 +79,39 @@ defmodule Paco.Parser.SequenceOfTest do
 
   test "cut in the sequence" do
     parser = sequence_of([lit("a"), cut, lit("b")])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: true} = parse("aa", parser, format: :raw)
 
     parser = sequence_of([cut(lit("a")), lit("b")])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: true} = parse("aa", parser, format: :raw)
   end
 
   test "cut and sew are skipped" do
     parser = sequence_of([lit("a"), cut, lit("b"), sew, lit("c")])
-    assert parse(parser, "abc") == {:ok, ["a", "b", "c"]}
+    assert parse("abc", parser) == {:ok, ["a", "b", "c"]}
   end
 
   test "sew the cut in the sequence" do
     parser = sequence_of([lit("a"), cut, lit("b"), sew, lit("c")])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
-    assert %Paco.Failure{fatal: false} = parse(parser, "ab", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: true} = parse("aa", parser, format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("ab", parser, format: :raw)
 
     parser = sequence_of([cut(lit("a")), sew(lit("b")), lit("c")])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: true} = parse(parser, "aa", format: :raw)
-    assert %Paco.Failure{fatal: false} = parse(parser, "ab", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: true} = parse("aa", parser, format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("ab", parser, format: :raw)
   end
 
   test "cut the sew in the sequence" do
     parser = sequence_of([sew, lit("a"), cut, lit("b")])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("aa", parser, format: :raw)
 
     parser = sequence_of([sew(lit("a")), cut(lit("b"))])
-    assert %Paco.Failure{fatal: false} = parse(parser, "b", format: :raw)
-    assert %Paco.Failure{fatal: false} = parse(parser, "aa", format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("b", parser, format: :raw)
+    assert %Paco.Failure{fatal: false} = parse("aa", parser, format: :raw)
   end
 
   test "consumes input on success" do

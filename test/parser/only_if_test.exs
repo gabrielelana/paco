@@ -6,23 +6,23 @@ defmodule Paco.Parser.OnlyIfTest do
 
   test "success" do
     parser = integer |> only_if(&(&1 > 0))
-    assert parse(parser, "42") == {:ok, 42}
+    assert parse("42", parser) == {:ok, 42}
   end
 
   test "failure" do
     parser = integer |> only_if(&(&1 > 0))
-    assert parse(parser, "0") == {:error, "0 is not acceptable at 1:1"}
+    assert parse("0", parser) == {:error, "0 is not acceptable at 1:1"}
   end
 
   test "failure with description" do
     parser = integer |> only_if(&(&1 > 0)) |> as("ONLY IF")
-    assert parse(parser, "0") == {:error, "0 is not acceptable (ONLY IF) at 1:1"}
+    assert parse("0", parser) == {:error, "0 is not acceptable (ONLY IF) at 1:1"}
   end
 
   test "failure with message" do
     message = "expected a number greater than 0 %AT% but got %RESULT%"
     parser = integer |> only_if(fn n -> {n > 0, message} end)
-    assert parse(parser, "0") == {:error,
+    assert parse("0", parser) == {:error,
       "expected a number greater than 0 at 1:1 but got 0"
     }
   end
