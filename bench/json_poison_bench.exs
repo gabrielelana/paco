@@ -111,11 +111,19 @@ defmodule Paco.Benchmark.JSON do
   }
   """
 
-  bench "small" do
+  bench "paco small" do
     {:ok, _} = Paco.Parser.JSON.parse(@small)
   end
 
-  bench "medium" do
+  bench "poison small" do
+    {:ok, _} = Poison.decode(@small)
+  end
+
+  bench "paco medium" do
     {:ok, _} = Paco.Parser.JSON.parse(@medium)
+  end
+
+  bench "poison medium" do
+    {:ok, _} = Poison.decode(@medium)
   end
 end
