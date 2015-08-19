@@ -25,6 +25,7 @@ defmodule Paco.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    []
+    [{:benchfella, "~> 0.2.1", only: :dev},
+     {:poison, "~> 1.4.0", only: :dev}]
   end
 end
