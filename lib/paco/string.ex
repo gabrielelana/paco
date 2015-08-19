@@ -167,14 +167,12 @@ defmodule Paco.String do
   end
 
 
-
-  defp position_after({n, l, c}, grapheme) do
-    if Paco.ASCII.newline?(grapheme) do
-      {n + 1, l + 1, 1}
-    else
-      {n + 1, l, c + 1}
-    end
-  end
+  defp position_after({n, l, _}, "\n"), do: {n + 1, l + 1, 1}
+  defp position_after({n, l, _}, "\v"), do: {n + 1, l + 1, 1}
+  defp position_after({n, l, _}, "\f"), do: {n + 1, l + 1, 1}
+  defp position_after({n, l, _}, "\r\n"), do: {n + 1, l + 1, 1}
+  defp position_after({n, l, _}, "\r"), do: {n + 1, l + 1, 1}
+  defp position_after({n, l, c}, _), do: {n + 1, l, c + 1}
 
 
 
